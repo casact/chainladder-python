@@ -300,7 +300,7 @@ class MackChainladder(Chainladder):
         avg = {"regression": 0, "volume": 1, "simple": 2}
         avg = [avg.get(item, item) for item in X.average_]
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
-        weight = xp.sqrt(full.values[..., : len(X.ddims)] ** (2 - val))
+        weight = xp.sqrt(full.values[..., : len(X.development)] ** (2 - val))
         obj.values = X.sigma_.values / num_to_nan(weight)
         w = lxp.concatenate(
             (X.w_, lxp.ones((val.shape[0], val.shape[1], val.shape[2], 1))), 3
@@ -347,13 +347,12 @@ class MackChainladder(Chainladder):
         return (self.process_risk_**2).sum(axis="origin").sqrt()
 
     def _mack_recursion(self, est, X=None):
-        obj = X.copy()
         backend = X.array_backend
-        xp = obj.get_array_module()
-        risk_arr = xp.zeros((*X.shape[:3], 1))
         if est == "total_parameter_risk_":
+            obj = X.iloc[:, :, 0:1, :].copy()
+            xp = obj.get_array_module()
+            risk_arr = xp.zeros((*obj.shape[:3], 1))
             nans = None
-            risk_arr = risk_arr[..., 0:1, :]
             future_std_err = (
                 X._full_triangle_ - X[X.valuation < X.valuation_date]
             ).iloc[:, :, :, : X.shape[3]] * X.std_err_.values
@@ -361,11 +360,13 @@ class MackChainladder(Chainladder):
             t1_t = xp.nan_to_num(
                 future_std_err.sum("origin").set_backend(backend).values
             )
-            obj.odims = obj.odims[0:1]
         else:
+            obj = X.copy()
+            xp = obj.get_array_module()
+            risk_arr = xp.zeros((*X.shape[:3], 1))
             nans = xp.nan_to_num(X.nan_triangle[None, None])
             nans = 1 - xp.concatenate((nans, xp.zeros((1, 1, X.shape[2], 1))), 3)
-            full_tri = X._full_triangle_.values[..., : len(X.ddims)]
+            full_tri = X._full_triangle_.values[..., : len(X.development)]
             if est == "parameter_risk_":
                 # std_err_ is always numpy
                 t1_t = (
@@ -374,7 +375,7 @@ class MackChainladder(Chainladder):
             else:
                 t1_t = xp.nan_to_num(full_tri) * self._get_full_std_err_(X).values
         extend = X.ldf_.shape[-1] - X.shape[-1] + 1
-        ldf = X.ldf_.values[..., : len(X.ddims) - 1]
+        ldf = X.ldf_.values[..., : len(X.development) - 1]
         tail = X.cdf_.values[..., -extend : -extend + 1]
         ldf = xp.array(X.ldf_.get_array_module().concatenate((ldf, tail), -1))
         # Recursive Mack Formula
@@ -386,7 +387,9 @@ class MackChainladder(Chainladder):
                 t_tot = t_tot * nans[..., i + 1 : i + 2]
             risk_arr = xp.concatenate((risk_arr, xp.nan_to_num(t_tot)), 3)
         obj.values = risk_arr
-        obj.ddims = X._full_triangle_.ddims[list(range(X.shape[-1])) + [-1]]
+        obj.development = X._full_triangle_.development.iloc[
+            list(range(X.shape[-1])) + [-1]
+        ].values
         obj.valuation_date = X._full_triangle_.valuation_date
         obj._set_slicers()
         return obj
@@ -710,6 +713,6 @@ class MackChainladder(Chainladder):
             self.mack_std_err_.set_backend(backend).values[..., -1:],
         )
         obj.values = obj.get_array_module().concatenate(cols, 3)
-        obj.ddims = ["Latest", "IBNR", "Ultimate", "Mack Std Err"]
+        obj.development = ["Latest", "IBNR", "Ultimate", "Mack Std Err"]
         obj._set_slicers()
         return obj

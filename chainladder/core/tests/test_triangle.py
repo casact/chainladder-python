@@ -25,6 +25,7 @@ from chainladder.core.common import Common
 from chainladder.utils.sparse import COO
 from chainladder.utils.utility_functions import (
     _axis_orders,
+    _axis_to_axis_number,
     _get_axis_name,
     _get_axis_number,
     date_delta_adjustment,
@@ -341,7 +342,7 @@ def test_origin_and_value_setters(raa):
     assert np.all((
         np.all(raa2.origin == raa.origin),
         np.all(raa2.development == raa.development),
-        np.all(raa2.odims == raa.odims),
+        np.all(raa2._axes[2] == raa._axes[2]),
         np.all(raa2.columns == raa.columns),
     ))
 
@@ -492,8 +493,17 @@ def test_triangle_axes(raa):
     assert axes[3].equals(raa.development)
 
 
-def test_axis_mappings():
+def test_axis_mappings(raa):
     """Verify axis number and name resolutions in chainladder.core.typing."""
+    from chainladder.core.typing import (
+        _axis_orders as typing_axis_orders,
+        _axis_to_axis_number as typing_axis_to_axis_number,
+        _get_axis_name as typing_get_axis_name,
+        _get_axis_number as typing_get_axis_number,
+    )
+
+    assert typing_axis_orders == _axis_orders
+    assert typing_axis_to_axis_number == _axis_to_axis_number
     for idx, name in enumerate(_axis_orders):
         assert _get_axis_number(idx) == idx
         assert _get_axis_number(idx - 4) == idx
@@ -501,6 +511,12 @@ def test_axis_mappings():
         assert _get_axis_name(idx) == name
         assert _get_axis_name(idx - 4) == name
         assert _get_axis_name(name) == name
+        assert typing_get_axis_number(idx) == idx
+        assert typing_get_axis_name(idx) == name
+        assert raa._get_axis_number(idx) == idx
+        assert raa._get_axis_number(name) == idx
+        assert raa._get_axis(idx) == idx
+        assert raa._get_axis(name) == idx
 
     with pytest.raises(
         ValueError, match="No axis named invalid for object type Triangle"
@@ -510,13 +526,20 @@ def test_axis_mappings():
     with pytest.raises(ValueError, match=r"No axis named 5 for object type Triangle"):
         _get_axis_number(5)
 
+    with pytest.raises(ValueError, match="Invalid axis specified"):
+        raa._get_axis_number("invalid")
+
 
 def test_triangle_axis_descriptor():
     """Verify TriangleAxis descriptor correctly uses integer axis keys for index and columns."""
     assert isinstance(cl.Triangle.index, TriangleAxis)
     assert cl.Triangle.index.__doc__ is not None
     assert isinstance(cl.Triangle.columns, TriangleAxis)
+    assert isinstance(cl.Triangle.origin, TriangleAxis)
+    assert isinstance(cl.Triangle.development, TriangleAxis)
     assert cl.Triangle.columns.__doc__ is not None
+    assert cl.Triangle.origin.__doc__ is not None
+    assert cl.Triangle.development.__doc__ is not None
 
     class MockTriangle:
         def __init__(self):
@@ -585,6 +608,367 @@ def test_triangle_axis_descriptor():
     m.columns = ["a"]
     with pytest.raises(ValueError, match="length mismatch"):
         m.columns = ["a", "b"]
+
+
+def test_set_axis(raa):
+    """Verify Triangle._set_axis sets index, columns, origin, and development."""
+    tri = raa.copy()
+    # Test setting index via int and str
+    new_idx = pd.DataFrame({"Company": ["Test"]})
+    tri._set_axis(0, new_idx)
+    pd.testing.assert_frame_equal(tri.index, new_idx)
+    tri._set_axis("index", new_idx)
+    pd.testing.assert_frame_equal(tri.index, new_idx)
+
+    # Test setting columns via int and str
+    tri._set_axis(1, ["ColA"])
+    assert list(tri.columns) == ["ColA"]
+    tri._set_axis("columns", ["ColB"])
+    assert list(tri.columns) == ["ColB"]
+
+    # Test setting origin via int and str
+    orig_years = [str(y) for y in range(1981, 1991)]
+    tri._set_axis(2, orig_years)
+    assert list(tri.origin.year) == list(range(1981, 1991))
+    tri._set_axis("origin", orig_years)
+    assert list(tri.origin.year) == list(range(1981, 1991))
+
+    # Test setting development via int and str
+    devs = list(range(1, 11))
+    tri._set_axis(3, devs)
+    assert list(tri.development) == devs
+    tri._set_axis("development", devs)
+    assert list(tri.development) == devs
+
+    # Invalid axis raises ValueError
+    with pytest.raises(ValueError):
+        tri._set_axis("invalid", [1])
+
+
+def test_centralized_axis_edge_cases(raa):
+    """Cover edge cases for TriangleAxis origin, development, and legacy pickles."""
+    # 1. origin on 1-origin pattern returns Series(["(All)"])
+    dev = cl.Development().fit(raa)
+    assert dev.ldf_.origin.iloc[0] == "(All)"
+    assert len(dev.ldf_.origin) == 1
+
+    # 2. _set_origin and _set_development on mock without values
+    class MockTriangleNoValues:
+        origin_grain = "Y"
+        origin_close = "DEC"
+        development_grain = "Y"
+        is_pattern = False
+        is_val_tri = False
+        _axes = {
+            2: pd.period_range("2000", periods=3, freq="Y-DEC").to_timestamp().values,
+            3: np.array([12, 24, 36]),
+        }
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+        def _len_check(self, a, b):
+            if len(a) != len(b):
+                raise ValueError("Length mismatch")
+
+    mock = MockTriangleNoValues()
+    mock.origin = ["2001", "2002", "2003"]
+    assert len(mock._axes[2]) == 3
+    with pytest.raises(ValueError, match="Length mismatch"):
+        mock.origin = ["2001"]
+
+    mock.development = [12, 24, 36]
+    assert len(mock._axes[3]) == 3
+    with pytest.raises(ValueError, match="Length mismatch"):
+        mock.development = [12]
+
+    # 3. Development scalar/string assignment for single column and pattern
+    single_col_tri = raa.iloc[:, :, :, :1].copy()
+    single_col_tri.development = 12
+    assert list(single_col_tri.development) == [12]
+    assert not single_col_tri.is_val_tri
+
+    single_col_tri.development = "12"
+    assert list(single_col_tri.development) == [12]
+    assert not single_col_tri.is_val_tri
+
+    single_col_tri.development = "1"
+    assert list(single_col_tri.development) == [1]
+    assert not single_col_tri.is_val_tri
+
+    pattern_tri = dev.ldf_.iloc[:, :, :, :1].copy()
+    pattern_tri.development = "1-2"
+    assert list(pattern_tri._axes[3]) == [1]
+    assert not pattern_tri.is_val_tri
+
+    single_row_tri = raa.iloc[:, :, :1, :].copy()
+    single_row_tri.origin = 2000
+    assert len(single_row_tri.origin) == 1
+
+    # 4. Valuation triangle development and non-cumulative pattern development
+    val_tri = raa.dev_to_val()
+    assert list(val_tri.development) == [str(y) for y in range(1981, 1991)]
+    assert list(raa.link_ratio.development)[0] == "12-24"
+    assert list(dev.cdf_.development)[0] == "12-Ult"
+
+    # 5. Pattern with is_ultimate True
+    class MockPatternUltimate:
+        is_pattern = True
+        is_ultimate = True
+        is_val_tri = False
+        is_cumulative = False
+        development_grain = "Y"
+        development = cl.Triangle.development
+        _axes = {3: np.array([12, 24, 9999])}
+
+        def _dstep(self):
+            return {"M": {"Y": 12}}
+
+    mock_ult = MockPatternUltimate()
+    assert list(mock_ult.development) == ["12-24", "24-36", "36-48"]
+    mock_ult.development = mock_ult.development
+    assert mock_ult._axes[3][-1] == 9999
+    assert list(mock_ult._axes[3]) == [12, 24, 9999]
+
+    # 6. Triangle.origin and Triangle.development setters on uninitialized instance
+    t_uninit = cl.Triangle.__new__(cl.Triangle)
+    t_uninit.origin = np.array(["2000-01-01"], dtype="datetime64[ns]")
+    assert 2 in t_uninit._axes
+
+    t2_uninit = cl.Triangle.__new__(cl.Triangle)
+    t2_uninit.development = np.array([12, 24])
+    assert 3 in t2_uninit._axes
+
+    # 7. Redundant legacy keys in __setstate__
+    state_redundant = raa.__dict__.copy()
+    raw_odims = raa._axes[2].copy()
+    raw_ddims = raa._axes[3].copy()
+    state_redundant["_axes"] = {
+        0: raa.index.copy(),
+        1: raa.columns.copy(),
+        2: raw_odims.copy(),
+        3: raw_ddims.copy(),
+    }
+    state_redundant["_odims"] = raw_odims.copy()
+    state_redundant["odims"] = raw_odims.copy()
+    state_redundant["_ddims"] = raw_ddims.copy()
+    state_redundant["ddims"] = raw_ddims.copy()
+    restored_red = cl.Triangle.__new__(cl.Triangle)
+    restored_red.__setstate__(state_redundant)
+    assert "_odims" not in restored_red.__dict__
+    assert "odims" not in restored_red.__dict__
+    assert "_ddims" not in restored_red.__dict__
+    assert "ddims" not in restored_red.__dict__
+
+    # 8. Unprefixed origin/development legacy pickle and fallthrough
+    state_no_axes = raa.__dict__.copy()
+    state_no_axes["_axes"] = {}
+    restored_none = cl.Triangle.__new__(cl.Triangle)
+    restored_none.__setstate__(state_no_axes)
+    assert 2 not in restored_none._axes
+    assert 3 not in restored_none._axes
+
+    # 9. _get_axis_number and _get_axis edge cases
+    assert raa._get_axis_number(None) == 0
+    assert raa._get_axis(None) == 0
+    for neg, pos in [(-1, 3), (-2, 2), (-3, 1), (-4, 0)]:
+        assert raa._get_axis_number(neg) == pos
+        assert raa._get_axis(neg) == pos
+
+    # 10. Development roundtrip and sort_axis preservation of valuation and pattern types
+    val_tri = raa.dev_to_val()
+    val_tri.development = val_tri.development
+    assert val_tri.is_val_tri
+    assert isinstance(val_tri._axes[3], pd.DatetimeIndex)
+    assert val_tri.valuation is not None
+
+    shuffled_val = val_tri.iloc[..., [2, 1, 0]].sort_axis(3)
+    assert shuffled_val.is_val_tri
+    assert isinstance(shuffled_val._axes[3], pd.DatetimeIndex)
+    assert list(shuffled_val.development) == list(val_tri.development[:3])
+
+    pattern_tri = raa.link_ratio
+    pattern_tri.development = pattern_tri.development
+    assert pattern_tri.is_pattern
+    assert pattern_tri._axes[3].dtype.kind == "i"
+    assert pattern_tri.valuation is not None
+
+    # Ultimate pattern preserves 9999 sentinel lag across development round-trips
+    pattern_ult = raa.link_ratio
+    pattern_ult._axes[3][-1] = 9999
+    assert pattern_ult.is_ultimate
+    pattern_ult.development = pattern_ult.development
+    assert pattern_ult.is_ultimate
+    assert pattern_ult._axes[3][-1] == 9999
+
+    # 11. Pattern origin round-trip and "(All)" assignment
+    orig_label = dev.ldf_.origin
+    dev.ldf_.origin = orig_label
+    assert dev.ldf_.origin.iloc[0] == "(All)"
+    dev.ldf_.origin = "(All)"
+    assert dev.ldf_.origin.iloc[0] == "(All)"
+
+    # 12. Pattern development sort orders numerically (12-24 before 108-120)
+    dev_10yr = cl.load_sample("ABC")
+    ldf_10yr = cl.Development().fit(dev_10yr).ldf_
+    shuffled_ldf = ldf_10yr.iloc[..., [8, 0]].sort_axis(3)
+    assert list(shuffled_ldf.development) == [
+        list(ldf_10yr.development)[0],
+        list(ldf_10yr.development)[8],
+    ]
+
+    pattern_ult.is_cumulative = True
+    pattern_ult.development = pattern_ult.development
+    assert pattern_ult.is_ultimate
+    assert pattern_ult._axes[3][-1] == 9999
+
+    tri_lags = raa.copy()
+    tri_lags._axes[3] = np.array([12, 120, 24, 36, 48, 60, 72, 84, 96, 108])
+    sorted_lags = tri_lags.sort_axis(3)
+    assert list(sorted_lags.development) == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
+
+    # 13. Additional axis branch coverage for edge cases
+    # TriangleAxis descriptor on class vs instance without _axes
+    assert isinstance(cl.Triangle.origin, cl.core.axis.TriangleAxis)
+
+    class EmptyObj:
+        pass
+
+    empty = EmptyObj()
+    with pytest.raises(AttributeError, match="has no attribute 'origin'"):
+        _ = cl.Triangle.origin.__get__(empty, EmptyObj)
+
+    # _get_origin and _get_development when raw is None
+    class MockNoneAxes:
+        is_pattern = False
+        is_val_tri = False
+        origin_grain = "S"
+        origin_close = "DEC"
+        development_grain = "S"
+        _axes = {2: None, 3: None}
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+    none_mock = MockNoneAxes()
+    assert none_mock.origin is None
+    assert none_mock.development is None
+
+    # origin_grain variations (S, H) and development_grain (Q, M)
+    class MockGrainAxes:
+        is_pattern = False
+        is_val_tri = True
+        origin_grain = "H"
+        origin_close = "DEC"
+        development_grain = "Q"
+        _axes = {
+            2: pd.to_datetime(["2000-06-30"]).values,
+            3: pd.DatetimeIndex(["2000-06-30"]),
+        }
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+    grain_mock = MockGrainAxes()
+    assert grain_mock.origin is not None
+    assert "2000" in grain_mock.development.iloc[0]
+    grain_mock.development_grain = "M"
+    assert "2000-06" in grain_mock.development.iloc[0]
+
+    # _set_origin with PeriodIndex, DatetimeIndex, and datetime64 ndarray
+    t_orig = raa.copy()
+    t_orig.origin = pd.period_range("2000", periods=10, freq="Y-DEC")
+    assert len(t_orig._axes[2]) == 10
+    t_orig.origin = pd.date_range("2000", periods=10, freq="YS")
+    assert len(t_orig._axes[2]) == 10
+    t_orig.origin = pd.date_range("2000", periods=10, freq="YS").values
+    assert len(t_orig._axes[2]) == 10
+
+    # (All) origin fallback when _axes does not have 2
+    class MockAllNoAxes:
+        origin_grain = "Y"
+        origin_close = "DEC"
+        _axes = {}
+        origin = cl.Triangle.origin
+
+    all_mock = MockAllNoAxes()
+    all_mock.origin = "(All)"
+    assert len(all_mock._axes[2]) == 1
+
+    # _set_development with PeriodIndex, DatetimeIndex, and datetime64 ndarray
+    val_tri_cov = raa.dev_to_val()
+    val_tri_cov.development = pd.date_range("2000", periods=10, freq="YS")
+    assert len(val_tri_cov._axes[3]) == 10
+    val_tri_cov.development = pd.period_range("2000", periods=10, freq="Y")
+    assert len(val_tri_cov._axes[3]) == 10
+    val_tri_cov.development = pd.date_range("2000", periods=10, freq="YS").values
+    assert len(val_tri_cov._axes[3]) == 10
+
+    # non-val tri development with PeriodIndex and datetime64
+    non_val = raa.copy()
+    non_val.development = pd.period_range("2000", periods=10, freq="Y")
+    assert len(non_val._axes[3]) == 10
+    non_val.development = pd.date_range("2000", periods=10, freq="YS").values
+    assert len(non_val._axes[3]) == 10
+
+    # _set_development valuation string parsing
+    val_single = val_tri_cov.iloc[:, :, :1, :1].copy()
+    val_single.development = "2005"
+    assert val_single.is_val_tri
+
+    # _set_development parse error fallback
+    non_val_single = raa.iloc[:, :, :1, :1].copy()
+    non_val_single.development = "unparseable_string"
+    assert non_val_single._axes[3][0] == "unparseable_string"
+
+    # _set_columns and _set_index non-TriangleBase mock
+    class MockFullAxes:
+        _axes = {
+            0: pd.DataFrame({"a": [1]}),
+            1: pd.Index(["v"]),
+            2: np.array([1]),
+            3: np.array([12]),
+        }
+        index = cl.Triangle.index
+        columns = cl.Triangle.columns
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+        def _len_check(self, a, b):
+            if len(a) != len(b):
+                raise ValueError("Len mismatch")
+
+    full_mock = MockFullAxes()
+    full_mock.index = pd.DataFrame({"a": [2]})
+    with pytest.raises(TypeError, match="index must be a pandas DataFrame"):
+        full_mock.index = "not a df"
+    full_mock.columns = "new_col"
+    assert list(full_mock.columns) == ["new_col"]
+
+    # _set_axis helper
+    cl.core.axis._set_axis(raa, 0, raa.index)
+    cl.core.axis._set_axis(raa, "columns", raa.columns)
+    cl.core.axis._set_axis(raa, 2, raa.origin)
+    cl.core.axis._set_axis(raa, "development", raa.development)
+
+    # Legacy pickle state key variations (odims/ddims string keys)
+    state_named_axes = raa.__dict__.copy()
+    state_named_axes["_axes"] = {
+        "index": raa.index.copy(),
+        "columns": raa.columns.copy(),
+        "origin": raa._axes[2].copy(),
+        "development": raa._axes[3].copy(),
+    }
+    restored_named = cl.Triangle.__new__(cl.Triangle)
+    restored_named.__setstate__(state_named_axes)
+    assert 2 in restored_named._axes
+    assert 3 in restored_named._axes
+
+    state_legacy_bare = raa.__dict__.copy()
+    state_legacy_bare["_axes"] = {}
+    state_legacy_bare["odims"] = raa._axes[2].copy()
+    state_legacy_bare["ddims"] = raa._axes[3].copy()
+    restored_bare = cl.Triangle.__new__(cl.Triangle)
+    restored_bare.__setstate__(state_legacy_bare)
+    assert 2 in restored_bare._axes
+    assert 3 in restored_bare._axes
 
 
 def test_triangle_index_property(raa):
@@ -679,11 +1063,15 @@ class TestLegacyPickleCompatibility:
     """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
 
     def test_legacy_kdims_vdims_migration(self, raa):
-        # 1. Simulate legacy serialized Triangle containing kdims and vdims
+        # 1. Simulate legacy serialized Triangle containing kdims, vdims, odims, and ddims
+        raw_odims = raa._axes[2]
+        raw_ddims = raa._axes[3]
         state = raa.__dict__.copy()
         state.pop("_axes", None)
         state["kdims"] = raa.index.values
         state["vdims"] = raa.columns.values
+        state["odims"] = raw_odims
+        state["ddims"] = raw_ddims
 
         restored = cl.Triangle.__new__(cl.Triangle)
         with pytest.warns(
@@ -695,19 +1083,27 @@ class TestLegacyPickleCompatibility:
         assert isinstance(restored.index, pd.DataFrame)
         assert restored.index.equals(raa.index)
         assert list(restored.columns) == list(raa.columns)
+        assert restored.origin.equals(raa.origin)
+        assert (restored.development == raa.development).all()
         assert restored.loc["Total"].shape == raa.loc["Total"].shape
         assert restored.equals(raa)
         assert 0 in restored._axes
         assert restored._axes[0].equals(raa.index)
         assert 1 in restored._axes
         assert restored._axes[1].equals(raa.columns)
+        assert 2 in restored._axes
+        assert 3 in restored._axes
 
     def test_legacy_pickle_fallback_without_keys(self, raa):
         # 2. Simulate fallback when no kdims/vdims keys are found (no warning)
+        raw_odims = raa._axes[2]
+        raw_ddims = raa._axes[3]
         state_empty = raa.__dict__.copy()
         state_empty.pop("_axes", None)
         state_empty.pop("kdims", None)
         state_empty.pop("vdims", None)
+        state_empty["_odims"] = raw_odims
+        state_empty["_ddims"] = raw_ddims
 
         restored_empty = cl.Triangle.__new__(cl.Triangle)
         with warnings.catch_warnings():
@@ -717,13 +1113,19 @@ class TestLegacyPickleCompatibility:
         assert list(restored_empty.index.columns) == ["Total"]
         assert 0 in restored_empty._axes
         assert 1 in restored_empty._axes
+        assert 2 in restored_empty._axes
+        assert 3 in restored_empty._axes
 
     def test_migrated_pickle_roundtrip(self, raa):
         # 3. Verify re-pickling the migrated instance works without warnings
+        raw_odims = raa._axes[2]
+        raw_ddims = raa._axes[3]
         state = raa.__dict__.copy()
         state.pop("_axes", None)
         state["kdims"] = raa.index.values
         state["vdims"] = raa.columns.values
+        state["odims"] = raw_odims
+        state["ddims"] = raw_ddims
 
         restored = cl.Triangle.__new__(cl.Triangle)
         with pytest.warns(
@@ -737,6 +1139,8 @@ class TestLegacyPickleCompatibility:
         assert roundtripped.equals(raa)
         assert 0 in roundtripped._axes
         assert 1 in roundtripped._axes
+        assert 2 in roundtripped._axes
+        assert 3 in roundtripped._axes
 
 
 def test_sort_axis_columns_out_of_order(raa):
@@ -3335,6 +3739,163 @@ def test_set_development_bare_years_unaffected_by_age_support() -> None:
         cumulative=True,
     )
     assert list(tri.development) == ["1970"]
+
+
+def test_set_development_fractional_ages(raa: Triangle) -> None:
+    """
+    Assigning fractional ages to development preserves float values without integer truncation.
+    """
+    tri = raa.copy()
+    fractional_ages = [12.5, 24.5, 36.5, 48.5, 60.5, 72.5, 84.5, 96.5, 108.5, 120.5]
+    tri.development = fractional_ages
+    assert np.allclose(tri.development.values, fractional_ages)
+
+
+def test_set_development_fractional_pattern_round_trip(raa: Triangle) -> None:
+    """
+    Hyphenated pattern labels with fractional ages round-trip through the development setter.
+    """
+    tri = raa.copy()
+    tri.development = [
+        "12.5-24.5",
+        "24.5-36.5",
+        "36.5-48.5",
+        "48.5-60.5",
+        "60.5-72.5",
+        "72.5-84.5",
+        "84.5-96.5",
+        "96.5-108.5",
+        "108.5-120.5",
+        "120.5-Ult",
+    ]
+    assert tri._axes[3][0] == 12.5
+    assert tri._axes[3][-1] == 120.5
+
+
+def test_set_development_period_index_valuation_and_valuation_property(
+    raa: Triangle,
+) -> None:
+    """Assigning a PeriodIndex to development expresses the axis in valuation periods and valuation works."""
+    tri = raa.copy()
+    assert not tri.is_val_tri
+    p = pd.period_range("2000", periods=10, freq="Y")
+    tri.development = p
+    assert tri.is_val_tri
+    assert isinstance(tri.valuation, pd.DatetimeIndex)
+
+    tri_val = raa.dev_to_val()
+    assert tri_val.is_val_tri
+    tri_val.development = pd.period_range(
+        "2000", periods=len(tri_val.development), freq="Y"
+    )
+    assert tri_val.is_val_tri
+    assert isinstance(tri_val.valuation, pd.DatetimeIndex)
+
+
+def test_sort_axis_fractional_pattern(raa: Triangle) -> None:
+    """sort_axis(3) on a pattern triangle with fractional development ages sorts correctly."""
+    tri = raa.copy()
+    tri.is_pattern = True
+    tri.development = [
+        "24.5-36.5",
+        "12.5-24.5",
+        "48.5-60.5",
+        "36.5-48.5",
+        "72.5-84.5",
+        "60.5-72.5",
+        "96.5-108.5",
+        "84.5-96.5",
+        "120.5-Ult",
+        "108.5-120.5",
+    ]
+    sorted_tri = tri.sort_axis(3)
+    assert sorted_tri._axes[3][0] == 12.5
+    assert sorted_tri._axes[3][-1] == 120.5
+
+
+def test_axis_descriptor_set_unchecked(raa: Triangle) -> None:
+    """Test TriangleAxis.set_unchecked descriptor for index and columns."""
+    from chainladder.core.axis import TriangleAxis
+
+    tri = raa.copy()
+    TriangleAxis(1).set_unchecked(tri, ["Losses"])
+    assert tri.columns[0] == "Losses"
+    TriangleAxis(0).set_unchecked(tri, tri.index)
+    assert tri.index.equals(raa.index)
+
+
+def test_set_index_non_dataframe_raises(raa: Triangle) -> None:
+    """Assigning a non-DataFrame to index raises TypeError."""
+    tri = raa.copy()
+    with pytest.raises(TypeError, match="index must be a pandas DataFrame"):
+        tri.index = "invalid"
+
+
+def test_set_origin_all_pattern(raa: Triangle) -> None:
+    """Assigning '(All)' to a pattern triangle origin sets and returns '(All)' label."""
+    tri_sum = raa.sum()
+    tri_sum.is_pattern = True
+    tri_sum.origin = ["(All)"]
+    assert str(tri_sum.origin.iloc[0]) == "(All)"
+
+
+def test_set_development_ultimate_token(raa: Triangle) -> None:
+    """Assigning a pattern ending with 'Ult' maps to the 9999 ultimate sentinel."""
+    tri_pat = raa.copy()
+    tri_pat.development = ["12-24"] * 9 + ["Ult"]
+    assert tri_pat._axes[3][-1] == 9999
+
+
+def test_set_development_year_strings_fallback_valuation(raa: Triangle) -> None:
+    """Passing calendar year strings to development falls back to valuation periods."""
+    tri_yr = raa.copy()
+    tri_yr.development = [str(y) for y in range(2000, 2010)]
+    assert tri_yr.is_val_tri
+    assert isinstance(tri_yr.valuation, pd.DatetimeIndex)
+
+
+def test_set_development_non_numeric_pattern_fallback(raa: Triangle) -> None:
+    """Non-numeric and multi-segment pattern strings fall through without crashing."""
+    tri = raa.copy()
+    tri.development = ["abc-def"] * 10
+    assert tri._axes[3][0] == "abc-def"
+
+    tri.development = ["1-2-3-4"] * 10
+    assert tri._axes[3][0] == "1-2-3-4"
+
+
+def test_set_development_whole_floats_convert_to_int(raa: Triangle) -> None:
+    """Float development lags that are whole numbers normalize to integers."""
+    tri = raa.copy()
+    tri.development = [12.0, 24.0, 36.0, 48.0, 60.0, 72.0, 84.0, 96.0, 108.0, 120.0]
+    assert np.issubdtype(tri._axes[3].dtype, np.integer)
+
+
+def test_set_development_valuation_string_labels(raa: Triangle) -> None:
+    """Re-assigning matching valuation labels or ISO date strings preserves valuation mode."""
+    tri_val = raa.dev_to_val()
+    tri_val.development = list(tri_val.development)
+    assert tri_val.is_val_tri
+
+    tri_val.development = [f"{y}-12-31" for y in range(1981, 1991)]
+    assert tri_val.is_val_tri
+
+
+def test_fractional_ages_predict_and_tails(raa: Triangle) -> None:
+    """Predict and tail fitting handle fractional development ages without integer conversion errors."""
+    import chainladder as cl
+
+    tri = raa.copy()
+    tri.development = [12.5, 24.5, 36.5, 48.5, 60.5, 72.5, 84.5, 96.5, 108.5, 120.5]
+    model = cl.Chainladder().fit(tri)
+    pred = model.predict(tri)
+    assert pred is not None
+
+    dev_tri = cl.Development().fit_transform(tri)
+    tail = cl.TailConstant(1.05).fit(dev_tri)
+    assert tail.ldf_ is not None
+    assert tail.ldf_._axes[3][0] == 12.5
+    assert tail.ldf_._axes[3][-1] == 132.5
 
 
 def test_input_validation_non_numeric_columns_raises() -> None:

@@ -16,7 +16,7 @@ from chainladder import (
     _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.utils.utility_functions import concat, num_to_nan
+from chainladder.utils.utility_functions import _get_axis_number, concat, num_to_nan
 
 from typing import cast, TYPE_CHECKING
 
@@ -124,10 +124,10 @@ class TrianglePandas(_TrianglePandasBase):
             out["columns"] = obj.columns[values.coords[1]]
             missing_cols: list = list(set(self.columns) - set(out["columns"]))
             if origin_as_datetime:
-                out["origin"] = obj.odims[values.coords[2]]
+                out["origin"] = obj._axes[2][values.coords[2]]
             else:
                 out["origin"] = obj.origin[values.coords[2]]
-            out["development"] = obj.ddims[values.coords[3]]
+            out["development"] = obj.development.iloc[values.coords[3]].values
             out["values"] = values.data
             out: DataFrame = pd.pivot_table(
                 out, index=obj.key_labels + ["origin", "development"], columns="columns"
@@ -139,8 +139,8 @@ class TrianglePandas(_TrianglePandasBase):
 
             valuation_series = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order="F"),
-                index=obj.odims if origin_as_datetime else obj.origin,
-                columns=obj.ddims,
+                index=obj._axes[2] if origin_as_datetime else obj.origin,
+                columns=obj.development,
             ).unstack()
             valuation_series.name = "valuation"
             valuation: DataFrame = valuation_series.reset_index().rename(
@@ -257,7 +257,7 @@ class TrianglePandas(_TrianglePandasBase):
         return df.hvplot(*args, **kwargs)
 
     @staticmethod
-    def _get_axis(
+    def _get_axis_number(
         axis: Literal["index", "columns", "origin", "development"] | int | None,
     ) -> int:
         """
@@ -268,30 +268,31 @@ class TrianglePandas(_TrianglePandasBase):
         axis: Literal['index', 'columns', 'origin', 'development'] | int | None
             String or integer representation of the requested axis. If
             supplied as a string, returns the integer representation. If
-            supplied as an integer, returns the same integer.
+            supplied as an integer, returns the canonical positive integer.
 
         Returns
         -------
         int
-            The integer representation of the requested axis
+            The integer representation of the requested axis (0..3).
         """
-
-        ax = {
-            **{0: 0, 1: 1, 2: 2, 3: 3},
-            **{-1: 3, -2: 2, -3: 1, -4: 0},
-            **{"index": 0, "columns": 1, "origin": 2, "development": 3},
-        }
-
+        if axis is None:
+            return 0
         try:
-            return ax[axis]
-        except KeyError:
-            if axis is None:
-                return 0
-            else:
-                raise ValueError(
-                    "Invalid axis specified. Please specify the correct string or "
-                    "integer representation of the desired axis."
-                )
+            return _get_axis_number(axis)
+        except ValueError as err:
+            raise ValueError(
+                "Invalid axis specified. Please specify the correct string or "
+                "integer representation of the desired axis."
+            ) from err
+
+    @staticmethod
+    def _get_axis(
+        axis: Literal["index", "columns", "origin", "development"] | int | None,
+    ) -> int:
+        """
+        Backward-compatible alias for _get_axis_number.
+        """
+        return TrianglePandas._get_axis_number(axis)
 
     def dropna(self) -> Triangle:
         """
@@ -978,7 +979,7 @@ class TrianglePandas(_TrianglePandasBase):
                 keep = self._validate_contiguous_drop(
                     result.development, ax_labels, "development", errors
                 )
-                result = result._slice(keep, "ddims")
+                result = result._slice(keep, "development")
                 if result.is_val_tri:
                     result.valuation_date = min(
                         result.valuation.max(), result.valuation_date
@@ -1349,11 +1350,11 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
             )
         if axis == 1 and obj.values.shape[axis] == 1 and len(obj.columns) > 1:
             obj.columns = pd.Index([0], name="columns")
-        if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
-            obj.odims = obj.odims[0:1]
-        # If axis is development, set the ddims to be the valuation date.
-        if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
-            obj.ddims = pd.DatetimeIndex(
+        if axis == 2 and obj.values.shape[axis] == 1 and len(obj.origin) > 1:
+            obj.origin = obj.origin[0:1]
+        # If axis is development, set the development axis to be the valuation date.
+        if axis == 3 and obj.values.shape[axis] == 1 and len(obj.development) > 1:
+            obj._axes[3] = pd.DatetimeIndex(
                 [self.valuation_date], dtype=__dt64_dtype__, freq=None
             )
         obj._set_slicers()
@@ -1415,13 +1416,13 @@ def add_groupby_agg_func(cls, k: str, v: str):
         if self.axis == 1:
             obj.columns = group_index
         if self.axis == 2:
-            odims = self.obj._to_datetime(
+            orig_dt = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]
             )
-            obj.origin_grain = self.obj._get_grain(odims)
+            obj.origin_grain = self.obj._get_grain(orig_dt)
             split = obj.origin_grain.split("-")
             obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
-            obj.odims = odims.values
+            obj._axes[2] = orig_dt.values
         obj._set_slicers()
         if auto_sparse:
             obj = obj._auto_sparse()

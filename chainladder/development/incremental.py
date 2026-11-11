@@ -211,7 +211,7 @@ class IncrementalAdditive(DevelopmentBase):
             Returns the instance itself.
         """
         # check dev lag
-        if not isinstance(X.ddims, np.ndarray):
+        if X.is_val_tri:
             raise ValueError("Triangle must be expressed with development lags")
         # convert to numpy
         if X.array_backend == "sparse":
@@ -263,7 +263,7 @@ class IncrementalAdditive(DevelopmentBase):
         self.zeta_ = self._param_property(x, self.params_.slope_[..., 0][..., None, :])
 
         # to consolidate under full_triangle_
-        y_ = xp.repeat(self.zeta_.values, len(x.odims), -2)
+        y_ = xp.repeat(self.zeta_.values, len(x.origin), -2)
         obj = x.copy()
         keeps = (
             1
