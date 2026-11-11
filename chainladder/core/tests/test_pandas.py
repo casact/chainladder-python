@@ -57,6 +57,11 @@ PASSTHRU_METHODS_NOT_COVERED_BY_TEST_TRIANGLE = [
 
 
 def test_pandas_methods_are_defined_on_classes():
+    """
+    Define pandas-style methods directly on the classes, not attached at runtime.
+
+    This lets static type checkers such as Pyright/Pylance and ty see them.
+    """
     assert (
         set(AGGREGATIONS + ["diff"] + PASSTHRU_METHODS)
         <= TrianglePandas.__dict__.keys()
@@ -66,6 +71,12 @@ def test_pandas_methods_are_defined_on_classes():
 
 @pytest.mark.parametrize("method", AGGREGATIONS + ["diff"])
 def test_triangle_aggregation_dispatch(raa, monkeypatch, method):
+    """
+    Delegate each Triangle method to ``_triangle_aggregate`` unchanged.
+
+    Aggregations pass the ``nan``-prefixed NumPy function name (e.g. ``nansum``);
+    ``diff`` passes ``diff``. Arguments and the return value pass through as is.
+    """
     aggregate = Mock()
     monkeypatch.setattr(triangle_pandas, "_triangle_aggregate", aggregate)
 
@@ -80,6 +91,11 @@ def test_triangle_aggregation_dispatch(raa, monkeypatch, method):
 
 @pytest.mark.parametrize("method", AGGREGATIONS)
 def test_groupby_aggregation_dispatch(clrd, monkeypatch, method):
+    """
+    Delegate each TriangleGroupBy aggregation to ``_groupby_aggregate``.
+
+    The method name, arguments and return value pass through unchanged.
+    """
     aggregate = Mock()
     monkeypatch.setattr(triangle_pandas, "_groupby_aggregate", aggregate)
     grouped = clrd.groupby("LOB")
@@ -92,6 +108,12 @@ def test_groupby_aggregation_dispatch(clrd, monkeypatch, method):
 
 @pytest.mark.parametrize("method", PASSTHRU_METHODS_NOT_COVERED_BY_TEST_TRIANGLE)
 def test_dataframe_passthru_dispatch(raa, monkeypatch, method):
+    """
+    Call the same-named DataFrame method on ``to_frame()``.
+
+    Arguments and the return value pass through unchanged. Only methods not
+    already covered by ``test_triangle.test_add_df_passthru`` are checked.
+    """
     frame = raa.to_frame()
     monkeypatch.setattr(raa, "to_frame", lambda: frame)
     passthru = Mock()
@@ -107,6 +129,12 @@ def test_dataframe_passthru_dispatch(raa, monkeypatch, method):
 @pytest.mark.parametrize("axis", ["index", "columns", "origin", "development"])
 @pytest.mark.filterwarnings("error::RuntimeWarning")
 def test_triangle_aggregation_values(clrd, method, axis):
+    """
+    Match the NumPy ``nan*`` reduction along each axis, with zeros as NaN.
+
+    The result keeps the input's backend and the ``keepdims`` shape, no
+    RuntimeWarning is raised, and the input triangle is not modified.
+    """
     if clrd.array_backend == "sparse" and method in {"var", "std"}:
         pytest.skip("The sparse backend does not implement nanvar or nanstd")
     triangle = clrd.iloc[11:13, :2, :5, :5]
@@ -135,6 +163,7 @@ def test_triangle_aggregation_values(clrd, method, axis):
 
 @pytest.mark.parametrize("axis", range(4))
 def test_aggregation_default_axis_first_non_singleton(clrd, axis):
+    """With ``axis=None``, ``sum`` reduces the first axis of length > 1."""
     indexer = [slice(11, 13), slice(0, 2), slice(0, 5), slice(0, 5)]
     for preceding_axis in range(axis):
         start = indexer[preceding_axis].start
@@ -151,6 +180,12 @@ def test_aggregation_default_axis_first_non_singleton(clrd, axis):
 @pytest.mark.parametrize("backend", ["numpy", "sparse"])
 @pytest.mark.parametrize("keepdims", [False, True])
 def test_aggregation_default_axis_singleton_result(raa: Triangle, backend, keepdims):
+    """
+    With ``axis=None`` and all axes of length 1, ``sum`` returns the single value.
+
+    It is a NumPy scalar, or with ``keepdims=True`` a (1, 1, 1, 1) triangle
+    keeping the index. Checked on the numpy and sparse backends.
+    """
     triangle = raa.iloc[:, :, :1, :1].set_backend(backend)
     result = triangle.sum(axis=None, keepdims=keepdims)
 
