@@ -230,6 +230,7 @@ class TweedieGLM(DevelopmentBase):
                         TweedieRegressor(
                             link=self.link,
                             power=self.power,
+                            alpha=self.alpha,
                             max_iter=self.max_iter,
                             tol=self.tol,
                             warm_start=self.warm_start,
