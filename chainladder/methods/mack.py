@@ -163,8 +163,8 @@ class MackChainladder(Chainladder):
         if "sigma_" not in self.X_:
             raise ValueError("Triangle not compatible with MackChainladder")
         # The Mack recursion multiplies cumulative amounts, so the risk
-        # estimates use the cumulative form of an incremental triangle.
-        X_cum = self.X_ if self.X_.is_cumulative else self.X_.incr_to_cum()
+        # estimates use a cumulative copy of X_.
+        X_cum = self.X_.incr_to_cum()
         # Caching full_triangle_ for fit as it is called a lot
         X_cum._full_triangle_ = _get_full_triangle(X_cum, self.ultimate_)
         self.parameter_risk_ = self._mack_recursion("parameter_risk_", X_cum)
@@ -172,7 +172,6 @@ class MackChainladder(Chainladder):
         self.total_parameter_risk_ = self._mack_recursion(
             "total_parameter_risk_", X_cum
         )
-        del X_cum._full_triangle_
         self.process_variance_ = self._include_process_variance()
         return self
 
@@ -237,8 +236,8 @@ class MackChainladder(Chainladder):
         X_new.average_ = getattr(X_new, "average_", self.X_.average_)
         X_new.w_ = getattr(X_new, "w_", self.X_.w_)
         # The Mack recursion multiplies cumulative amounts, so the risk
-        # estimates use the cumulative form of an incremental triangle.
-        X_cum = X_new if X_new.is_cumulative else X_new.incr_to_cum()
+        # estimates use a cumulative copy of X_new.
+        X_cum = X_new.incr_to_cum()
         X_cum._full_triangle_ = X_cum.full_triangle_
         X_new.parameter_risk_ = self._mack_recursion("parameter_risk_", X_cum)
         X_new.process_risk_ = self._mack_recursion("process_risk_", X_cum)
@@ -249,7 +248,6 @@ class MackChainladder(Chainladder):
         X_new.full_std_err_ = self._get_full_std_err_(X_cum)
         X_new.total_mack_std_err_ = self._get_total_mack_std_err_(X_new)
         X_new.mack_std_err_ = (X_new.parameter_risk_**2 + X_new.process_risk_**2).sqrt()
-        del X_cum._full_triangle_
         return X_new
 
     @property
@@ -289,13 +287,11 @@ class MackChainladder(Chainladder):
             2012  0.039675  0.034017  0.026776  0.008976  0.001243  0.001324  0.0
             2013  0.035752  0.030671  0.024143  0.008094  0.001121  0.001193  0.0
         """
-        X = self.X_
-        if not X.is_cumulative:
-            # The weights use cumulative amounts.
-            from chainladder.core.common import _get_full_triangle
+        from chainladder.core.common import _get_full_triangle
 
-            X = X.incr_to_cum()
-            X._full_triangle_ = _get_full_triangle(X, self.ultimate_)
+        # The weights use cumulative amounts.
+        X = self.X_.incr_to_cum()
+        X._full_triangle_ = _get_full_triangle(X, self.ultimate_)
         return self._get_full_std_err_(X)
 
     def _get_full_std_err_(self, X=None):
@@ -304,7 +300,10 @@ class MackChainladder(Chainladder):
         obj = X.copy()
         xp = obj.get_array_module()
         lxp = X.ldf_.get_array_module()
-        full = getattr(X, "_full_triangle_", self.full_triangle_)
+        # The fallback is built only when X carries no cached full triangle.
+        full = getattr(X, "_full_triangle_", None)
+        if full is None:
+            full = self.full_triangle_
         avg = {"regression": 0, "volume": 1, "simple": 2}
         avg = [avg.get(item, item) for item in X.average_]
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
