@@ -50,3 +50,50 @@ def test_hat_adjustment_is_zero_at_corners(genins):
         np.testing.assert_array_equal(
             model.resampled_triangles_.values, first.resampled_triangles_.values
         )
+
+
+def _bootstrap_run(tri, random_state):
+    """Return the resampled values and the Chainladder ultimates for one run."""
+    sims = cl.BootstrapODPSample(n_sims=20, random_state=random_state).fit_transform(
+        tri
+    )
+    return sims.values, cl.Chainladder().fit(sims).ultimate_.values
+
+
+def test_random_state_zero_reproduces_ultimates(raa):
+    """
+    Check that ``random_state=0`` reproduces the process-variance draws.
+
+    Seed 0 used to give the process-variance step an unseeded generator, so
+    the resampled triangles repeated and the ultimates did not (#1568).
+    """
+    first, second = _bootstrap_run(raa, 0), _bootstrap_run(raa, 0)
+    np.testing.assert_array_equal(first[0], second[0])
+    np.testing.assert_array_equal(first[1], second[1])
+
+
+def test_random_state_none_uses_global_generator(raa):
+    """
+    Check that ``random_state=None`` draws from the global ``np.random``
+    generator, as the docstring says, so ``np.random.seed`` repeats a run.
+    """
+    np.random.seed(1)
+    first = _bootstrap_run(raa, None)
+    np.random.seed(1)
+    second = _bootstrap_run(raa, None)
+    np.testing.assert_array_equal(first[0], second[0])
+    np.testing.assert_array_equal(first[1], second[1])
+
+
+def test_random_state_accepts_random_state_instance(raa):
+    """
+    Check that a ``RandomState`` instance is used as the generator.
+
+    The resampled triangles match those from the integer seed the instance
+    was built with.
+    """
+    from_instance = _bootstrap_run(raa, np.random.RandomState(42))
+    np.testing.assert_array_equal(
+        from_instance[0], _bootstrap_run(raa, np.random.RandomState(42))[0]
+    )
+    np.testing.assert_array_equal(from_instance[0], _bootstrap_run(raa, 42)[0])

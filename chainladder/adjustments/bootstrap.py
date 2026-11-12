@@ -254,7 +254,9 @@ class BootstrapODPSample(DevelopmentBase):
         # Suggestions from Using the ODP Bootstrap Model: A Practitioners Guide
         adj_resid_dist = adj_resid_dist[adj_resid_dist != 0]
         adj_resid_dist = adj_resid_dist - xp.mean(adj_resid_dist)
-        random_state = xp.random.RandomState(self.random_state)
+        from chainladder.utils.utility_functions import _check_random_state
+
+        random_state = _check_random_state(self.random_state, xp)
         resampled_residual = [
             (
                 random_state.choice(
@@ -368,9 +370,12 @@ def _get_process_variance(self, full_triangle):
     #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
     xp = full_triangle.get_array_module()
     lower_tri = full_triangle.cum_to_incr() - self.cum_to_incr()
-    random_state = xp.random.RandomState(
-        None if not self.random_state else self.random_state + 1
+    from chainladder.utils.utility_functions import (
+        _check_random_state,
+        _process_variance_seed,
     )
+
+    random_state = _check_random_state(_process_variance_seed(self.random_state), xp)
     lower_tri.values = random_state.gamma(
         shape=abs(lower_tri.values) / self.scale_, scale=self.scale_
     ) * xp.sign(xp.nan_to_num(lower_tri.values))

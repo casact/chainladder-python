@@ -1306,3 +1306,37 @@ def _get_axis_name(axis: int | str) -> str:
         Canonical axis name ('index', 'columns', 'origin', 'development').
     """
     return _axis_orders[_get_axis_number(axis)]
+
+
+def _check_random_state(seed, xp=np):
+    """
+    Return a random number generator for ``seed`` on the array module ``xp``.
+
+    ``sklearn.utils.check_random_state`` handles the three accepted forms:
+    ``None`` gives the global ``np.random`` generator, an integer seeds a new
+    ``RandomState``, and a ``RandomState`` instance is returned as it is. It
+    serves numpy and every module without a ``random.RandomState`` of its own,
+    such as ``sparse``, whose draws numpy then makes. A module that has one,
+    such as cupy, gets a ``RandomState`` built from ``seed`` unless ``seed`` is
+    already one.
+    """
+    if xp is np or not hasattr(getattr(xp, "random", None), "RandomState"):
+        from sklearn.utils import check_random_state
+
+        return check_random_state(seed)
+    if isinstance(seed, xp.random.RandomState):
+        return seed
+    return xp.random.RandomState(seed)
+
+
+def _process_variance_seed(seed):
+    """
+    Return the seed for the process-variance draws that follow the draws
+    seeded by ``seed``.
+
+    An integer seed is offset by 1 so the two sets of draws differ, including
+    for seed 0. A ``RandomState`` instance or ``None`` is passed through.
+    """
+    if isinstance(seed, (int, np.integer)) and not isinstance(seed, bool):
+        return int(seed) + 1
+    return seed

@@ -263,7 +263,9 @@ class Benktander(MethodBase):
         """Private method to establish Benktander Apriori"""
         xp = X.get_array_module()
         if self.apriori_sigma != 0:
-            random_state = xp.random.RandomState(self.random_state)
+            from chainladder.utils.utility_functions import _check_random_state
+
+            random_state = _check_random_state(self.random_state, xp)
             # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
             cov = self.apriori_sigma / self.apriori
             sigma_log = np.sqrt(np.log1p(cov**2))
