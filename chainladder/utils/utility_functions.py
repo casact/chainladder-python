@@ -393,13 +393,11 @@ def read_json(json_str, array_backend=None):
         array_backend = options.ARRAY_BACKEND
     json_dict = json.loads(json_str)
     if type(json_dict) is list:
-        import chainladder as cl
-
         return Pipeline(
             steps=[
                 (
                     item["name"],
-                    cl.__dict__[item["__class__"]]().set_params(**item["params"]),
+                    _estimator_from_json(item["__class__"], item["params"]),
                 )
                 for item in json_dict
             ]
@@ -444,9 +442,20 @@ def read_json(json_str, array_backend=None):
         else:
             return tri
     else:
-        import chainladder as cl
+        return _estimator_from_json(json_dict["__class__"], json_dict["params"])
 
-        return cl.__dict__[json_dict["__class__"]]().set_params(**json_dict["params"])
+
+def _estimator_from_json(class_name, params):
+    """
+    Build the chainladder estimator named ``class_name`` with ``params`` and
+    check the parameter values it can check without a triangle.
+    """
+    import chainladder as cl
+
+    estimator = cl.__dict__[class_name]().set_params(**params)
+    if hasattr(estimator, "_validate_params"):
+        estimator._validate_params()
+    return estimator
 
 
 def _origin_periods(index, grain):

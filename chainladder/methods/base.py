@@ -20,6 +20,14 @@ if TYPE_CHECKING:
 class MethodBase(BaseEstimator, EstimatorIO, Common):
     _estimator_type = "chainladder"
 
+    def _validate_params(self, X: Triangle | None = None) -> None:
+        """
+        Check the estimator's parameter values and raise a ``ValueError`` that
+        names the first parameter with a value the estimator cannot use.
+
+        Subclasses override it; the base class checks nothing.
+        """
+
     def validate_X(self, X):  # noqa: N802
         obj = X.copy()
         if "ldf_" not in obj:
