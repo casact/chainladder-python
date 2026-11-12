@@ -317,7 +317,11 @@ class BootstrapODPSample(DevelopmentBase):
             ),
             weight_matrix,
         )
-        hat = xp.diagonal(xp.sqrt(xp.divide(1, abs(1 - hat), where=(1 - hat) != 0)))
+        hat = xp.diagonal(
+            xp.sqrt(
+                xp.divide(1, abs(1 - hat), out=xp.zeros_like(hat), where=(1 - hat) != 0)
+            )
+        )
         total_length = X.nan_triangle.shape[0]
         reshaped_hat = xp.reshape(hat[:total_length], (1, total_length))
         indices = xp.nansum(X.nan_triangle, axis=0).cumsum().astype(int)
