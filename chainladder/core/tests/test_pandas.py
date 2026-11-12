@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import Mock
 
 import numpy as np
@@ -197,23 +197,55 @@ def test_aggregation_default_axis_singleton_result(raa: Triangle, backend, keepd
         assert result == triangle.values[0, 0, 0, 0]
 
 
-def _nan_cumsum(values: np.ndarray, axis: int) -> np.ndarray:
-    """Cumulative sum skipping NaN that leaves NaN cells as NaN, like pandas."""
-    result = np.where(np.isnan(values), np.nan, np.nancumsum(values, axis=axis))
+AXES = ["index", "columns", "origin", "development"]
+
+
+def _numpy_values(triangle: Triangle) -> np.ndarray:
+    """The triangle's values as a numpy array, whatever its backend."""
+    values = triangle.set_backend("numpy").values
+    assert isinstance(values, np.ndarray)
+    return values
+
+
+def _triangle_mask(triangle: Triangle) -> np.ndarray:
+    """``nan_triangle`` as a numpy array: 1 inside the triangle, NaN outside it."""
+    return np.asarray(triangle.set_backend("numpy").nan_triangle, dtype=float)
+
+
+def _nan_cumsum(values: np.ndarray, mask: np.ndarray, axis: int) -> np.ndarray:
+    """
+    Running total along ``axis`` that counts NaN as zero.
+
+    The result is NaN outside ``mask`` and where the total is zero.
+    """
+    result = np.nancumsum(values, axis=axis) * mask
     result[result == 0] = np.nan
     return result
 
 
-def _nan_diff(values: np.ndarray, axis: int) -> np.ndarray:
-    """First difference keeping the shape with NaN in the first slot, like pandas."""
-    result = np.full_like(values, np.nan)
-    head = [slice(None)] * values.ndim
-    tail = [slice(None)] * values.ndim
-    head[axis] = slice(1, None)
-    tail[axis] = slice(None, -1)
-    result[tuple(head)] = values[tuple(head)] - values[tuple(tail)]
+def _nan_diff(
+    values: np.ndarray, mask: np.ndarray, axis: int, periods: int = 1
+) -> np.ndarray:
+    """
+    Pandas ``diff`` along ``axis`` that counts NaN as zero.
+
+    The result is NaN where either cell is outside ``mask``, where there is no
+    cell to subtract and where the difference is zero.
+    """
+
+    def pandas_diff(array: np.ndarray) -> np.ndarray:
+        moved = np.moveaxis(array, axis, 0)
+        frame = pd.DataFrame(moved.reshape(moved.shape[0], -1))
+        diff = frame.diff(periods=periods).to_numpy().reshape(moved.shape)
+        return np.moveaxis(diff, 0, axis).copy()
+
+    result = pandas_diff(np.where(np.isnan(values), 0.0, values))
+    result[np.isnan(pandas_diff(np.broadcast_to(mask, values.shape)))] = np.nan
     result[result == 0] = np.nan
     return result
+
+
+SHAPE_PRESERVING_EXPECTED = {"cumsum": _nan_cumsum, "diff": _nan_diff}
 
 
 def _assert_same_labels(result: Triangle, triangle: Triangle) -> None:
@@ -229,50 +261,68 @@ def _assert_same_labels(result: Triangle, triangle: Triangle) -> None:
     assert result.development.equals(triangle.development)
 
 
-@pytest.mark.parametrize(
-    ("method", "expected_func"), [("cumsum", _nan_cumsum), ("diff", _nan_diff)]
-)
-@pytest.mark.parametrize("axis", ["index", "columns", "origin", "development"])
-def test_triangle_shape_preserving_values(clrd, method, expected_func, axis):
+@pytest.mark.parametrize("method", ["cumsum", "diff"])
+@pytest.mark.parametrize("axis", AXES)
+def test_triangle_shape_preserving_values(
+    clrd: Triangle, method: str, axis: str
+) -> None:
     """
     Apply ``cumsum`` and ``diff`` along each axis without collapsing it.
 
-    The result is a Triangle with the input's shape, labels and backend; empty
-    cells stay NaN and the input triangle is not modified.
+    The result is a Triangle with the input's shape, labels and backend. A NaN
+    inside the triangle counts as zero, cells outside the triangle stay NaN and
+    the input triangle is not modified.
     """
     triangle = clrd.iloc[13:16, :2, -5:, :5]
     before = triangle.copy()
-    values = triangle.set_backend("numpy").values
-    assert np.isnan(values).any()
-    expected = expected_func(values, triangle._get_axis(axis))
+    values = _numpy_values(triangle)
+    mask = _triangle_mask(triangle)
+    # The slice has both kinds of NaN: zeros inside the triangle, empty outside.
+    assert np.isnan(values[..., ~np.isnan(mask)]).any()
+    assert np.isnan(mask).any()
+    expected = SHAPE_PRESERVING_EXPECTED[method](values, mask, AXES.index(axis))
 
     result = getattr(triangle, method)(axis=axis, auto_sparse=False)
 
     assert result.shape == triangle.shape
     assert result.array_backend == triangle.array_backend
     _assert_same_labels(result, triangle)
-    np.testing.assert_allclose(
-        result.set_backend("numpy").values, expected, equal_nan=True
-    )
+    np.testing.assert_allclose(_numpy_values(result), expected, equal_nan=True)
     assert triangle.equals(before)
 
 
-def test_cumsum_development_inverts_cum_to_incr(raa):
-    """Cumulating incremental amounts along development restores the triangle."""
-    result = raa.cum_to_incr().cumsum(axis="development")
+def test_cumsum_development_inverts_cum_to_incr(clrd: Triangle) -> None:
+    """
+    Cumulating incremental amounts along development restores the triangle.
 
-    assert result.shape == raa.shape
+    ``clrd`` has zero increments, which are stored as NaN inside the triangle.
+    """
+    incremental = clrd.cum_to_incr()
+    inside = ~np.isnan(_triangle_mask(clrd))
+    assert np.isnan(_numpy_values(incremental)[..., inside]).any()
+
+    result = incremental.cumsum(axis="development")
+
+    assert result.shape == clrd.shape
     np.testing.assert_allclose(
-        result.set_backend("numpy").values,
-        raa.set_backend("numpy").values,
+        _numpy_values(result),
+        _numpy_values(clrd),
         equal_nan=True,
     )
 
 
-def test_diff_development_matches_cum_to_incr(raa):
-    """Differencing along development gives the increments after the first age."""
-    result = raa.diff(axis="development").set_backend("numpy").values
-    incremental = raa.cum_to_incr().set_backend("numpy").values
+def test_diff_development_matches_cum_to_incr(clrd: Triangle) -> None:
+    """
+    Differencing along development gives the increments after the first age.
+
+    ``clrd`` has zero cumulative amounts, which are stored as NaN inside the
+    triangle. The first age has no earlier cell to subtract and is NaN.
+    """
+    inside = ~np.isnan(_triangle_mask(clrd))
+    assert np.isnan(_numpy_values(clrd)[..., inside]).any()
+
+    result = _numpy_values(clrd.diff(axis="development"))
+    incremental = _numpy_values(clrd.cum_to_incr())
 
     assert np.isnan(result[..., 0]).all()
     np.testing.assert_allclose(result[..., 1:], incremental[..., 1:], equal_nan=True)
@@ -280,7 +330,9 @@ def test_diff_development_matches_cum_to_incr(raa):
 
 @pytest.mark.parametrize("method", ["cumsum", "diff"])
 @pytest.mark.parametrize("axis", range(4))
-def test_shape_preserving_default_axis_first_non_singleton(clrd, method, axis):
+def test_shape_preserving_default_axis_first_non_singleton(
+    clrd: Triangle, method: str, axis: int
+) -> None:
     """With ``axis=None``, use the first non-singleton axis, like the reductions."""
     indexer = [slice(11, 13), slice(0, 2), slice(0, 5), slice(0, 5)]
     for preceding_axis in range(axis):
@@ -294,7 +346,7 @@ def test_shape_preserving_default_axis_first_non_singleton(clrd, method, axis):
 
 
 @pytest.mark.parametrize("method", ["cumsum", "diff"])
-def test_shape_preserving_singleton(raa, method):
+def test_shape_preserving_singleton(raa: Triangle, method: str) -> None:
     """
     A (1, 1, 1, 1) Triangle stays a Triangle instead of becoming a scalar.
 
@@ -306,15 +358,15 @@ def test_shape_preserving_singleton(raa, method):
     assert result.shape == triangle.shape
     assert result.array_backend == triangle.array_backend
     _assert_same_labels(result, triangle)
-    values = result.set_backend("numpy").values
+    values = _numpy_values(result)
     if method == "diff":
         assert np.isnan(values).all()
     else:
-        np.testing.assert_allclose(values, triangle.set_backend("numpy").values)
+        np.testing.assert_allclose(values, _numpy_values(triangle))
 
 
 @pytest.mark.parametrize("method", ["cumsum", "diff"])
-def test_shape_preserving_negative_axis(raa, method):
+def test_shape_preserving_negative_axis(raa: Triangle, method: str) -> None:
     """Negative axis numbers count back from the development axis."""
     result = getattr(raa, method)(axis=-1, auto_sparse=False)
     expected = getattr(raa, method)(axis="development", auto_sparse=False)
@@ -322,7 +374,7 @@ def test_shape_preserving_negative_axis(raa, method):
 
 
 @pytest.mark.parametrize("method", ["cumsum", "diff"])
-def test_shape_preserving_empty_triangle(raa, method):
+def test_shape_preserving_empty_triangle(raa: Triangle, method: str) -> None:
     """A Triangle with no index rows is returned empty, on the same backend."""
     triangle = raa.iloc[:0, :, :, :]
 
@@ -333,7 +385,7 @@ def test_shape_preserving_empty_triangle(raa, method):
 
 
 @pytest.mark.parametrize("method", ["cumsum", "diff"])
-def test_shape_preserving_auto_sparse(raa, method):
+def test_shape_preserving_auto_sparse(raa: Triangle, method: str) -> None:
     """
     By default a small sparse result is converted to numpy, like the reductions.
 
@@ -349,64 +401,85 @@ def test_shape_preserving_auto_sparse(raa, method):
     assert default.equals(kept)
 
 
-@pytest.mark.parametrize("skipna", [True, False])
-def test_cumsum_internal_missing_cells(raa, skipna):
+def test_cumsum_counts_nan_inside_triangle_as_zero(raa: Triangle) -> None:
     """
-    Continue the total after a missing cell only with ``skipna=True``.
+    Carry the running total through a NaN inside the triangle.
 
-    The missing cell stays missing either way, and a zero total is stored as NaN.
+    Triangles store zeros as NaN, so that cell is a zero and not a gap. A zero
+    total is stored as NaN in turn, and the input triangle is not modified.
     """
     triangle = raa.iloc[:, :, :1, :5]
     triangle.values = triangle.get_array_module().array(
         np.array([2.0, np.nan, 3.0, -5.0, 4.0]).reshape(triangle.shape)
     )
     before = triangle.copy()
-    result = triangle.cumsum(axis="development", skipna=skipna, auto_sparse=False)
-    expected = [2.0, np.nan, 5.0, np.nan, 4.0] if skipna else [2.0] + [np.nan] * 4
+
+    result = triangle.cumsum(axis="development", auto_sparse=False)
 
     np.testing.assert_allclose(
-        result.set_backend("numpy").values.ravel(), expected, equal_nan=True
+        _numpy_values(result).ravel(),
+        [2.0, 2.0, 5.0, np.nan, 4.0],
+        equal_nan=True,
     )
     assert triangle.equals(before)
 
 
+def test_diff_counts_nan_inside_triangle_as_zero(raa: Triangle) -> None:
+    """
+    Subtract a NaN inside the triangle, and subtract from one, as a zero.
+
+    A zero difference is stored as NaN in turn, and the first cell has no
+    earlier cell to subtract.
+    """
+    triangle = raa.iloc[:, :, :1, :5]
+    triangle.values = triangle.get_array_module().array(
+        np.array([2.0, np.nan, 3.0, 3.0, 4.0]).reshape(triangle.shape)
+    )
+
+    result = triangle.diff(axis="development", auto_sparse=False)
+
+    np.testing.assert_allclose(
+        _numpy_values(result).ravel(),
+        [np.nan, -2.0, 3.0, np.nan, 1.0],
+        equal_nan=True,
+    )
+
+
 @pytest.mark.parametrize("axis", range(4))
 @pytest.mark.parametrize("periods", [0, 2, -1, -2, 10, 12])
-def test_diff_periods(clrd, axis, periods):
-    """Match pandas ``diff`` for each axis and ``periods``, with zeros as NaN."""
+def test_diff_periods(clrd: Triangle, axis: int, periods: int) -> None:
+    """
+    Match pandas ``diff`` for each axis and ``periods``.
+
+    A NaN inside the triangle counts as zero, and a difference with a cell
+    outside the triangle is NaN.
+    """
     triangle = clrd.iloc[13:16, :2, -5:, :5]
-    values = np.moveaxis(triangle.set_backend("numpy").values, axis, 0)
-    expected = (
-        pd
-        .DataFrame(values.reshape(values.shape[0], -1))
-        .diff(periods=periods)
-        .to_numpy()
-        .reshape(values.shape)
-    )
-    expected = np.moveaxis(expected, 0, axis)
-    expected[expected == 0] = np.nan
+    values = _numpy_values(triangle)
+    expected = _nan_diff(values, _triangle_mask(triangle), axis, periods)
 
     result = triangle.diff(axis=axis, periods=periods, auto_sparse=False)
 
     assert result.shape == triangle.shape
     assert result.array_backend == triangle.array_backend
     _assert_same_labels(result, triangle)
-    np.testing.assert_allclose(
-        result.set_backend("numpy").values, expected, equal_nan=True
-    )
+    np.testing.assert_allclose(_numpy_values(result), expected, equal_nan=True)
 
 
-def test_diff_periods_must_be_integer(raa):
+def test_diff_periods_must_be_integer(raa: Triangle) -> None:
     """A non-integer ``periods`` raises instead of being truncated."""
+    not_an_integer: Any = 1.5
     with pytest.raises(TypeError):
-        raa.diff(axis="development", periods=1.5)
+        raa.diff(axis="development", periods=not_an_integer)
 
 
-def test_sparse_transforms_do_not_densify(raa, monkeypatch):
+def test_sparse_transforms_do_not_densify(
+    raa: Triangle, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """``cumsum`` and ``diff`` on a sparse Triangle never call ``todense``."""
     triangle = raa.set_backend("sparse")
 
-    def reject_densification(*_args, **_kwargs):
+    def reject_densification(*_args: object, **_kwargs: object) -> None:
         pytest.fail("Transform unexpectedly densified its sparse input")
 
     with monkeypatch.context() as patch:
@@ -417,7 +490,7 @@ def test_sparse_transforms_do_not_densify(raa, monkeypatch):
     assert cumulative.array_backend == difference.array_backend == "sparse"
 
 
-def test_groupby_cumsum(clrd):
+def test_groupby_cumsum(clrd: Triangle) -> None:
     """
     Cumulate within each group and keep every row in the original order.
 
@@ -427,66 +500,65 @@ def test_groupby_cumsum(clrd):
     triangle = clrd.iloc[:12, :2, -4:, :4]
     before = triangle.copy()
     assert not triangle.index["LOB"].is_monotonic_increasing
-    values = triangle.set_backend("numpy").values
+    values = _numpy_values(triangle)
+    mask = _triangle_mask(triangle)
     expected = np.empty_like(values)
     for _, rows in triangle.index.groupby("LOB").indices.items():
-        expected[rows] = _nan_cumsum(values[rows], axis=0)
+        expected[rows] = _nan_cumsum(values[rows], mask, axis=0)
 
     result = triangle.groupby("LOB").cumsum(auto_sparse=False)
 
     assert result.shape == triangle.shape
     assert result.array_backend == triangle.array_backend
     _assert_same_labels(result, triangle)
-    np.testing.assert_allclose(
-        result.set_backend("numpy").values, expected, equal_nan=True
-    )
+    np.testing.assert_allclose(_numpy_values(result), expected, equal_nan=True)
     assert triangle.equals(before)
 
 
 @pytest.mark.parametrize("axis", [1, 2, 3])
-def test_groupby_cumsum_other_axes(clrd, axis):
+def test_groupby_cumsum_other_axes(clrd: Triangle, axis: Literal[1, 2, 3]) -> None:
     """Group along the columns, origin and development axes as well."""
     triangle = clrd.iloc[13:16, :4, -4:, :4]
     groups = ["a", "b", "a", "b"]
-    values = triangle.set_backend("numpy").values
+    values = _numpy_values(triangle)
+    mask = _triangle_mask(triangle)
     expected = np.empty_like(values)
     for positions in ([0, 2], [1, 3]):
         indexer = [slice(None)] * axis + [positions]
-        expected[tuple(indexer)] = _nan_cumsum(values[tuple(indexer)], axis)
+        # The group keeps only its own origins or developments of the mask.
+        group_mask = mask[tuple(indexer[2:])]
+        expected[tuple(indexer)] = _nan_cumsum(values[tuple(indexer)], group_mask, axis)
 
     result = triangle.groupby(groups, axis=axis).cumsum(auto_sparse=False)
 
     assert result.shape == triangle.shape
     assert result.array_backend == triangle.array_backend
     _assert_same_labels(result, triangle)
-    np.testing.assert_allclose(
-        result.set_backend("numpy").values, expected, equal_nan=True
-    )
+    np.testing.assert_allclose(_numpy_values(result), expected, equal_nan=True)
 
 
 @pytest.mark.parametrize("all_missing", [True, False])
-def test_groupby_cumsum_missing_keys(clrd, all_missing):
+def test_groupby_cumsum_missing_keys(clrd: Triangle, all_missing: bool) -> None:
     """Labels with a missing group key are NaN; the other groups still cumulate."""
     triangle = clrd.iloc[:12, :2, -4:, :4]
     labels = triangle.index.copy()
     labels.loc[labels.index if all_missing else [0], "LOB"] = None
     triangle.index = labels
-    values = triangle.set_backend("numpy").values
+    values = _numpy_values(triangle)
+    mask = _triangle_mask(triangle)
     expected = np.full_like(values, np.nan)
     for rows in labels.groupby("LOB").indices.values():
-        expected[rows] = _nan_cumsum(values[rows], axis=0)
+        expected[rows] = _nan_cumsum(values[rows], mask, axis=0)
 
     result = triangle.groupby("LOB").cumsum(auto_sparse=False)
 
     assert result.shape == triangle.shape
     assert result.array_backend == triangle.array_backend
     _assert_same_labels(result, triangle)
-    np.testing.assert_allclose(
-        result.set_backend("numpy").values, expected, equal_nan=True
-    )
+    np.testing.assert_allclose(_numpy_values(result), expected, equal_nan=True)
 
 
-def test_groupby_cumsum_auto_sparse(clrd):
+def test_groupby_cumsum_auto_sparse(clrd: Triangle) -> None:
     """
     By default a small sparse result is converted to numpy, like the reductions.
 
@@ -500,21 +572,3 @@ def test_groupby_cumsum_auto_sparse(clrd):
     assert default.array_backend == "numpy"
     assert kept.array_backend == "sparse"
     assert default.equals(kept)
-
-
-@pytest.mark.parametrize("skipna", [True, False])
-def test_groupby_cumsum_skipna(raa, skipna):
-    """``skipna`` applies within each group and does not carry across groups."""
-    triangle = raa.iloc[:, :, :1, :4]
-    triangle.values = triangle.get_array_module().array(
-        np.array([2.0, np.nan, 3.0, 4.0]).reshape(triangle.shape)
-    )
-    expected = [2.0, np.nan, 5.0, 4.0] if skipna else [2.0, np.nan, np.nan, 4.0]
-
-    result = triangle.groupby(["a", "a", "a", "b"], axis=3).cumsum(
-        skipna=skipna, auto_sparse=False
-    )
-
-    np.testing.assert_allclose(
-        result.set_backend("numpy").values.ravel(), expected, equal_nan=True
-    )
