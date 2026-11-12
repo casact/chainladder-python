@@ -146,8 +146,10 @@ def test_origin_broadcasting(raa: Triangle) -> None:
 def test_one_axis_broadcasting_with_union(clrd: Triangle, op) -> None:
     """
     A one-origin operand with fewer development periods, or a one-development
-    operand with fewer origins, spans the other operand's axes on both
-    backends, with or without a single index and column (#1574).
+    operand with fewer origins, applies its values to every origin or
+    development period of the other operand, with or without a single index
+    and column (#1574). In the period the short operand lacks, addition and
+    subtraction treat it as 0, and multiplication and division give NaN.
 
     Parameters
     ----------
@@ -160,22 +162,26 @@ def test_one_axis_broadcasting_with_union(clrd: Triangle, op) -> None:
     -------
     None
     """
-    dense = clrd.set_backend("numpy")
-    for one_axis in (
-        clrd.iloc[..., :-1].sum("origin"),
-        clrd.iloc[..., :-1, :].sum("development"),
-        clrd.iloc[:1, :1, :, :-1].sum("origin"),
-        clrd.iloc[:1, :1, :-1, :].sum("development"),
+    origin_case = np.s_[..., :-1], np.s_[..., -1:]
+    development_case = np.s_[..., :-1, :], np.s_[..., -1:, :]
+    for short, (overlap, gap) in (
+        (clrd.iloc[..., :-1].sum("origin"), origin_case),
+        (clrd.iloc[:1, :1, :, :-1].sum("origin"), origin_case),
+        (clrd.iloc[..., :-1, :].sum("development"), development_case),
+        (clrd.iloc[:1, :1, :-1, :].sum("development"), development_case),
     ):
-        one_axis_dense = one_axis.set_backend("numpy")
-        for result, expected in (
-            (op(clrd, one_axis), op(dense, one_axis_dense)),
-            (op(one_axis, clrd), op(one_axis_dense, dense)),
+        for column in short.columns:
+            short[column] = 500
+        for result, expected, gap_operands in (
+            (op(clrd, short), op(clrd.iloc[overlap], 500), (clrd.iloc[gap], 0)),
+            (op(short, clrd), op(500, clrd.iloc[overlap]), (0, clrd.iloc[gap])),
         ):
             assert result.shape == clrd.shape
-            np.testing.assert_allclose(
-                result.set_backend("numpy").values, expected.values
-            )
+            assert result.iloc[overlap].equals(expected)
+            if op in (operator.add, operator.sub):
+                assert result.iloc[gap].equals(op(*gap_operands))
+            else:
+                assert np.isnan(result.iloc[gap].set_backend("numpy").values).all()
 
 
 def test_arithmetic_union(raa):
