@@ -11,7 +11,7 @@ import pandas as pd
 from chainladder.utils.utility_functions import num_to_nan, concat
 
 from chainladder.core.pandas import TriangleGroupBy
-from chainladder.utils.sparse import sp
+from chainladder.utils.sparse import broadcast_origin_development, sp
 from chainladder import _deprecated_rename, _warn_dask_parallel_deprecated
 
 try:
@@ -228,7 +228,10 @@ class TriangleDunders:
                 obj_arr[:] = xp.nan
                 obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
             else:
-                obj_arr, other_arr = obj.values.copy(), other.values.copy()
+                obj_arr = broadcast_origin_development(obj.values, loh - lol, ldh - ldl)
+                other_arr = broadcast_origin_development(
+                    other.values, roh - rol, rdh - rdl
+                )
                 other_arr.coords[2] = other_arr.coords[2] + rol
                 other_arr.coords[3] = other_arr.coords[3] + rdl
                 obj_arr.coords[2] = obj_arr.coords[2] + lol
