@@ -196,3 +196,117 @@ def test_aggregation_default_axis_singleton_result(raa: Triangle, backend, keepd
     else:
         assert isinstance(result, np.floating)
         assert result == triangle.values[0, 0, 0, 0]
+
+
+def _nan_cumsum(values: np.ndarray, axis: int) -> np.ndarray:
+    """Cumulative sum skipping NaN that leaves NaN cells as NaN, like pandas."""
+    result = np.where(np.isnan(values), np.nan, np.nancumsum(values, axis=axis))
+    result[result == 0] = np.nan
+    return result
+
+
+def _nan_diff(values: np.ndarray, axis: int) -> np.ndarray:
+    """First difference keeping the shape with NaN in the first slot, like pandas."""
+    result = np.full_like(values, np.nan)
+    head = [slice(None)] * values.ndim
+    tail = [slice(None)] * values.ndim
+    head[axis] = slice(1, None)
+    tail[axis] = slice(None, -1)
+    result[tuple(head)] = values[tuple(head)] - values[tuple(tail)]
+    result[result == 0] = np.nan
+    return result
+
+
+def _assert_same_labels(result: Triangle, triangle: Triangle) -> None:
+    assert result.index.equals(triangle.index)
+    assert result.columns.equals(triangle.columns)
+    result_origin, expected_origin = result.origin, triangle.origin
+    if isinstance(expected_origin, pd.Series):
+        assert isinstance(result_origin, pd.Series)
+        pd.testing.assert_series_equal(result_origin, expected_origin)
+    else:
+        assert isinstance(result_origin, pd.PeriodIndex)
+        pd.testing.assert_index_equal(result_origin, expected_origin)
+    assert result.development.equals(triangle.development)
+
+
+@pytest.mark.parametrize(
+    ("method", "expected_func"), [("cumsum", _nan_cumsum), ("diff", _nan_diff)]
+)
+@pytest.mark.parametrize("axis", ["index", "columns", "origin", "development"])
+def test_triangle_shape_preserving_values(clrd, method, expected_func, axis):
+    """
+    Apply ``cumsum`` and ``diff`` along each axis without collapsing it.
+
+    The result is a Triangle with the input's shape, labels and backend; empty
+    cells stay NaN and the input triangle is not modified.
+    """
+    triangle = clrd.iloc[13:16, :2, -5:, :5]
+    before = triangle.copy()
+    values = triangle.set_backend("numpy").values
+    assert np.isnan(values).any()
+    expected = expected_func(values, triangle._get_axis(axis))
+
+    result = getattr(triangle, method)(axis=axis, auto_sparse=False)
+
+    assert result.shape == triangle.shape
+    assert result.array_backend == triangle.array_backend
+    _assert_same_labels(result, triangle)
+    np.testing.assert_allclose(
+        result.set_backend("numpy").values, expected, equal_nan=True
+    )
+    assert triangle.equals(before)
+
+
+def test_cumsum_development_inverts_cum_to_incr(raa):
+    """Cumulating incremental amounts along development restores the triangle."""
+    result = raa.cum_to_incr().cumsum(axis="development")
+
+    assert result.shape == raa.shape
+    np.testing.assert_allclose(
+        result.set_backend("numpy").values,
+        raa.set_backend("numpy").values,
+        equal_nan=True,
+    )
+
+
+def test_diff_development_matches_cum_to_incr(raa):
+    """Differencing along development gives the increments after the first age."""
+    result = raa.diff(axis="development").set_backend("numpy").values
+    incremental = raa.cum_to_incr().set_backend("numpy").values
+
+    assert np.isnan(result[..., 0]).all()
+    np.testing.assert_allclose(result[..., 1:], incremental[..., 1:], equal_nan=True)
+
+
+@pytest.mark.parametrize("method", ["cumsum", "diff"])
+def test_shape_preserving_default_axis_first_non_singleton(raa, method):
+    """With ``axis=None``, use the first axis of length > 1, like the reductions."""
+    result = getattr(raa, method)(auto_sparse=False)
+    expected = getattr(raa, method)(axis="origin", auto_sparse=False)
+
+    assert result.equals(expected)
+
+
+def test_groupby_cumsum(clrd):
+    """
+    Cumulate within each group and keep every row in the original order.
+
+    Like pandas ``groupby(...).cumsum()``, the result has the input's shape and
+    index, and each row is the running total of the earlier rows in its group.
+    """
+    triangle = clrd.iloc[:12, :2, -4:, :4]
+    assert not triangle.index["LOB"].is_monotonic_increasing
+    values = triangle.set_backend("numpy").values
+    expected = np.empty_like(values)
+    for _, rows in triangle.index.groupby("LOB").indices.items():
+        expected[rows] = _nan_cumsum(values[rows], axis=0)
+
+    result = triangle.groupby("LOB").cumsum(auto_sparse=False)
+
+    assert result.shape == triangle.shape
+    assert result.array_backend == triangle.array_backend
+    _assert_same_labels(result, triangle)
+    np.testing.assert_allclose(
+        result.set_backend("numpy").values, expected, equal_nan=True
+    )
