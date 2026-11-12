@@ -7,6 +7,7 @@ Mirror pandas API onto the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import operator
 import warnings
 
 from typing import TYPE_CHECKING, cast
@@ -98,9 +99,53 @@ class TriangleGroupBy:
         """Refer to pandas for ``std`` functionality."""
         return _groupby_aggregate(self, "std", *args, **kwargs)
 
-    def cumsum(self, *args: Any, **kwargs: Any) -> Triangle:
-        """Refer to pandas for ``cumsum`` functionality."""
-        return _groupby_aggregate(self, "cumsum", *args, **kwargs)
+    def cumsum(self, *, skipna: bool = True, auto_sparse: bool = True) -> Triangle:
+        """
+        Cumulate within each group, keeping every label in its original order.
+
+        Unlike the other groupby methods, this does not reduce each group to a
+        single label. Like pandas ``groupby(...).cumsum()``, the result has the
+        shape and labels of the grouped Triangle.
+
+        Parameters
+        ----------
+        skipna : bool, default True
+            Passed to :meth:`~chainladder.Triangle.cumsum`.
+        auto_sparse : bool, default True
+            Whether the result's array backend may be switched based on its size
+            and density. ``False`` keeps the input's backend.
+
+        Returns
+        -------
+        Triangle
+            Running totals within each group. Labels with a missing group key
+            are NaN.
+        """
+        obj = self.obj.copy()
+        xp = obj.get_array_module()
+        values = []
+        positions = []
+        for rows in self.groups.indices.values():
+            indexer = [slice(None)] * self.axis + [rows]
+            group = obj.iloc[tuple(indexer)].cumsum(
+                self.axis, skipna=skipna, auto_sparse=False
+            )
+            values.append(group.values)
+            positions.extend(rows)
+
+        # Rows excluded by groupby (e.g. missing keys) have no running total.
+        missing = np.setdiff1d(np.arange(obj.shape[self.axis]), positions)
+        if len(missing):
+            shape = list(obj.shape)
+            shape[self.axis] = len(missing)
+            values.append(xp.full(tuple(shape), xp.nan))
+            positions.extend(missing)
+        if values:
+            indexer = [slice(None)] * self.axis + [np.argsort(positions)]
+            obj.values = xp.concatenate(values, axis=self.axis)[tuple(indexer)]
+        if auto_sparse:
+            obj = obj._auto_sparse()
+        return obj
 
     def quantile(self, *args: Any, **kwargs: Any) -> Triangle:
         """Refer to pandas for ``quantile`` functionality."""
@@ -159,10 +204,64 @@ class TrianglePandas(_TrianglePandasBase):
         return _triangle_aggregate(self, "nanstd", axis, *args, **kwargs)
 
     def cumsum(
-        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+        self,
+        axis: str | int | None = None,
+        *,
+        skipna: bool = True,
+        auto_sparse: bool = True,
     ) -> Triangle:
-        """Refer to pandas for ``cumsum`` functionality."""
-        return _triangle_aggregate(self, "nancumsum", axis, *args, **kwargs)
+        """
+        Cumulate values along an axis, keeping the shape and labels.
+
+        Only the values change. Flags such as ``is_cumulative`` are left as they
+        are; use :meth:`~chainladder.Triangle.incr_to_cum` to convert an
+        incremental Triangle.
+
+        Parameters
+        ----------
+        axis : str | int | None
+            Axis to cumulate along. ``None`` uses the first axis whose length is
+            not 1, or the index if every axis has length 1.
+        skipna : bool, default True
+            If True, missing cells are skipped and the running total continues
+            after them. If False, every cell after a missing one is missing.
+        auto_sparse : bool, default True
+            Whether the result's array backend may be switched based on its size
+            and density. ``False`` keeps the input's backend.
+
+        Returns
+        -------
+        Triangle
+            Running totals with the input's shape and labels. Missing cells stay
+            missing, and zero totals are stored as NaN.
+        """
+        obj = self.copy()
+        axis = (
+            next((i for i, size in enumerate(obj.shape) if size != 1), 0)
+            if axis is None
+            else self._get_axis(axis)
+        )
+        xp = obj.get_array_module()
+        if obj.array_backend == "sparse":
+            # sparse has no cumsum: add one slice at a time, which stays sparse.
+            func = xp.nansum if skipna else xp.sum
+            prefixes = []
+            running = None
+            for stop in range(1, obj.shape[axis] + 1):
+                indexer = [slice(None)] * axis + [slice(stop - 1, stop)]
+                increment = func(obj.values[tuple(indexer)], axis, keepdims=True)
+                running = increment if running is None else running + increment
+                prefixes.append(running)
+            values = xp.concatenate(prefixes, axis=axis) if prefixes else obj.values
+        else:
+            func = xp.nancumsum if skipna else xp.cumsum
+            values = func(obj.values, axis)
+        obj.values = cast(
+            "BackendArray", num_to_nan(xp.where(xp.isnan(obj.values), xp.nan, values))
+        )
+        if auto_sparse:
+            obj = obj._auto_sparse()
+        return obj
 
     def quantile(
         self, axis: str | int | None = None, *args: Any, **kwargs: Any
@@ -171,10 +270,70 @@ class TrianglePandas(_TrianglePandasBase):
         return _triangle_aggregate(self, "nanquantile", axis, *args, **kwargs)
 
     def diff(
-        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+        self,
+        axis: str | int | None = None,
+        periods: int = 1,
+        *,
+        auto_sparse: bool = True,
     ) -> Triangle:
-        """Refer to pandas for ``diff`` functionality."""
-        return _triangle_aggregate(self, "diff", axis, *args, **kwargs)
+        """
+        Difference values along an axis, keeping the shape and labels.
+
+        Each cell has the cell ``periods`` positions away subtracted from it,
+        like pandas ``diff``. Unlike pandas, ``axis`` is the first argument.
+        Only the values change. Flags such as ``is_cumulative`` are left as they
+        are; use :meth:`~chainladder.Triangle.cum_to_incr` to convert a
+        cumulative Triangle.
+
+        Parameters
+        ----------
+        axis : str | int | None
+            Axis to difference along. ``None`` uses the first axis whose length
+            is not 1, or the index if every axis has length 1.
+        periods : int, default 1
+            Distance to the cell that is subtracted. Positive values subtract an
+            earlier cell, negative values a later one.
+        auto_sparse : bool, default True
+            Whether the result's array backend may be switched based on its size
+            and density. ``False`` keeps the input's backend.
+
+        Returns
+        -------
+        Triangle
+            Differences with the input's shape and labels. Cells with no cell to
+            subtract are NaN, and zero differences are stored as NaN.
+        """
+        periods = operator.index(periods)
+        obj = self.copy()
+        axis = (
+            next((i for i, size in enumerate(obj.shape) if size != 1), 0)
+            if axis is None
+            else self._get_axis(axis)
+        )
+        xp = obj.get_array_module()
+        if periods == 0 or abs(periods) >= obj.shape[axis]:
+            # Every difference is zero, or no cell has one to subtract.
+            obj.values = xp.full(obj.shape, xp.nan)
+        else:
+            current = [slice(None)] * 4
+            previous = [slice(None)] * 4
+            current[axis] = (
+                slice(periods, None) if periods > 0 else slice(None, periods)
+            )
+            previous[axis] = (
+                slice(None, -periods) if periods > 0 else slice(-periods, None)
+            )
+            values = obj.values[tuple(current)] - obj.values[tuple(previous)]
+            shape = list(obj.shape)
+            shape[axis] = abs(periods)
+            padding = xp.full(tuple(shape), xp.nan)
+            parts = [padding, values] if periods > 0 else [values, padding]
+            obj.values = cast(
+                "BackendArray", num_to_nan(xp.concatenate(parts, axis=axis))
+            )
+        if auto_sparse:
+            obj = obj._auto_sparse()
+        return obj
 
     def to_clipboard(self, *args: Any, **kwargs: Any) -> None:
         """Refer to pandas for ``to_clipboard`` functionality."""
