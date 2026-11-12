@@ -2325,6 +2325,26 @@ def test_edgecase_236():
     )
 
 
+def test_val_dev_round_trip_with_only_first_origin_populated():
+    tri = cl.Triangle(
+        pd.DataFrame({
+            "origin": [1981, 1981, 1981],
+            "valuation": [1981, 1982, 1983],
+            "paid": [5012.0, 8269.0, 10907.0],
+        }),
+        origin="origin",
+        valuation="valuation",
+        columns="paid",
+        cumulative=True,
+    )
+    val = tri.dev_to_val()
+    assert val.values.shape == tri.values.shape
+    np.testing.assert_array_equal(val.val_to_dev().values, tri.values)
+    out = tri.grain("OYDY")
+    assert out.shape == tri.shape
+    np.testing.assert_array_equal(out.values, tri.values)
+
+
 def test_to_frame_on_zero(clrd):
     assert len((clrd * 0).latest_diagonal.to_frame(origin_as_datetime=False)) == 0
 
