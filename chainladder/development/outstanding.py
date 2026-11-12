@@ -12,6 +12,7 @@ from chainladder.utils.utility_functions import num_to_nan
 
 import numpy as np
 import pandas as pd
+import warnings
 
 if TYPE_CHECKING:
     from chainladder.core import Triangle
@@ -168,17 +169,28 @@ class CaseOutstanding(DevelopmentBase):
             Development(n_periods=self.case_n_periods).fit(self.X_.sum(0).sum(1)).w_
         )
 
-        case_to_prior_case_naned = self.case_to_prior_case_ * self.case_w_
-        case_to_prior_case_naned.values = num_to_nan(case_to_prior_case_naned.values)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*empty slice.*",
+            )
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*All-NaN slice.*",
+            )
+            case_to_prior_case_naned = self.case_to_prior_case_ * self.case_w_
+            case_to_prior_case_naned.values = num_to_nan(
+                case_to_prior_case_naned.values
+            )
+            self.case_ldf_ = case_to_prior_case_naned.mean(axis=2).fillna(1.0)
 
-        self.case_ldf_ = self.case_to_prior_case_.mean(2)  # this has the wrong value
-        self.case_ldf_.values = case_to_prior_case_naned.mean(axis=2).values
-
-        paid_to_prior_case_naned = self.paid_to_prior_case_ * self.paid_w_
-        paid_to_prior_case_naned.values = num_to_nan(paid_to_prior_case_naned.values)
-
-        self.paid_ldf_ = self.paid_to_prior_case_.mean(2)  # this has the wrong value
-        self.paid_ldf_.values = paid_to_prior_case_naned.mean(axis=2).values
+            paid_to_prior_case_naned = self.paid_to_prior_case_ * self.paid_w_
+            paid_to_prior_case_naned.values = num_to_nan(
+                paid_to_prior_case_naned.values
+            )
+            self.paid_ldf_ = paid_to_prior_case_naned.mean(axis=2).fillzero()
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
@@ -271,9 +283,8 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        out = (incurred_tri - paid_tri).iloc[..., 1:] / (incurred_tri - paid_tri).iloc[
-            ..., :-1
-        ].values
+        prior_case = num_to_nan((incurred_tri - paid_tri).iloc[..., :-1].values)
+        out = (incurred_tri - paid_tri).iloc[..., 1:] / prior_case
         out.is_pattern = True
         out.is_cumulative = False
 
@@ -288,10 +299,8 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        out = (
-            paid_tri.cum_to_incr().iloc[..., 1:]
-            / (incurred_tri - paid_tri).iloc[..., :-1].values
-        )
+        prior_case = num_to_nan((incurred_tri - paid_tri).iloc[..., :-1].values)
+        out = paid_tri.cum_to_incr().iloc[..., 1:] / prior_case
         out.is_pattern = True
 
         return out
