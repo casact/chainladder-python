@@ -1637,8 +1637,15 @@ class Triangle(TriangleBase):
         scale = self._dstep()[obj.development_grain][obj.origin_grain]
         offset = np.arange(obj.shape[-2]) * scale
         min_slide = -offset.max()
-        if (obj.values.coords[-2] == np.arange(1)).all():
-            # Unique edge case #239
+        if (
+            sign == -1
+            and obj.shape[-1] == 1
+            and obj.ddims[0] == obj.valuation_date
+            and (obj.values.coords[-2] == 0).all()
+        ):
+            # Unique edge case #239: val_to_dev measures a single latest-diagonal
+            # column from the last origin, so data held only by the first origin
+            # sits offset[-1] columns later.
             offset = offset[-1:] * sign
         offset = offset[obj.values.coords[-2]] * sign  # [0]
         obj.values.coords[-1] = obj.values.coords[-1] + offset
