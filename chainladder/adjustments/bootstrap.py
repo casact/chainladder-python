@@ -37,8 +37,10 @@ class BootstrapODPSample(DevelopmentBase):
     random_state: int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by np.random.
+        If None, ``fit`` draws an integer seed from the RandomState instance
+        used by np.random and keeps it as ``random_state_``. With several
+        columns, each column then draws its own seed, so the columns' draws
+        stay independent.
 
     Attributes
     ----------
@@ -46,6 +48,13 @@ class BootstrapODPSample(DevelopmentBase):
         A set of triangles represented by each simulation
     scale_:
         The scale parameter to be used in generating process risk
+    random_state_: int or RandomState instance
+        The seed the draws used: ``random_state`` when it is an integer or a
+        RandomState instance, otherwise the integer ``fit`` drew. Passing it
+        back as ``random_state`` repeats the run, except on a triangle with
+        several columns fitted with ``random_state=None``: each column drew its
+        own seed and ``random_state_`` seeds only the process-variance draws,
+        so calling ``np.random.seed`` before ``fit`` repeats that run instead.
 
     See Also
     --------
@@ -164,11 +173,19 @@ class BootstrapODPSample(DevelopmentBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
+        from chainladder.utils.utility_functions import _record_seed
+
+        self.random_state_ = _record_seed(self.random_state)
         if X.shape[1] > 1:
             from chainladder.utils.utility_functions import concat
 
+            # With random_state=None each column draws its own seed, so the
+            # columns' residual draws are independent. An integer or a
+            # RandomState instance is passed to every column.
+            column_state = None if self.random_state is None else self.random_state_
+            params = {**self.get_params(), "random_state": column_state}
             out = [
-                BootstrapODPSample(**self.get_params()).fit(X.iloc[:, i])
+                BootstrapODPSample(**params).fit(X.iloc[:, i])
                 for i in range(X.shape[1])
             ]
             xp = X.get_array_module(out[0].design_matrix_)
@@ -256,7 +273,7 @@ class BootstrapODPSample(DevelopmentBase):
         adj_resid_dist = adj_resid_dist - xp.mean(adj_resid_dist)
         from chainladder.utils.utility_functions import _check_random_state
 
-        random_state = _check_random_state(self.random_state, xp)
+        random_state = _check_random_state(self.random_state_, xp)
         resampled_residual = [
             (
                 random_state.choice(
@@ -359,7 +376,7 @@ class BootstrapODPSample(DevelopmentBase):
         X_new = X.copy()
         X_new = self.resampled_triangles_
         X_new.scale_ = self.scale_
-        X_new.random_state = self.random_state
+        X_new.random_state = self.random_state_
         X_new._get_process_variance = types.MethodType(_get_process_variance, X_new)
         return X_new
 

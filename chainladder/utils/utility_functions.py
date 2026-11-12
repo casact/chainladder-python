@@ -1340,3 +1340,17 @@ def _process_variance_seed(seed):
     if isinstance(seed, (int, np.integer)) and not isinstance(seed, bool):
         return int(seed) + 1
     return seed
+
+
+def _record_seed(seed):
+    """
+    Return the seed a fit records as ``random_state_``.
+
+    For ``None``, one integer is drawn from the global ``np.random`` generator,
+    so ``np.random.seed`` still repeats a run and the drawn integer can be
+    passed back as ``random_state``. An integer or a ``RandomState`` instance
+    is returned as it is.
+    """
+    if seed is None:
+        return int(np.random.randint(np.iinfo(np.int32).max))
+    return seed
