@@ -1140,3 +1140,14 @@ def test_valid_params_pass_validation(raa):
     cl.Development(average=lambda age: "geometric", n_periods=[-1] * 9).fit(raa)
     dev = cl.Development(n_periods=4, average="simple")
     assert cl.read_json(dev.to_json()).get_params() == dev.get_params()
+
+
+@pytest.mark.parametrize("name", ["Trend", "BerquistSherman", "ParallelogramOLF"])
+def test_read_json_loads_estimators_without_the_hook(name):
+    """
+    Check that ``read_json`` still loads estimators outside ``DevelopmentBase``
+    and ``MethodBase``, whose ``_validate_params`` is sklearn's and needs a
+    ``_parameter_constraints`` attribute they do not have.
+    """
+    estimator = getattr(cl, name)()
+    assert cl.read_json(estimator.to_json()).get_params() == estimator.get_params()

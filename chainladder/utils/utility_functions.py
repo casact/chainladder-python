@@ -451,9 +451,14 @@ def _estimator_from_json(class_name, params):
     check the parameter values it can check without a triangle.
     """
     import chainladder as cl
+    from chainladder.development.base import DevelopmentBase
+    from chainladder.methods.base import MethodBase
 
     estimator = cl.__dict__[class_name]().set_params(**params)
-    if hasattr(estimator, "_validate_params"):
+    # sklearn's BaseEstimator has a _validate_params of its own, which needs a
+    # _parameter_constraints attribute that chainladder estimators do not set,
+    # so only the chainladder hook is called.
+    if isinstance(estimator, (DevelopmentBase, MethodBase)):
         estimator._validate_params()
     return estimator
 
