@@ -7,9 +7,7 @@ cover the one-year claims development result (CDR) and cite sources by their
 keys in docs/library/references.bib. What these CDR tests check for each
 attribute, by source:
 
-========================  ========  ========  ============
 Attribute                 merz2008  merz2014  per-triangle
-========================  ========  ========  ============
 ldf_, sigma_              Table 2   Table 1   --
 ibnr_                     --        Table 2   --
 process_risk_             --        Table 2   --
@@ -20,7 +18,6 @@ total_parameter_risk_     --        Table 2   --
 total_mack_std_err_       Table 4   Table 2   --
 cdr_std_err_              Table 4   --        clrd
 total_cdr_std_err_        Table 4   Table 3   clrd
-========================  ========  ========  ============
 
 merz2008
     The paper prints Tables 2 and 4 for its own triangle, the sample mw2008,
@@ -53,11 +50,16 @@ the Mack attributes as they were.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 
 import chainladder as cl
 import pytest
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 def test_mack_to_triangle():
@@ -85,8 +87,12 @@ def test_mack_malformed(raa):
     assert x.process_risk_.iloc[:, :, :-1].equals(y.process_risk_)
 
 
-def test_multi_triangle_mack(clrd, atol):
-    tri = clrd.loc["Agway Ins Co"]["IncurLoss", "CumPaidLoss"]
+def test_multi_triangle_mack(clrd: Triangle, atol: float) -> None:
+    """
+    Tests that applying MackChainladder on a multi-triangle returns the same
+    results as applying MackChainladder on each single-triangle individually
+    """
+    tri = clrd.groupby("LOB").sum()["IncurLoss", "CumPaidLoss"]
     mack = cl.MackChainladder().fit(tri)
     for i in range(len(tri.index)):
         for j in range(len(tri.columns)):
