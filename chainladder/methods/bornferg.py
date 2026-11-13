@@ -28,8 +28,8 @@ class BornhuetterFerguson(Benktander):
         using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by np.random.
+        If None, ``fit`` draws an integer seed from the RandomState instance
+        used by np.random and keeps it as ``random_state_``.
 
     Attributes
     ----------
@@ -37,6 +37,11 @@ class BornhuetterFerguson(Benktander):
         The ultimate losses per the method
     ibnr_: Triangle
         The IBNR per the method
+    random_state_: int, RandomState instance or None
+        The seed the apriori draws used: ``random_state`` when it is an integer
+        or a RandomState instance, otherwise the integer ``fit`` drew. Passing
+        it back as ``random_state`` repeats the draws. It is ``random_state``
+        itself when ``apriori_sigma`` is 0, since no draw is made.
 
     See Also
     --------

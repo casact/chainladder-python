@@ -135,3 +135,45 @@ def test_capecod_apriori_sigma_is_positive(genins: Triangle) -> None:
     vals = cc.expectation_.values
     vals = vals[np.isfinite(vals)]
     assert (vals > 0).all()  # ~10% would be negative under the old normal
+
+
+def test_apriori_sigma_random_state_forms(genins: Triangle) -> None:
+    """
+    Check that ``random_state`` accepts ``None`` and a ``RandomState`` instance
+    for the apriori draws, as the docstring says (#1568).
+    """
+    weight = genins.latest_diagonal * 0 + 1
+
+    def expectation(random_state):
+        return (
+            cl
+            .BornhuetterFerguson(apriori_sigma=0.5, random_state=random_state)
+            .fit(genins, sample_weight=weight)
+            .expectation_.values
+        )
+
+    np.random.seed(3)
+    first = expectation(None)
+    np.random.seed(3)
+    np.testing.assert_array_equal(first, expectation(None))
+    np.testing.assert_array_equal(expectation(np.random.RandomState(7)), expectation(7))
+
+
+def test_apriori_sigma_records_the_seed(genins: Triangle) -> None:
+    """
+    Check that ``fit`` records the seed it draws for the aprioris as
+    ``random_state_``, and draws none when ``apriori_sigma`` is 0 (#1568).
+    """
+    weight = genins.latest_diagonal * 0 + 1
+    model = cl.BornhuetterFerguson(apriori_sigma=0.5).fit(genins, sample_weight=weight)
+    seed = model.random_state_
+    assert isinstance(seed, int)
+    repeat = cl.BornhuetterFerguson(apriori_sigma=0.5, random_state=seed).fit(
+        genins, sample_weight=weight
+    )
+    np.testing.assert_array_equal(model.expectation_.values, repeat.expectation_.values)
+
+    state = np.random.get_state()[1].copy()
+    model = cl.BornhuetterFerguson().fit(genins, sample_weight=weight)
+    assert model.random_state_ is None
+    np.testing.assert_array_equal(np.random.get_state()[1], state)
