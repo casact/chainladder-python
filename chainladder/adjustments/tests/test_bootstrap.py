@@ -29,7 +29,7 @@ def test_multi_index(clrd):
     pd.testing.assert_frame_equal(resampled_triangles.index, expected)
 
 
-def test_hat_adjustment_is_zero_at_corners():
+def test_hat_adjustment_is_zero_at_corners(genins):
     """
     Check that the hat adjustment factor is exactly 0 at the two corner cells,
     and that one ``random_state`` gives one hat matrix and one set of draws.
@@ -40,7 +40,7 @@ def test_hat_adjustment_is_zero_at_corners():
     ``random_state``, so every fit must match the first in all of ``hat_`` and
     ``resampled_triangles_``.
     """
-    tri = cl.load_sample("genins")
+    tri = genins
     first = cl.BootstrapODPSample(n_sims=10, random_state=42).fit(tri)
     assert first.hat_[0, -1] == 0
     assert first.hat_[-1, 0] == 0
