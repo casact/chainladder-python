@@ -6,6 +6,7 @@ import pickle
 import warnings
 
 from io import StringIO
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import matplotlib
@@ -2363,6 +2364,26 @@ def test_edgecase_236():
     )
 
 
+def test_val_dev_round_trip_with_only_first_origin_populated():
+    tri = cl.Triangle(
+        pd.DataFrame({
+            "origin": [1981, 1981, 1981],
+            "valuation": [1981, 1982, 1983],
+            "paid": [5012.0, 8269.0, 10907.0],
+        }),
+        origin="origin",
+        valuation="valuation",
+        columns="paid",
+        cumulative=True,
+    )
+    val = tri.dev_to_val()
+    assert val.values.shape == tri.values.shape
+    np.testing.assert_array_equal(val.val_to_dev().values, tri.values)
+    out = tri.grain("OYDY")
+    assert out.shape == tri.shape
+    np.testing.assert_array_equal(out.values, tri.values)
+
+
 def test_to_frame_on_zero(clrd):
     assert len((clrd * 0).latest_diagonal.to_frame(origin_as_datetime=False)) == 0
 
@@ -3906,3 +3927,176 @@ def test_duplicate_columns_assignment(raa) -> None:
     two.columns = ["col", "col"]
     two["col"] = 42
     assert two.values[0, 0, 0, 0] == 42
+
+
+def test_triangle_pct_change(raa) -> None:
+    """pct_change passes through to pandas.DataFrame.pct_change (#1528)."""
+    expected = raa.to_frame().pct_change(fill_method=None)
+    result = raa.pct_change(fill_method=None)
+    pd.testing.assert_frame_equal(result, expected)
+
+
+# The issue's example: two 2020 rows valued at the end of 2020 fall in one cell.
+DUPLICATE_ROWS = pd.DataFrame({
+    "origin": ["2020", "2020", "2020", "2021"],
+    "valuation": ["2020", "2020", "2021", "2021"],
+    "paid": [100, 50, 180, 90],
+})
+DUPLICATE_KWARGS = {
+    "origin": "origin",
+    "valuation": "valuation",
+    "columns": "paid",
+    "cumulative": True,
+}
+SAMPLE_DATA = Path(cl.__file__).parent / "utils" / "data"
+
+
+def test_duplicates_sum_by_default() -> None:
+    """
+    Rows that share an index, origin and valuation are added together by
+    default and with ``duplicates="sum"``, as before the keyword existed
+    (#1567).
+    """
+    default = cl.Triangle(DUPLICATE_ROWS, **DUPLICATE_KWARGS)
+    summed = cl.Triangle(DUPLICATE_ROWS, duplicates="sum", **DUPLICATE_KWARGS)
+    assert default.values[0, 0, 0, 0] == 150
+    assert summed.equals(default)
+
+
+def test_duplicates_raise_names_cells() -> None:
+    """
+    ``duplicates="raise"`` raises a ValueError that names each repeated cell
+    by origin and valuation and gives its number of rows.
+    """
+    with pytest.raises(
+        ValueError,
+        match=r"in 1 triangle cell: origin 2020-01-01, valuation 2020-12-31 \(2 rows\)",
+    ):
+        cl.Triangle(DUPLICATE_ROWS, duplicates="raise", **DUPLICATE_KWARGS)
+
+
+def test_duplicates_warn_sums() -> None:
+    """
+    ``duplicates="warn"`` gives the message as a warning that points at the
+    caller's line, then sums the rows as the default does.
+    """
+    with pytest.warns(UserWarning, match="Their values were summed") as record:
+        warned = cl.Triangle(DUPLICATE_ROWS, duplicates="warn", **DUPLICATE_KWARGS)
+    files = [w.filename for w in record if "input row" in str(w.message)]
+    assert files == [__file__]
+    assert warned.equals(cl.Triangle(DUPLICATE_ROWS, **DUPLICATE_KWARGS))
+
+
+def test_duplicates_invalid_value() -> None:
+    """An unknown ``duplicates`` value raises a ValueError."""
+    with pytest.raises(ValueError, match="duplicates must be 'sum', 'raise' or 'warn'"):
+        cl.Triangle(DUPLICATE_ROWS, duplicates="first", **DUPLICATE_KWARGS)
+
+
+def test_duplicates_claim_level(monthly: Triangle) -> None:
+    """
+    prism.csv holds one row per claim, so built with no index it puts many
+    claims in each cell. The default and ``"sum"`` give the prism sample
+    summed over its index, while ``"raise"`` rejects the same rows.
+    """
+    raw = pd.read_csv(SAMPLE_DATA / "prism.csv")
+    kwargs = {
+        "origin": "AccidentDate",
+        "valuation": "PaymentDate",
+        "columns": list(monthly.columns),
+        "cumulative": False,
+    }
+    default = cl.Triangle(raw, **kwargs)
+    assert default.shape == monthly.shape
+    assert np.allclose(
+        np.nan_to_num(default.set_backend("numpy").values),
+        np.nan_to_num(monthly.set_backend("numpy").values),
+    )
+    assert cl.Triangle(raw, duplicates="sum", **kwargs).equals(default)
+    with pytest.raises(ValueError, match="more than one input row"):
+        cl.Triangle(raw, duplicates="raise", **kwargs)
+
+
+def test_duplicates_multi_index() -> None:
+    """
+    With a two-level index the check counts rows per index key, origin and
+    valuation. Company A reports its auto line under two codes, so keyed by
+    company and line its two auto rows share a cell; adding the code to the
+    index leaves one row per cell.
+    """
+    data = pd.DataFrame({
+        "company": ["A", "A", "A", "B"],
+        "code": [1, 2, 1, 3],
+        "lob": ["auto", "auto", "home", "auto"],
+        "origin": ["2020", "2020", "2020", "2020"],
+        "valuation": ["2020", "2020", "2020", "2020"],
+        "paid": [100, 50, 30, 20],
+    })
+    with pytest.raises(
+        ValueError,
+        match=r"in 1 triangle cell: index \('A', 'auto'\), origin 2020-01-01",
+    ):
+        cl.Triangle(
+            data, index=["company", "lob"], duplicates="raise", **DUPLICATE_KWARGS
+        )
+    keyed = cl.Triangle(
+        data, index=["company", "lob", "code"], duplicates="raise", **DUPLICATE_KWARGS
+    )
+    assert keyed.shape[0] == 4
+
+
+def test_duplicates_ultimate_rows() -> None:
+    """
+    Rows at the ultimate valuation (``options.ULT_VAL``) are built into their
+    own triangle first; repeated ultimate rows are checked the same way.
+    """
+    data = pd.DataFrame({
+        "origin": pd.to_datetime(["1981-01-01", "1981-01-01", "1981-01-01"]),
+        "valuation": pd.to_datetime(
+            ["1981-12-31", cl.options.ULT_VAL, cl.options.ULT_VAL],
+            format="ISO8601",
+        ),
+        "ultimate": [100.0, 150.0, 50.0],
+    })
+    kwargs = {
+        "origin": "origin",
+        "valuation": "valuation",
+        "columns": "ultimate",
+        "cumulative": True,
+    }
+    assert cl.Triangle(data, **kwargs).values[0, 0, 0, -1] == 200
+    with pytest.raises(ValueError, match=r"valuation 2261-12-31 \(2 rows\)"):
+        cl.Triangle(data, duplicates="raise", **kwargs)
+
+
+def test_duplicates_pandas_subclass() -> None:
+    """
+    A DataFrame subclass takes the non-pandas branch of ``_aggregate_data``
+    (the one Dask input uses) and is checked the same way.
+    """
+
+    class _Frame(pd.DataFrame):
+        @property
+        def _constructor(self):
+            return _Frame
+
+    with pytest.raises(ValueError, match=r"valuation 2020-12-31 \(2 rows\)"):
+        cl.Triangle(_Frame(DUPLICATE_ROWS), duplicates="raise", **DUPLICATE_KWARGS)
+
+
+def test_read_csv_duplicates() -> None:
+    """``cl.read_csv`` passes ``duplicates`` on to the Triangle constructor."""
+    csv = DUPLICATE_ROWS.to_csv(index=False)
+    with pytest.raises(ValueError, match="more than one input row"):
+        cl.read_csv(StringIO(csv), duplicates="raise", **DUPLICATE_KWARGS)
+
+
+def test_clrd_samples_one_row_per_cell() -> None:
+    """
+    In clrd and clrd2025 each GRCODE has its own GRNAME, so keyed by GRNAME
+    and LOB every input row has a cell of its own: the four name-and-line
+    pairs that used to span two GRCODEs load as separate triangles instead
+    of being summed (#1567).
+    """
+    assert cl.load_sample("clrd", duplicates="raise").shape[0] == 779
+    assert cl.load_sample("clrd2025", duplicates="raise").shape[0] == 772

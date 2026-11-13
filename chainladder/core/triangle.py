@@ -34,6 +34,7 @@ except ImportError:
 from typing import (
     Any,
     cast,
+    Literal,
     Optional,
     TYPE_CHECKING,
     Self,
@@ -106,6 +107,12 @@ class Triangle(TriangleBase):
         ``cl.options.AUTO_SPARSE`` is ``True``, the backend is instead
         chosen automatically based on array size and density, regardless
         of this argument's value.
+    duplicates: {'sum', 'raise', 'warn'}, default 'sum'
+        What to do when more than one row of ``data`` falls in the same
+        index, origin and development cell. ``'sum'`` adds the rows together,
+        as transaction data needs. ``'raise'`` raises a ``ValueError`` naming
+        the first repeated cells, and ``'warn'`` gives the same message as a
+        warning, then sums.
 
     Attributes
     ----------
@@ -506,10 +513,16 @@ class Triangle(TriangleBase):
         pattern=False,
         trailing: bool = True,
         age: Optional[str | list] = None,
+        duplicates: Literal["sum", "raise", "warn"] = "sum",
         *args,
         **kwargs,
     ):
         self._axes: dict[int, Any] = {}
+
+        if duplicates not in ("sum", "raise", "warn"):
+            raise ValueError(
+                f"duplicates must be 'sum', 'raise' or 'warn', not {duplicates!r}."
+            )
 
         # If data are present, validate the dimensions.
         if data is None:
@@ -540,6 +553,7 @@ class Triangle(TriangleBase):
             origin=origin,
             valuation=development,
             cumulative=cumulative,
+            duplicates=duplicates,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
         origin_date: Series = self._to_datetime(
@@ -621,6 +635,7 @@ class Triangle(TriangleBase):
             development_date=development_date,
             index=index,
             columns=columns,
+            duplicates=duplicates,
         )
 
         # Fill in missing periods with zeros.
@@ -765,6 +780,7 @@ class Triangle(TriangleBase):
         origin: list,
         valuation: list,
         cumulative: bool,
+        duplicates: Literal["sum", "raise", "warn"] = "sum",
     ) -> tuple[DataFrame, Triangle]:
         """
         Split ultimate valuation rows from long-format triangle data.
@@ -792,6 +808,7 @@ class Triangle(TriangleBase):
                     columns=columns,
                     index=index,
                     cumulative=cumulative,
+                    duplicates=duplicates,
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[valuation[0]] != options.ULT_VAL]
@@ -1632,8 +1649,15 @@ class Triangle(TriangleBase):
         scale = self._dstep()[self.development_grain][self.origin_grain]
         offset = np.arange(self.shape[-2]) * scale
         min_slide = -offset.max()
-        if (self.values.coords[-2] == np.arange(1)).all():
-            # Unique edge case #239
+        if (
+            sign == -1
+            and self.shape[-1] == 1
+            and self.ddims[0] == self.valuation_date
+            and (self.values.coords[-2] == 0).all()
+        ):
+            # Unique edge case #239: val_to_dev measures a single latest-diagonal
+            # column from the last origin, so data held only by the first origin
+            # sits offset[-1] columns later.
             offset = offset[-1:] * sign
         offset = offset[self.values.coords[-2]] * sign  # [0]
         self.values.coords[-1] = self.values.coords[-1] + offset
@@ -2215,19 +2239,20 @@ class Triangle(TriangleBase):
 
     def development_correlation(self, p_critical=0.5):
         """
-        Mack (1997) test for correlations between subsequent development
+        Mack (1994) test for correlations between subsequent development
         factors. Results should be within confidence interval range
         otherwise too much correlation
 
         Parameters
         ----------
-        p_critical: float (default=0.10)
-            Value between 0 and 1 representing the confidence level for the test. A
-            value of 0.1 implies 90% confidence.
+        p_critical: float (default=0.5)
+            Value between 0 and 1 giving the significance level of the test. The
+            confidence level is ``1 - p_critical``, so a value of 0.5 implies 50%
+            confidence and a value of 0.1 implies 90% confidence.
         Returns
         -------
             DevelopmentCorrelation object with t, t_critical, t_expectation,
-            t_variance, and range attributes.
+            t_variance, and confidence_interval attributes.
 
         Examples
         --------
@@ -2262,11 +2287,12 @@ class Triangle(TriangleBase):
         Parameters
         ----------
         p_critical: float (default=0.10)
-            Value between 0 and 1 representing the confidence level for the test
+            Value between 0 and 1 giving the significance level of the test. 0.1
+            implies 90% confidence.
         total:
             Whether to calculate valuation correlation in total across all
-            years (True) consistent with Mack 1993 or for each year separately
-            (False) consistent with Mack 1997.
+            years (True), as in Appendix H of Mack (1994), or for each year
+            separately (False).
         Returns
         -------
             ValuationCorrelation object with z, z_critical, z_expectation and

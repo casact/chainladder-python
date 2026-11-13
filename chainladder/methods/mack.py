@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+import numpy as np
 import pandas as pd
 from chainladder.methods import Chainladder
 
@@ -39,6 +40,12 @@ class MackChainladder(Chainladder):
         The total prediction error by origin period
     total_mack_std_err_:
         The total prediction error across all origin periods
+    cdr_std_err_:
+        The one-year standard error of the claims development result by
+        origin period (Merz and Wüthrich 2008, ``merz2008``)
+    total_cdr_std_err_:
+        The one-year standard error of the claims development result across
+        all origin periods
 
     See Also
     --------
@@ -157,17 +164,21 @@ class MackChainladder(Chainladder):
             2012   7162.2         693.2
             2013  14396.9         901.4
         """
+        from chainladder.core.common import _get_full_triangle
+
         super().fit(X, y, sample_weight)
         if "sigma_" not in self.X_:
             raise ValueError("Triangle not compatible with MackChainladder")
+        # The Mack recursion multiplies cumulative amounts, so the risk
+        # estimates use a cumulative copy of X_.
+        X_cum = self.X_.incr_to_cum()
         # Caching full_triangle_ for fit as it is called a lot
-        self.X_._full_triangle_ = self.full_triangle_
-        self.parameter_risk_ = self._mack_recursion("parameter_risk_", self.X_)
-        self.process_risk_ = self._mack_recursion("process_risk_", self.X_)
+        X_cum._full_triangle_ = _get_full_triangle(X_cum, self.ultimate_)
+        self.parameter_risk_ = self._mack_recursion("parameter_risk_", X_cum)
+        self.process_risk_ = self._mack_recursion("process_risk_", X_cum)
         self.total_parameter_risk_ = self._mack_recursion(
-            "total_parameter_risk_", self.X_
+            "total_parameter_risk_", X_cum
         )
-        del self.X_._full_triangle_
         self.process_variance_ = self._include_process_variance()
         return self
 
@@ -231,17 +242,19 @@ class MackChainladder(Chainladder):
         X_new.std_err_ = getattr(X_new, "std_err_", self.X_.std_err_)
         X_new.average_ = getattr(X_new, "average_", self.X_.average_)
         X_new.w_ = getattr(X_new, "w_", self.X_.w_)
-        X_new._full_triangle_ = X_new.full_triangle_
-        X_new.parameter_risk_ = self._mack_recursion("parameter_risk_", X_new)
-        X_new.process_risk_ = self._mack_recursion("process_risk_", X_new)
+        # The Mack recursion multiplies cumulative amounts, so the risk
+        # estimates use a cumulative copy of X_new.
+        X_cum = X_new.incr_to_cum()
+        X_cum._full_triangle_ = X_cum.full_triangle_
+        X_new.parameter_risk_ = self._mack_recursion("parameter_risk_", X_cum)
+        X_new.process_risk_ = self._mack_recursion("process_risk_", X_cum)
         X_new.total_process_risk_ = (X_new.process_risk_**2).sum(axis="origin").sqrt()
         X_new.total_parameter_risk_ = self._mack_recursion(
-            "total_parameter_risk_", X_new
+            "total_parameter_risk_", X_cum
         )
-        X_new.full_std_err_ = self._get_full_std_err_(X_new)
+        X_new.full_std_err_ = self._get_full_std_err_(X_cum)
         X_new.total_mack_std_err_ = self._get_total_mack_std_err_(X_new)
         X_new.mack_std_err_ = (X_new.parameter_risk_**2 + X_new.process_risk_**2).sqrt()
-        del X_new._full_triangle_
         return X_new
 
     @property
@@ -281,7 +294,12 @@ class MackChainladder(Chainladder):
             2012  0.039675  0.034017  0.026776  0.008976  0.001243  0.001324  0.0
             2013  0.035752  0.030671  0.024143  0.008094  0.001121  0.001193  0.0
         """
-        return self._get_full_std_err_(self.X_)
+        from chainladder.core.common import _get_full_triangle
+
+        # The weights use cumulative amounts.
+        X = self.X_.incr_to_cum()
+        X._full_triangle_ = _get_full_triangle(X, self.ultimate_)
+        return self._get_full_std_err_(X)
 
     def _get_full_std_err_(self, X=None):
         from chainladder.utils.utility_functions import num_to_nan
@@ -289,7 +307,8 @@ class MackChainladder(Chainladder):
         obj = X.copy()
         xp = obj.get_array_module()
         lxp = X.ldf_.get_array_module()
-        full = getattr(X, "_full_triangle_", self.full_triangle_)
+        # fit, predict and full_std_err_ cache the full triangle on X first.
+        full = X._full_triangle_
         avg = {"regression": 0, "volume": 1, "simple": 2}
         avg = [avg.get(item, item) for item in X.average_]
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
@@ -466,6 +485,197 @@ class MackChainladder(Chainladder):
         return pd.DataFrame(out, index=obj.index, columns=obj.columns)
 
     @property
+    def cdr_std_err_(self):
+        """
+        One-year standard error of the claims development result by origin
+        period, Result 3.1 (eq. 3.9) of Merz and Wüthrich (2008, ``merz2008``).
+
+        The claims development result is the change in an origin's estimated
+        ultimate once the next diagonal is observed. ``mack_std_err_`` is the
+        counterpart to ultimate. The values follow the ``sigma_interpolation``
+        of :class:`Development`, and missing cells above the latest diagonal
+        give NaN.
+
+        Returns
+        -------
+        Triangle
+            One value per origin, shaped like ``ultimate_``, NaN for the
+            fully developed oldest origin.
+
+        Raises
+        ------
+        ValueError
+            If the triangle is not square, has a tail, or its development
+            factors are not volume-weighted over every link ratio.
+
+        Examples
+        --------
+        The triangle of Merz and Wüthrich (2008), with Mack's extrapolation
+        for the last sigma.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('mw2008')
+            dev = cl.Development(sigma_interpolation='mack').fit_transform(tr)
+            model = cl.MackChainladder().fit(dev)
+            print(model.cdr_std_err_)
+
+        .. testoutput::
+
+                          2261
+            2001           NaN
+            2002    566.174395
+            2003   1486.560344
+            2004   3923.098608
+            2005   9722.859763
+            2006  28442.621556
+            2007  20954.286973
+            2008  28119.317963
+            2009  53320.821049
+        """
+        obj = self.ultimate_.set_backend("numpy")
+        obj.values = np.sqrt(self._get_cdr_msep()[0])[..., None]
+        return obj.set_backend(self.X_.array_backend)
+
+    @property
+    def total_cdr_std_err_(self):
+        """
+        One-year standard error of the claims development result summed over
+        all origin periods, Result 3.3 (eq. 3.15) of Merz and Wüthrich (2008,
+        ``merz2008``). It exceeds the quadrature sum of ``cdr_std_err_``
+        because all origins share the estimated factors, and it raises
+        ``ValueError`` where ``cdr_std_err_`` does.
+
+        Returns
+        -------
+        DataFrame
+            One value per (index, column) combination of the fitted Triangle.
+
+        Examples
+        --------
+        On the paper's triangle the one-year error is about three quarters of
+        Mack's error to ultimate.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('mw2008')
+            dev = cl.Development(sigma_interpolation='mack').fit_transform(tr)
+            model = cl.MackChainladder().fit(dev)
+            print(model.total_cdr_std_err_)
+            print(model.total_mack_std_err_)
+
+        .. testoutput::
+
+            columns         values
+            (Total,)  81080.546787
+            columns          values
+            (Total,)  108401.387451
+        """
+        obj = self.X_
+        out = np.sqrt(self._get_cdr_msep()[1])
+        return pd.DataFrame(out, index=obj.index, columns=obj.columns)
+
+    def _get_cdr_msep(self):
+        """
+        Mean squared errors of the one-year claims development result.
+
+        Returns the per-origin values, shape (index, columns, origin), and
+        the totals over origins, shape (index, columns), from Results 3.1 and
+        3.3 of ``merz2008`` with I = J = n - 1. Origins i and development
+        periods j are 0-based, as in the paper, and the equation numbers in
+        the comments are the paper's.
+        """
+        from chainladder.development import Development
+
+        X = self.X_.set_backend("numpy")
+        C = X if X.is_cumulative else X.incr_to_cum()
+        a, b, n, m = C.shape
+        msg = "cdr_std_err_ and total_cdr_std_err_ need "
+        upper = np.add.outer(np.arange(n), np.arange(m)) <= n - 1
+        if n != m or not np.array_equal(~np.isnan(X.nan_triangle), upper):
+            raise ValueError(
+                msg + "a square triangle valued at its latest diagonal; this "
+                f"one has {n} origins and {m} development periods."
+            )
+        J = m - 1
+        ldf = X.ldf_.set_backend("numpy").values[..., 0, :]
+        sigma = X.sigma_.set_backend("numpy").values[..., 0, :]
+        if not (
+            np.all(np.nan_to_num(ldf[..., J:], nan=1.0) == 1)
+            and np.all(np.nan_to_num(sigma[..., J:]) == 0)
+        ):
+            raise ValueError(
+                msg + "a pattern without a tail, as Merz and Wüthrich (2008) "
+                "assume; fit without a tail estimator or with TailConstant(1.0)."
+            )
+        average = set(np.asarray(X.average_).ravel())
+        if average != {"volume"}:
+            raise ValueError(
+                msg + "volume-weighted development factors; this pattern uses "
+                f"{sorted(str(v) for v in average)}."
+            )
+        # A default Development on C gives the paper's factors (2.9), and the
+        # fitted w_ and ldf_ must match it.
+        fresh = Development().fit(C)
+        w, w_fresh = np.broadcast_arrays(np.asarray(X.w_), np.asarray(fresh.w_))
+        if not np.array_equal(w, w_fresh, equal_nan=True):
+            raise ValueError(
+                msg + "every link ratio of the triangle; this pattern excludes "
+                "some (drop, drop_high, drop_low, drop_valuation, n_periods)."
+            )
+        f = ldf[..., :J]  # f_j^I, (2.9)
+        if not np.allclose(
+            f, fresh.ldf_.values[..., 0, :], rtol=1e-8, atol=0, equal_nan=True
+        ):
+            raise ValueError(
+                msg + "development factors estimated from this triangle's "
+                "own link ratios; ldf_ differs from them, as after "
+                "Development(fillna=...)."
+            )
+        latest = C.latest_diagonal.values[..., 0]  # C_{i, I-i}
+        diag = latest[..., ::-1][..., :J]  # C_{I-j, j}
+        S1 = C.sum(axis="origin").values[..., 0, :J]  # S_j^{I+1}, (2.10)
+        S = S1 - diag  # S_j^I, (2.9)
+        ult = self.ultimate_.set_backend("numpy").values[..., 0]  # C_{i,J}^I, (2.11)
+        zero = np.zeros((a, b, 1))
+
+        def later(t):
+            """Sum of t over the positions after each position, last axis."""
+            return np.concatenate((np.cumsum(t[..., ::-1], -1)[..., -2::-1], zero), -1)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            q = sigma[..., :J] ** 2 / f**2  # sigma_j^2 (3.3) over (f_j^I)^2
+            i = np.arange(1, n)  # origins with a next diagonal
+            d = J - i  # their next development period, I - i
+            qd, Sd, S1d, Ci = q[..., d], S[..., d], S1[..., d], latest[..., i]
+            # Sums over j = I-i+1 .. J-1: the summands of Phi (3.5), and those
+            # of the sum that Delta (3.4) and Lambda (3.13) share.
+            Phi = later(diag * q / S1**2)[..., d]
+            shared = later((diag / S1) ** 2 * q / S)[..., d]
+            Psi = qd / Ci  # (3.6)
+            Delta = qd / Sd + shared  # (3.4)
+            Lam = Ci / S1d * qd / Sd + shared  # Lambda, (3.13)
+            Xi = Phi + qd / S1d  # (3.14)
+            msep = np.full((a, b, n), np.nan)
+            # (3.9), with Gamma = Phi + Psi (3.7)
+            msep[..., 1:] = ult[..., i] ** 2 * (Phi + Psi + Delta)
+            # (3.15): 2 * sum over k > i > 0 of C_{i,J} C_{k,J} (Xi + Lambda)
+            cross = ult[..., i] * later(ult[..., 1:]) * (Xi + Lam)
+            total = msep[..., 1:].sum(-1) + 2 * cross.sum(-1)
+        complete = ~np.isnan(C.values[..., upper]).any(-1)
+        msep[~complete] = np.nan
+        total[~complete] = np.nan
+        return msep, total
+
+    @property
     def summary_(self):
         """
         Headline Mack summary table by origin: latest diagonal, IBNR,
@@ -506,7 +716,7 @@ class MackChainladder(Chainladder):
         backend = obj.array_backend
         # forcing these four triangles to the same backend
         cols = (
-            self.X_.latest_diagonal.set_backend(backend).values,
+            self.latest_diagonal.set_backend(backend).values,
             self.ibnr_.set_backend(backend).values,
             self.ultimate_.set_backend(backend).values,
             self.mack_std_err_.set_backend(backend).values[..., -1:],

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import warnings
 
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
@@ -27,9 +27,9 @@ except ImportError:
     db = None
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from typing import Any, Literal, Type
+    from collections.abc import Callable, Mapping
     from types import ModuleType
+    from typing import Any, Literal
 
     from numpy import ndarray
     from pandas import DataFrame, Series
@@ -50,7 +50,7 @@ class TriangleGroupBy:
         self.axis = self.obj._get_axis(axis)
         self.by = by
         if kwargs.get("groups", None):
-            self.groups = kwargs.get("groups", None)
+            self.groups = kwargs["groups"]
         elif self.axis == 0:
             self.groups = obj.index.groupby(by)
         elif axis == 1:
@@ -66,6 +66,46 @@ class TriangleGroupBy:
             groups=self.groups,
         )
 
+    def sum(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``sum`` functionality."""
+        return _groupby_aggregate(self, "sum", *args, **kwargs)
+
+    def mean(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``mean`` functionality."""
+        return _groupby_aggregate(self, "mean", *args, **kwargs)
+
+    def median(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``median`` functionality."""
+        return _groupby_aggregate(self, "median", *args, **kwargs)
+
+    def max(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``max`` functionality."""
+        return _groupby_aggregate(self, "max", *args, **kwargs)
+
+    def min(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``min`` functionality."""
+        return _groupby_aggregate(self, "min", *args, **kwargs)
+
+    def prod(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``prod`` functionality."""
+        return _groupby_aggregate(self, "prod", *args, **kwargs)
+
+    def var(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``var`` functionality."""
+        return _groupby_aggregate(self, "var", *args, **kwargs)
+
+    def std(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``std`` functionality."""
+        return _groupby_aggregate(self, "std", *args, **kwargs)
+
+    def cumsum(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``cumsum`` functionality."""
+        return _groupby_aggregate(self, "cumsum", *args, **kwargs)
+
+    def quantile(self, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``quantile`` functionality."""
+        return _groupby_aggregate(self, "quantile", *args, **kwargs)
+
 
 class TrianglePandas(_TrianglePandasBase):
     if TYPE_CHECKING:
@@ -80,10 +120,112 @@ class TrianglePandas(_TrianglePandasBase):
             **kwargs: Any,
         ) -> Triangle: ...
 
-        # Installed by add_triangle_agg_func at runtime.
-        def sum(
-            self, axis: str | int | None = None, *args: Any, **kwargs: Any
-        ) -> TriangleProtocol: ...
+    def sum(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``sum`` functionality."""
+        return _triangle_aggregate(self, "nansum", axis, *args, **kwargs)
+
+    def mean(
+        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+    ) -> Triangle:
+        """Refer to pandas for ``mean`` functionality."""
+        return _triangle_aggregate(self, "nanmean", axis, *args, **kwargs)
+
+    def median(
+        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+    ) -> Triangle:
+        """Refer to pandas for ``median`` functionality."""
+        return _triangle_aggregate(self, "nanmedian", axis, *args, **kwargs)
+
+    def max(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``max`` functionality."""
+        return _triangle_aggregate(self, "nanmax", axis, *args, **kwargs)
+
+    def min(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``min`` functionality."""
+        return _triangle_aggregate(self, "nanmin", axis, *args, **kwargs)
+
+    def prod(
+        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+    ) -> Triangle:
+        """Refer to pandas for ``prod`` functionality."""
+        return _triangle_aggregate(self, "nanprod", axis, *args, **kwargs)
+
+    def var(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``var`` functionality."""
+        return _triangle_aggregate(self, "nanvar", axis, *args, **kwargs)
+
+    def std(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
+        """Refer to pandas for ``std`` functionality."""
+        return _triangle_aggregate(self, "nanstd", axis, *args, **kwargs)
+
+    def cumsum(
+        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+    ) -> Triangle:
+        """Refer to pandas for ``cumsum`` functionality."""
+        return _triangle_aggregate(self, "nancumsum", axis, *args, **kwargs)
+
+    def quantile(
+        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+    ) -> Triangle:
+        """Refer to pandas for ``quantile`` functionality."""
+        return _triangle_aggregate(self, "nanquantile", axis, *args, **kwargs)
+
+    def diff(
+        self, axis: str | int | None = None, *args: Any, **kwargs: Any
+    ) -> Triangle:
+        """Refer to pandas for ``diff`` functionality."""
+        return _triangle_aggregate(self, "diff", axis, *args, **kwargs)
+
+    def to_clipboard(self, *args: Any, **kwargs: Any) -> None:
+        """Refer to pandas for ``to_clipboard`` functionality."""
+        return self._df_passthru("to_clipboard", *args, **kwargs)
+
+    def to_csv(self, *args: Any, **kwargs: Any) -> str | None:
+        """Refer to pandas for ``to_csv`` functionality."""
+        return self._df_passthru("to_csv", *args, **kwargs)
+
+    def to_excel(self, *args: Any, **kwargs: Any) -> None:
+        """Refer to pandas for ``to_excel`` functionality."""
+        return self._df_passthru("to_excel", *args, **kwargs)
+
+    def to_json(self, *args: Any, **kwargs: Any) -> str | None:
+        """Refer to pandas for ``to_json`` functionality."""
+        return self._df_passthru("to_json", *args, **kwargs)
+
+    def to_html(self, *args: Any, **kwargs: Any) -> str | None:
+        """Refer to pandas for ``to_html`` functionality."""
+        return self._df_passthru("to_html", *args, **kwargs)
+
+    def to_dict(self, *args: Any, **kwargs: Any) -> Mapping | list[Mapping]:
+        """Refer to pandas for ``to_dict`` functionality."""
+        return self._df_passthru("to_dict", *args, **kwargs)
+
+    def unstack(self, *args: Any, **kwargs: Any) -> DataFrame | Series:
+        """Refer to pandas for ``unstack`` functionality."""
+        return self._df_passthru("unstack", *args, **kwargs)
+
+    def pivot(self, *args: Any, **kwargs: Any) -> DataFrame:
+        """Refer to pandas for ``pivot`` functionality."""
+        return self._df_passthru("pivot", *args, **kwargs)
+
+    def drop_duplicates(self, *args: Any, **kwargs: Any) -> DataFrame | None:
+        """Refer to pandas for ``drop_duplicates`` functionality."""
+        return self._df_passthru("drop_duplicates", *args, **kwargs)
+
+    def describe(self, *args: Any, **kwargs: Any) -> DataFrame:
+        """Refer to pandas for ``describe`` functionality."""
+        return self._df_passthru("describe", *args, **kwargs)
+
+    def melt(self, *args: Any, **kwargs: Any) -> DataFrame:
+        """Refer to pandas for ``melt`` functionality."""
+        return self._df_passthru("melt", *args, **kwargs)
+
+    def pct_change(self, *args: Any, **kwargs: Any) -> DataFrame:
+        """Refer to pandas for ``pct_change`` functionality."""
+        return self._df_passthru("pct_change", *args, **kwargs)
+
+    def _df_passthru(self, method: str, *args: Any, **kwargs: Any) -> Any:
+        return getattr(pd.DataFrame, method)(self.to_frame(), *args, **kwargs)
 
     def to_frame(
         self,
@@ -1301,220 +1443,134 @@ class TrianglePandas(_TrianglePandasBase):
         return result
 
 
-def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
+def _triangle_aggregate(
+    self: TrianglePandas,
+    method: str,
+    axis: str | int | None = None,
+    *args: Any,
+    **kwargs: Any,
+) -> Triangle:
     """
-    Aggregate Overrides in Triangle
+    Apply an array aggregation, preserving Triangle dimensions and metadata.
+
+    A singleton result is returned as a scalar unless ``keepdims=True``.
     """
-
-    def agg_func(
-        self: Triangle, axis: str | int | None = None, *args, **kwargs
-    ) -> Triangle | ndarray:
-        """
-        Applies the aggregation function specified by k from the outer function.
-
-        Parameters
-        ----------
-
-        self: Triangle
-            The triangle to which the aggregation function will be applied.
-
-        axis: str | int | None
-            The axis of the triangle to which the aggregation function will be applied.
-
-        Returns
-        -------
-
-        An aggregated Triangle or ndarray.
-        """
-        keepdims = kwargs.get("keepdims", None)
-        obj = self.copy()
-        auto_sparse: bool = kwargs.pop("auto_sparse", True)
-        if axis is None:
-            if max(obj.shape) == 1:
-                axis: int = 0
-            else:
-                axis: int = min([num for num, _ in enumerate(obj.shape) if _ != 1])
+    keepdims = kwargs.get("keepdims", None)
+    obj = self.copy()
+    auto_sparse: bool = kwargs.pop("auto_sparse", True)
+    if axis is None:
+        if max(obj.shape) == 1:
+            axis = 0
         else:
-            axis = self._get_axis(axis)
-        xp: ModuleType = obj.get_array_module()
-        func: Callable = getattr(xp, v)
-        kwargs.update({"keepdims": True})
-        # Apply the function on the requested axis.
-        if axis in [0, 1] and not obj.is_full:
-            with warnings.catch_warnings():
-                # the lower right half of an undeveloped triangle will always emit an
-                # empty or All-NaN slice warning when aggregating by index or column
-                # (depending on `func`; e.g. nanmean warns "empty slice",
-                # nanmax warns All-NaN slice
-                warnings.filterwarnings(
-                    "ignore",
-                    category=RuntimeWarning,
-                    message=".*empty slice.*",
-                )
-                warnings.filterwarnings(
-                    "ignore",
-                    category=RuntimeWarning,
-                    message=".*All-NaN slice.*",
-                )
-                obj.values = func(obj.values, axis=axis, *args, **kwargs)
-        else:
+            axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
+    else:
+        axis = self._get_axis(axis)
+    xp: ModuleType = obj.get_array_module()
+    func: Callable = getattr(xp, method)
+    kwargs.update({"keepdims": True})
+    # Apply the function on the requested axis.
+    if axis in [0, 1] and not obj.is_full:
+        with warnings.catch_warnings():
+            # the lower right half of an undeveloped triangle will always emit an
+            # empty or All-NaN slice warning when aggregating by index or column
+            # (depending on `func`; e.g. nanmean warns "empty slice",
+            # nanmax warns All-NaN slice
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*empty slice.*",
+            )
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*All-NaN slice.*",
+            )
             obj.values = func(obj.values, axis=axis, *args, **kwargs)
+    else:
+        obj.values = func(obj.values, axis=axis, *args, **kwargs)
 
-        # Aggregation function will collapse a dimension, so
-        # adjust the dimensions of the original object to match that of the aggregation.
-        if axis == 0 and obj.values.shape[axis] == 1 and len(obj.index) > 1:
-            obj.index = pd.DataFrame(
-                [["(All)"] * len(obj.key_labels)], columns=obj.key_labels
-            )
-        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.columns) > 1:
-            obj.columns = pd.Index([0], name="columns")
-        if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
-            obj.odims = obj.odims[0:1]
-        # If axis is development, set the ddims to be the valuation date.
-        if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
-            obj.ddims = pd.DatetimeIndex(
-                [self.valuation_date], dtype=__dt64_dtype__, freq=None
-            )
-        obj._set_slicers()
-        if auto_sparse:
-            obj._auto_sparse()
-        obj.values = cast("BackendArray", num_to_nan(obj.values))
-        if not keepdims and obj.shape == (1, 1, 1, 1):
-            return obj.values[0, 0, 0, 0]
-        else:
-            return obj
-
-    set_method(cls, agg_func, k)
-
-
-def add_groupby_agg_func(cls, k: str, v: str):
-    """Aggregate Overrides in GroupBy"""
-
-    def agg_func(self, *args, **kwargs):
-        from chainladder.utils import concat
-
-        obj = self.obj.copy()
-        auto_sparse = kwargs.pop("auto_sparse", True)
-        if db and obj.array_backend == "sparse":
-            _warn_dask_parallel_deprecated()
-
-            def aggregate(i, obj, axis, v):
-                return getattr(
-                    obj.iloc.__getitem__(tuple([slice(None)] * axis + [i])), v
-                )(axis, auto_sparse=False, keepdims=True)
-
-            bag = db.from_sequence(self.groups.indices.values())
-            bag = bag.map(aggregate, obj, self.axis, v)
-            values = bag.compute(scheduler="threads")
-        else:
-            values = [
-                getattr(
-                    obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
-                )(self.axis, auto_sparse=False, keepdims=True)
-                for i in self.groups.indices.values()
-            ]
-        obj = concat(values, axis=self.axis, ignore_index=True)
-        group_index = self.groups.first().index
-        if self.axis == 0:
-            if isinstance(group_index, pd.MultiIndex):
-                index = (
-                    pd
-                    .DataFrame(
-                        np.zeros(len(group_index)),
-                        index=group_index,
-                        columns=["_"],
-                    )
-                    .reset_index()
-                    .iloc[:, :-1]
-                )
-                obj.index = index
-            else:
-                index = pd.DataFrame(group_index)
-                obj.index = index
-        if self.axis == 1:
-            obj.columns = group_index
-        if self.axis == 2:
-            odims = self.obj._to_datetime(
-                pd.Series(self.groups.indices.keys()).to_frame(), [0]
-            )
-            obj.origin_grain = self.obj._get_grain(odims)
-            split = obj.origin_grain.split("-")
-            obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
-            obj.odims = odims.values
-        obj._set_slicers()
-        if auto_sparse:
-            obj._auto_sparse()
+    # Aggregation function will collapse a dimension, so
+    # adjust the dimensions of the original object to match that of the aggregation.
+    if axis == 0 and obj.values.shape[axis] == 1 and len(obj.index) > 1:
+        obj.index = pd.DataFrame(
+            [["(All)"] * len(obj.key_labels)], columns=obj.key_labels
+        )
+    if axis == 1 and obj.values.shape[axis] == 1 and len(obj.columns) > 1:
+        obj.columns = pd.Index([0], name="columns")
+    if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
+        obj.odims = obj.odims[0:1]
+    # If axis is development, set the ddims to be the valuation date.
+    if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
+        obj.ddims = pd.DatetimeIndex(
+            [self.valuation_date], dtype=__dt64_dtype__, freq=None
+        )
+    obj._set_slicers()
+    if auto_sparse:
+        obj._auto_sparse()
+    obj.values = cast("BackendArray", num_to_nan(obj.values))
+    if not keepdims and obj.shape == (1, 1, 1, 1):
+        return obj.values[0, 0, 0, 0]
+    else:
         return obj
 
-    set_method(cls=cls, func=agg_func, k=k)
 
+def _groupby_aggregate(
+    self: TriangleGroupBy, method: str, *args: Any, **kwargs: Any
+) -> Triangle:
+    """Aggregate each group and restore the grouped axis labels."""
+    from chainladder.utils import concat
 
-def add_df_passthru(cls, k):
-    """Pass Through of pandas functionality"""
+    obj = self.obj.copy()
+    auto_sparse = kwargs.pop("auto_sparse", True)
+    if db and obj.array_backend == "sparse":
+        _warn_dask_parallel_deprecated()
 
-    def df_passthru(self, *args, **kwargs):
-        return getattr(pd.DataFrame, k)(self.to_frame(), *args, **kwargs)
+        def aggregate(i, obj, axis, v):
+            return getattr(obj.iloc.__getitem__(tuple([slice(None)] * axis + [i])), v)(
+                axis, auto_sparse=False, keepdims=True
+            )
 
-    set_method(cls, df_passthru, k)
-
-
-def set_method(
-    cls: Type[TrianglePandas | TriangleGroupBy], func: Callable, k: str
-) -> None:
-    """
-    Assigns methods to a class.
-
-    Parameters
-    ----------
-
-    cls: Type[TrianglePandas | TriangleGroupBy]
-        Class to be modified.
-
-    func: Callable
-        Method to be added to the class supplied to parameter cls.
-
-    k: str
-        Name of the method to be added to the class supplied to parameter cls.
-
-    Returns
-    -------
-
-    None
-    """
-    func.__doc__ = "Refer to pandas for ``{}`` functionality.".format(k)
-    func.__name__ = k
-    setattr(cls, func.__name__, func)
-
-
-df_passthru = (
-    [
-        "to_clipboard",
-        "to_csv",
-        "to_excel",
-        "to_json",
-        "to_html",
-    ]
-    + [
-        "to_dict",
-        "unstack",
-        "pivot",
-        "drop_duplicates",
-        "describe",
-        "melt",
-    ]
-    + [
-        "pct_chg",
-    ]
-)
-for method in df_passthru:
-    add_df_passthru(TrianglePandas, method)
-
-agg_funcs = ["sum", "mean", "median", "max", "min", "prod", "var"]
-agg_funcs = agg_funcs + ["std", "cumsum", "quantile"]
-for func in agg_funcs:
-    add_groupby_agg_func(TriangleGroupBy, func, func)
-agg_funcs = {item: "nan" + item for item in agg_funcs}
-more_aggs = ["diff"]
-agg_funcs = {**agg_funcs, **{item: item for item in more_aggs}}
-for method, func in agg_funcs.items():
-    add_triangle_agg_func(TrianglePandas, method, func)
+        bag = db.from_sequence(self.groups.indices.values())
+        bag = bag.map(aggregate, obj, self.axis, method)
+        values = bag.compute(scheduler="threads")
+    else:
+        values = [
+            getattr(
+                obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), method
+            )(self.axis, auto_sparse=False, keepdims=True)
+            for i in self.groups.indices.values()
+        ]
+    obj = concat(values, axis=self.axis, ignore_index=True)
+    group_index = self.groups.first().index
+    if self.axis == 0:
+        if isinstance(group_index, pd.MultiIndex):
+            index = (
+                pd
+                .DataFrame(
+                    np.zeros(len(group_index)),
+                    index=group_index,
+                    columns=["_"],
+                )
+                .reset_index()
+                .iloc[:, :-1]
+            )
+            obj.index = index
+        else:
+            index = pd.DataFrame(group_index)
+            obj.index = index
+    if self.axis == 1:
+        obj.columns = group_index
+    if self.axis == 2:
+        odims = self.obj._to_datetime(
+            pd.Series(self.groups.indices.keys()).to_frame(), [0]
+        )
+        if odims is None:
+            raise ValueError("Group labels could not be converted to origin dates.")
+        obj.origin_grain = self.obj._get_grain(odims)
+        split = obj.origin_grain.split("-")
+        obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
+        obj.odims = odims.values
+    obj._set_slicers()
+    if auto_sparse:
+        obj._auto_sparse()
+    return obj
