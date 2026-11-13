@@ -1,3 +1,24 @@
+"""
+Tests for ClarkLDF against the worked example in clark2003 (keys refer to
+docs/library/references.bib). The example fits the ``genins`` triangle with
+premium 10,000,000 + 400,000 per year for the Cape Cod method. What the tests
+pin to the paper, by fit:
+
+=========================  ==========  ==========  ==========  ===========
+Attribute                  LDF,        LDF,        Cape Cod,   Cape Cod,
+                           loglogist.  Weibull     loglogist.  Weibull
+=========================  ==========  ==========  ==========  ===========
+omega_, theta_             p. 61       p. 65       p. 67       --
+G_ at the average ages     p. 63       p. 64       --          --
+elr_                       --          --          p. 67       --
+scale_                     p. 61       --          p. 68       --
+incremental_fits_          --          --          Table 2.1   --
+=========================  ==========  ==========  ==========  ===========
+
+The paper prints no Cape Cod fit with the Weibull curve, so that fit is not
+pinned to published numbers.
+"""
+
 from __future__ import annotations
 
 import numpy as np
@@ -32,6 +53,66 @@ def clark_premium(clark_genins):
     premium = clark_genins.latest_diagonal * 0
     premium.values = (10_000_000 + 400_000 * np.arange(10))[None, None, :, None]
     return premium
+
+
+# Average ages (x) of the paper's reserve tables, 1991 to 2000, in months.
+AVERAGE_AGES = [114, 102, 90, 78, 66, 54, 42, 30, 18, 6]
+
+# Fitted LDFs at those ages for the LDF method, clark2003, p. 63
+# (Loglogistic) and p. 64 (Weibull).
+LOGLOGISTIC_LDF = [
+    1.2946,
+    1.3456,
+    1.4135,
+    1.5077,
+    1.6452,
+    1.8604,
+    2.2338,
+    2.9991,
+    5.1593,
+    21.1073,
+]
+WEIBULL_LDF = [
+    1.0525,
+    1.0806,
+    1.1237,
+    1.1904,
+    1.2963,
+    1.4717,
+    1.7853,
+    2.4277,
+    4.1764,
+    15.6937,
+]
+
+
+def test_clark_ldf_loglogistic_parameters(clark_genins):
+    """LDF method Loglogistic fit: omega and theta match clark2003, p. 61."""
+    model = cl.ClarkLDF().fit(clark_genins)
+    assert model.omega_.iloc[0, 0] == pytest.approx(1.434294, rel=PAPER_RTOL)
+    assert model.theta_.iloc[0, 0] == pytest.approx(48.6249, rel=PAPER_RTOL)
+
+
+def test_clark_ldf_weibull_parameters(clark_genins):
+    """LDF method Weibull fit: theta and omega match clark2003, p. 65."""
+    model = cl.ClarkLDF(growth="weibull").fit(clark_genins)
+    assert model.omega_.iloc[0, 0] == pytest.approx(1.296906, rel=PAPER_RTOL)
+    assert model.theta_.iloc[0, 0] == pytest.approx(48.88453, rel=PAPER_RTOL)
+
+
+@pytest.mark.parametrize(
+    "growth, expected",
+    [("loglogistic", LOGLOGISTIC_LDF), ("weibull", WEIBULL_LDF)],
+)
+def test_clark_ldf_growth_at_average_ages(clark_genins, growth, expected):
+    """
+    1 / G_ at the paper's average ages gives the fitted LDF column of the
+    reserve tables in clark2003: p. 63 for the Loglogistic curve and p. 64
+    for the Weibull curve.
+    """
+    model = cl.ClarkLDF(growth=growth).fit(clark_genins)
+    growth_values = model.G_(np.array(AVERAGE_AGES, dtype=float)).values
+    assert 1 / growth_values.ravel() == pytest.approx(expected, rel=PAPER_RTOL)
 
 
 def test_clark_ldf_scale(clark_genins):
@@ -76,6 +157,13 @@ def test_clark_cape_cod_incremental_fits(clark_genins, clark_premium):
     assert model.incremental_fits_.values[0, 0] == pytest.approx(
         expected, rel=PAPER_RTOL, nan_ok=True
     )
+
+
+def test_clark_cape_cod_parameters(clark_genins, clark_premium):
+    """Cape Cod Loglogistic fit: omega and theta match clark2003, p. 67."""
+    model = cl.ClarkLDF().fit(clark_genins, sample_weight=clark_premium)
+    assert model.omega_.iloc[0, 0] == pytest.approx(1.447634, rel=PAPER_RTOL)
+    assert model.theta_.iloc[0, 0] == pytest.approx(48.0205, rel=PAPER_RTOL)
 
 
 def test_clark_cape_cod_sparse_premium(clark_genins, clark_premium):
