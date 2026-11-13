@@ -3,42 +3,39 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import pandas as pd
-import numpy as np
 import warnings
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Literal, Optional
+
+import pandas as pd
+import numpy as np
 
 from chainladder import (
-    __dt64_unit__,
     __dt64_dtype__,
-    options,
+    __dt64_unit__,
     _deprecated_backend_message,
+    options,
 )
-
+from chainladder.adjustments.disposal import DisposalMixin
 from chainladder.core.common import Common
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
 from chainladder.core.io import TriangleIO
 from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
-
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
-from chainladder.adjustments.disposal import DisposalMixin
-
-from typing import Literal, Optional, TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from chainladder import Triangle
-    from pandas import DataFrame, Series
+    from types import ModuleType
+
     from numpy.typing import ArrayLike
+    from pandas import DataFrame, Series
+    from pandas._libs.tslibs.timestamps import Timestamp
     from pandas.core.indexes.datetimes import DatetimeIndex
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
-    from pandas._libs.tslibs.timestamps import Timestamp
-    from types import ModuleType
 
 
 class TriangleBase(
@@ -187,7 +184,8 @@ class TriangleBase(
             age_series: Series = pd.to_numeric(data[age[0]]).round().astype(int)
             grain_base = origin_grain.split("-")[0]
             if grain_base == "2Q":
-                # no native pandas semiannual period; only calendar Jan/Jul anchors supported
+                # no native pandas semiannual period; only calendar Jan/Jul
+                # anchors supported
                 if origin_grain not in ("2Q", "2Q-DEC"):
                     raise ValueError(
                         "Development expressed as an age is not yet supported for a "
@@ -273,7 +271,8 @@ class TriangleBase(
                 warnings.warn(
                     _deprecated_backend_message("dask"),
                     DeprecationWarning,
-                    stacklevel=5,  # set to 5 to bypass the newly added deprecation decorators
+                    # set to 5 to bypass the newly added deprecation decorators
+                    stacklevel=5,
                 )
             # Dask dataframes are mutated.
             data["__origin__"] = origin_date
@@ -332,16 +331,18 @@ class TriangleBase(
         Parameters
         ----------
         data_agg: DataFrame
-            A DataFrame consisting of the triangle input data aggregated to the grain specified in the
-            Triangle constructor.
+            A DataFrame consisting of the triangle input data aggregated to the
+            grain specified in the Triangle constructor.
         index: list
-            The list of columns of the input data supplied to the index argument of the Triangle constructor.
+            The list of columns of the input data supplied to the index argument
+            of the Triangle constructor.
 
         Returns
         -------
         tuple[np.ndarray, np.ndarray]
-            A tuple consisting of a ndarray of the unique levels of the index, and another ndarray consisting of their
-            positions within the supplied data_agg.
+            A tuple consisting of a ndarray of the unique levels of the index,
+            and another ndarray consisting of their positions within the supplied
+            data_agg.
         """
 
         # Get unique values of index and assign an integer value to each one.
@@ -451,7 +452,8 @@ class TriangleBase(
             freq=development_grain,
         ).to_timestamp(how="e")
 
-        # If the development is semi-annual, we need to adjust further because of "2Q-DEC".
+        # If the development is semi-annual, we need to adjust further
+        # because of "2Q-DEC".
         if development_grain[:2] == "2Q":
             from pandas.tseries.offsets import DateOffset
 
@@ -537,10 +539,12 @@ class TriangleBase(
             target_field: Series = data[fields].iloc[:, 0]
 
         if hasattr(target_field, "dt"):
-            # If the target field is already a non-period datetime, no conversion is needed.
+            # If the target field is already a non-period datetime,
+            # no conversion is needed.
             target: Series = target_field
-            # If the target field is a period, convert to timestamp. period_end is a boolean that if true,
-            # means that the timestamp should be the end of the period.
+            # If the target field is a period, convert to timestamp. period_end
+            # is a boolean that if true,means that the timestamp should be the
+            # end of the period.
             if isinstance(target.iloc[0], pd.Period):
                 return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
         else:
@@ -572,14 +576,16 @@ class TriangleBase(
                 raise ValueError(
                     "Unable to infer datetime for field(s): "
                     + str(fields)
-                    + ". Please check the underlying data or any supplied format arguments."
+                    + ". Please check the underlying data or any supplied "
+                    + "format arguments."
                 )
             if not matched_a_format and pd.api.types.is_numeric_dtype(datetime_arg):
                 # unformatted numeric input falls through to pandas treating it
                 # as nanoseconds since epoch, not an actual date
                 raise ValueError(
-                    "Development lags could not be determined. This may be because `valuation` "
-                    "is expressed as an age where a date-like vector is required"
+                    "Development lags could not be determined. This may be because "
+                    "`valuation` is expressed as an age where a date-like vector is "
+                    "required"
                 )
             target: Series = target_field.map(datetime_mapping)
 
@@ -626,7 +632,8 @@ class TriangleBase(
                 )
                 end: str = "DEC" if end in ["JUN", "DEC"] and grain == "2Q" else end
             else:
-                # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
+                # If inferred to beginning of calendar period, 1/1 from YYYY,
+                # 4/1 from YYYYQQ
                 if (
                     dates.dt
                     .strftime("%m%d")
@@ -662,7 +669,8 @@ class TriangleBase(
     ) -> ModuleType:
         """
         Returns the module pertaining to the backend underlying the supplied array.
-        If no array is supplied, this method will return the array_backend of the TriangleBase.
+        If no array is supplied, this method will return the array_backend of the
+        TriangleBase.
 
         Parameters
         ----------
@@ -671,8 +679,8 @@ class TriangleBase(
 
         Returns
         -------
-            The backend module. For example, if the backend is numpy, it will return the "np" that you
-            would get if you ran the statement, "import numpy as np".
+            The backend module. For example, if the backend is numpy, it will return
+            the "np" that you would get if you ran the statement, "import numpy as np".
 
         Examples
         --------
@@ -712,12 +720,16 @@ class TriangleBase(
                 + ", ".join([*modules])
             ) from e
 
-    def _auto_sparse(self) -> Triangle:
+    def _auto_sparse(self) -> None:
         """
         Auto sparsifies at 30Mb or more and 20% density or less.
+
+        Returns
+        -------
+            None
         """
         if not options.AUTO_SPARSE:
-            return self
+            return None
         n = np.prod(list(self.shape) + [8 / 1e6])
         if (
             self.array_backend == "numpy"
@@ -729,7 +741,7 @@ class TriangleBase(
             self.values.density < 0.2 and n > 30
         ):
             self.set_backend("numpy", inplace=True)
-        return self
+        return None
 
     @property
     def valuation(self):

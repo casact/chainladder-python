@@ -89,7 +89,8 @@ def test_link_ratio_sets_pattern_metadata(raa: Triangle) -> None:
     assert lr.is_pattern
     assert not lr.is_cumulative
     # Both the origin and development axes shrink by one: development because
-    # ratios need adjacent pairs of columns, and origin since the last period only has 1 value.
+    # ratios need adjacent pairs of columns, and origin since the last period
+    # only has 1 value.
     assert lr.shape == (raa.shape[0], raa.shape[1], raa.shape[2] - 1, raa.shape[3] - 1)
 
 
@@ -270,7 +271,7 @@ def test_trend(raa, atol):
 
 def test_trend_invalid_axis_raises(raa: Triangle) -> None:
     """
-    trend() only supports trending along the origin or valuation axes
+    trend() only supports trending along the origin or valuationaxes
     (accepting either the string names or their positional equivalents, 2 and
     -2). Any other axis value should raise ValueError rather than silently
     doing something unexpected.
@@ -468,7 +469,10 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
 
 
 def test_triangle_columns_setter(raa):
-    """Setting Triangle.columns should update columns and slicers, and validate lengths."""
+    """
+    Setting Triangle.columns should update columns and slicers, and
+    validate lengths.
+    """
     tri = raa.copy()
     tri.columns = ["NewColumn"]
     assert list(tri.columns) == ["NewColumn"]
@@ -483,7 +487,10 @@ def test_triangle_columns_setter(raa):
 
 
 def test_triangle_axes(raa):
-    """Triangle.axes should return a list of [index, columns, origin, development]."""
+    """
+    Triangle.axes should return a list of
+    [index, columns, origin, development].
+    """
     axes = raa.axes
     assert isinstance(axes, list)
     assert len(axes) == 4
@@ -540,7 +547,8 @@ def test_triangle_axis_descriptor():
     assert 0 in obj._axes
     pd.testing.assert_frame_equal(obj.index, df)
 
-    # When self.values is None and 0 in _axes, _set_index checks against obj.index
+    # When self.values is None and 0 in _axes,
+    # _set_index checks against obj.index
     df_same_len = pd.DataFrame({"Company": ["C", "D"]})
     obj.index = df_same_len
     pd.testing.assert_frame_equal(obj.index, df_same_len)
@@ -548,7 +556,8 @@ def test_triangle_axis_descriptor():
     with pytest.raises(ValueError, match="length mismatch"):
         obj.index = pd.DataFrame({"Company": ["A", "B", "C"]})
 
-    # When self.values is not None, _set_index checks against range(self.values.shape[0])
+    # When self.values is not None,
+    # _set_index checks against range(self.values.shape[0])
     obj.values = np.zeros((2, 3))
     obj.index = df
     with pytest.raises(ValueError, match="length mismatch"):
@@ -599,7 +608,10 @@ def test_triangle_index_property(raa):
 
 
 def test_prep_index_single_element_different_key_labels(raa):
-    """Verify arithmetic index broadcasting when both triangles have 1 row but differing key_labels."""
+    """
+    Verify arithmetic index broadcasting when both triangles
+    have 1 row but differing key_labels.
+    """
     x = raa.copy()
     x.key_labels = ["LabelA"]
     y = raa.copy()
@@ -677,7 +689,9 @@ def test_series_indexing(raa):
 
 
 class TestLegacyPickleCompatibility:
-    """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
+    """
+    Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning.
+    """
 
     def test_legacy_kdims_vdims_migration(self, raa):
         # 1. Simulate legacy serialized Triangle containing kdims and vdims
@@ -770,10 +784,9 @@ def test_dev_to_val_inplace_on_val_tri_returns_self(qtr: Triangle) -> None:
     """
     val_tri = qtr.dev_to_val()
     assert val_tri.is_val_tri
-
-    result = val_tri.dev_to_val(inplace=True)
-
-    assert result is val_tri
+    new_val_tri = val_tri.copy()
+    new_val_tri.dev_to_val(inplace=True)
+    assert new_val_tri == val_tri
 
 
 def test_valdev2(qtr):
@@ -789,8 +802,25 @@ def test_valdev3(qtr):
 
 
 def test_valdev4(raa: Triangle) -> None:
-    lhs = raa.dev_to_val()[raa.dev_to_val().development >= "1989"].values.flatten()
-    rhs = raa[raa.valuation >= "1989"].dev_to_val().values.flatten()
+    """
+    Tests slicing using the development axis of a valuation Triangle
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
+    lhs = (
+        raa
+        .dev_to_val()[raa.dev_to_val().development >= "1989"]
+        .to_frame()
+        .values.flatten()
+    )
+    rhs = raa[raa.valuation >= "1989"].dev_to_val().to_frame().values.flatten()
     np.testing.assert_array_equal(lhs[~np.isnan(lhs)], rhs[~np.isnan(rhs)])
 
 
@@ -829,8 +859,8 @@ def test_dropna(clrd):
 
 def test_dropna_latest_diagonal(raa: Triangle) -> None:
     """
-    dropna() on a single-development-period triangle (shape[-1] == 1), where first origin period is nan.
-    First origin period should be eliminated.
+    dropna() on a single-development-period triangle (shape[-1] == 1), where
+    first origin period is nan. First origin period should be eliminated.
 
     Parameters
     ----------
@@ -1077,7 +1107,10 @@ def test_drop_level_non_index_raises(raa):
 
 
 def test_drop_development_updates_valuation_date(raa):
-    """Dropping the latest development period on a valuation triangle updates valuation_date."""
+    """
+    Dropping the latest development period on a valuation triangle
+    updates valuation_date.
+    """
     raa_val = raa.dev_to_val()
     latest_dev = raa_val.development.max()
     dropped = raa_val.drop(development=latest_dev)
@@ -1091,7 +1124,10 @@ def test_drop_unsupported_axis_raises(raa):
 
 
 def test_drop_ultimate_column_updates_is_ultimate(raa):
-    """Dropping the ultimate development column updates is_ultimate property to False."""
+    """
+    Dropping the ultimate development column updates is_ultimate property
+    to False.
+    """
     full_tri = cl.Chainladder().fit(raa).full_expectation_
     assert full_tri.is_ultimate
     dropped = full_tri.drop(development=full_tri.development.max())
@@ -1111,7 +1147,10 @@ def test_drop_interior_development_raises(raa):
 
 
 def test_drop_invalid_errors_raises(raa):
-    """Passing an invalid errors parameter (e.g. errors='foo') should raise ValueError."""
+    """
+    Passing an invalid errors parameter (e.g. errors='foo') should
+    raise ValueError.
+    """
     with pytest.raises(ValueError, match="errors must be 'raise' or 'ignore'"):
         raa.drop(development=120, errors="foo")
 
@@ -1313,8 +1352,8 @@ def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     dense = small_prism.set_backend("numpy")
     cl.options.set_option("AUTO_SPARSE", False)
     try:
-        result = dense._auto_sparse()
-        assert result is dense
+        result = dense.copy()
+        result._auto_sparse()
         assert result.array_backend == "numpy"
     finally:
         cl.options.reset_option("AUTO_SPARSE")
@@ -1467,9 +1506,9 @@ def test_auto_sparse_converts_numpy_to_sparse(prism: Triangle) -> None:
     dense = small_prism.set_backend("numpy")
     assert dense.array_backend == "numpy"
 
-    result = dense._auto_sparse()
+    result = dense.copy()
+    result._auto_sparse()
 
-    assert result is dense
     assert result.array_backend == "sparse"
 
 
@@ -2780,8 +2819,9 @@ def test_odd_quarter_end():
 
 
 def test_single_valuation_date_preserves_exact_date():
-    # Test that a single development date is preserved exactly and not converted to fiscal year
-    # Regression test for issue where 202510 was incorrectly converted to 2026-09 instead of 2025-10
+    # Test that a single development date is preserved exactly and not converted
+    # to fiscal year. Regression test for issue where 202510 was incorrectly converted
+    # to 2026-09 instead of 2025-10
     data = pd.DataFrame({
         "Accident Year Month": [202002, 202003, 202105, 202201, 202301, 202401, 202501],
         "Calendar Year Month": [202510] * 7,  # Single valuation date
@@ -2922,12 +2962,25 @@ def test_oxdx_triangle():
                     assert np.all(
                         tri.development == [y - j + x * y for x in range(width)]
                     )
-                    # there's a known bug with origin that displays incorrect year when origin doesn't start on 1/1
+                    # there's a known bug with origin that displays incorrect year
+                    # when origin doesn't start on 1/1
                     # if x == 12:
                     # assert np.all(tri.origin == ['2020','2021'])
                     # elif x in [6,3]:
-                    # assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
-                    # assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))
+                    # assert np.all(
+                    #    tri.origin.strftime('%Y')
+                    #    == pd.to_datetime(tri.odims).strftime('%Y')
+                    # )
+                    # assert np.all(
+                    #    tri.origin.strftime('%q').values.astype(float)
+                    #    == np.ceil(
+                    #        (
+                    #            pd.to_datetime(tri.odims)
+                    #            .strftime('%m').values.astype(int)
+                    #             - 0.5
+                    #        ) / 3
+                    #    )
+                    # )
 
 
 def test_fillzero():
@@ -2965,8 +3018,9 @@ def test_2x2_triangle():
 
 def test_triangle_init_from_dict() -> None:
     """
-    Tests the initialization of a triangle by supplying a dict to the data parameter. The triangle
-    created should be equal to that of one created with a pandas DataFrame containing the same data.
+    Tests the initialization of a triangle by supplying a dict to the data parameter.
+    The triangle created should be equal to that of one created with a pandas DataFrame
+    containing the same data.
     """
 
     # Common data.
@@ -3137,21 +3191,25 @@ def test_validate_assumption_axis2(raa: Triangle) -> None:
 
 
 def test_xs(clrd):
-    # when slicing with .loc on the first term in the index, Triangle will drop the term
+    # when slicing with .loc on the first term in the index, Triangle will
+    # drop the term
     assert clrd.xs("Adriatic Ins Co").equals(clrd.loc["Adriatic Ins Co"])
     assert clrd.xs("Adriatic Ins Co").index.equals(clrd.loc["Adriatic Ins Co"].index)
-    # when slicing with .loc on the all term in the index, Triangle will not drop any term
+    # when slicing with .loc on the all term in the index, Triangle will
+    # not drop any term
     assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=False).equals(
         clrd.loc["Agway Ins Co", "comauto"]
     )
     assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=False).index.equals(
         clrd.loc["Agway Ins Co", "comauto"].index
     )
-    # when all index terms are included in xs and drop_level is True, the default 'Total' index value is provided
+    # when all index terms are included in xs and drop_level is True, the
+    # default 'Total' index value is provided
     assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=True).index.equals(
         cl.load_sample("genins").index
     )
-    # when slicing with .loc on the second or subsequent terms in the index, Triangle will not drop the term
+    # when slicing with .loc on the second or subsequent terms in the index,
+    # Triangle will not drop the term
     assert clrd.xs("comauto", level=1, drop_level=False).equals(
         clrd.loc[clrd["LOB"] == "comauto"]
     )
@@ -3204,8 +3262,8 @@ def test_get_array_module_invalid_backend_raises(raa: Triangle) -> None:
 
 def test_set_development_no_development_column() -> None:
     """
-    Initialize a triangle without a development dimension specified. Development will default to being
-    a single period set to the latest origin period.
+    Initialize a triangle without a development dimension specified. Development will
+    default to being a single period set to the latest origin period.
 
     Returns
     -------
@@ -3360,7 +3418,8 @@ def test_set_development_bare_years_unaffected_by_age_support() -> None:
 
 def test_input_validation_non_numeric_columns_raises() -> None:
     """
-    Initialize a triangle with reported losses as an invalid string data type. Should raise a TypeError.
+    Initialize a triangle with reported losses as an invalid string data type.
+    Should raise a TypeError.
 
     Returns
     -------
@@ -3438,7 +3497,8 @@ def test_get_axis_value(raa) -> None:
 
 def test_to_datetime_uninferrable_format_raises() -> None:
     """
-    Initialize a triangle with incorrect date format on the origin axis. Should raise a ValueError.
+    Initialize a triangle with incorrect date format on the origin axis.
+    Should raise a ValueError.
 
     Returns
     -------
@@ -3461,8 +3521,8 @@ def test_to_datetime_uninferrable_format_raises() -> None:
 
 def test_set_backend_via_ldf(raa: Triangle) -> None:
     """
-    Call set_backend on a fitted estimator. The estimator has no array_backend attribute
-    of its own, so set_backend resolves the old backend through ldf_.
+    Call set_backend on a fitted estimator. The estimator has no array_backend
+    attribute of its own, so set_backend resolves the old backend through ldf_.
 
     Parameters
     ----------
@@ -3480,8 +3540,8 @@ def test_set_backend_via_ldf(raa: Triangle) -> None:
 
 def test_set_backend_no_array_backend_raises() -> None:
     """
-    Call set_backend on an unfitted estimator. The estimator has neither array_backend
-    nor ldf_, so set_backend raises ValueError.
+    Call set_backend on an unfitted estimator. The estimator has neither
+    array_backend nor ldf_, so set_backend raises ValueError.
 
     Returns
     -------
@@ -3519,8 +3579,8 @@ def test_set_backend_inplace_updates_array_backend_attr(raa: Triangle) -> None:
 def test_set_backend_deep_propagates_to_nested_common(raa: Triangle) -> None:
     """
     set_backend with deep=True iterates vars(self) and recursively converts every
-    nested Common instance. Without deep=True, the nested
-    attributes keep their original backend; with deep=True all are converted.
+    nested Common instance. Without deep=True, the nested attributes keep their
+    original backend; with deep=True all are converted.
 
     Parameters
     ----------
@@ -3546,8 +3606,8 @@ def test_set_backend_deep_propagates_to_nested_common(raa: Triangle) -> None:
 def test_set_backend_inplace_mutates_values(raa: Triangle) -> None:
     """
     set_backend(inplace=True) reassigns self.values.
-    Verify the in-place mutation produces the correct array type: numpy to sparse yields a COO,
-    sparse to numpy yields an ndarray.
+    Verify the in-place mutation produces the correct array type: numpy to sparse
+    yields a COO, sparse to numpy yields an ndarray.
 
     Parameters
     ----------
@@ -3765,7 +3825,7 @@ def test_feed_age_into_valuation_raises() -> None:
 
 def test_fill(clrd: Triangle) -> None:
     """
-    ``Fill`` method works as intended
+    ``fill`` method works as intended
     """
     fill_tri = clrd.iloc[2:4, 4:6].fill(100)
     # (10 + 1) * 10 / 2 is the number of valid values in one single triangle
@@ -3777,11 +3837,36 @@ def test_fill(clrd: Triangle) -> None:
 
 def test_full_fill(raa: Triangle) -> None:
     """
-    ``Fill`` method works as intended on full triangle
+    ``fill`` method works as intended on full triangle
     """
     full_tri = cl.Chainladder().fit(raa).full_triangle_
     fill_full_tri = full_tri.fill(200)
     assert np.all(fill_full_tri.values == np.broadcast_to([200], (1, 1, 10, 12)))
+
+
+def test_dev_val_inplace(raa: Triangle) -> None:
+    """
+    ``dev_to_val`` and ``val_to_dev`` methods respect ``inplace``
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    raa_copy = raa.copy()
+    raa_copy2 = raa.copy()
+    assert raa_copy2.dev_to_val(True) is None
+    assert raa_copy == raa
+    assert raa_copy2 == raa_copy.dev_to_val()
+    raa_copy = raa.copy().dev_to_val()
+    raa_copy2 = raa_copy.copy()
+    assert raa_copy2.val_to_dev(True) is None
+    assert raa_copy2 == raa
+    assert raa_copy == raa_copy2.dev_to_val()
 
 
 def test_json_roundtrip_preserves_dataframe_index(raa, clrd) -> None:
@@ -3806,7 +3891,9 @@ def test_triangle_copy_isolated_index(raa) -> None:
 
 
 def test_triangle_index_setter_resets_row_index(raa) -> None:
-    """Assigning a DataFrame with non-default index to Triangle.index resets row index."""
+    """
+    Assigning a DataFrame with non-default index to Triangle.index resets row index.
+    """
     custom_df = pd.DataFrame({"Total": ["Total"]}, index=[42])
     raa1 = raa.copy()
     raa1.index = custom_df
@@ -3818,7 +3905,9 @@ def test_triangle_index_setter_resets_row_index(raa) -> None:
 
 
 def test_sort_index_inplace(clrd: Triangle) -> None:
-    """sort_index with inplace=True updates values and index in sync without crashing."""
+    """
+    sort_index with inplace=True updates values and index in sync without crashing.
+    """
     shuffled = clrd.iloc[::-1].copy()
     result = shuffled.sort_index(inplace=True)
     assert result is shuffled
@@ -3827,7 +3916,9 @@ def test_sort_index_inplace(clrd: Triangle) -> None:
 
 
 def test_duplicate_columns_assignment(raa) -> None:
-    """Assigning to duplicate column label updates first matching column without error."""
+    """
+    Assigning to duplicate column label updates first matching column without error.
+    """
     r1 = raa.copy()
     r1.columns = ["a"]
     r2 = raa.copy()
