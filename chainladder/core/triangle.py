@@ -7,24 +7,24 @@ Define the Triangle class, the core data structure representing actuarial triang
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import pandas as pd
-import numpy as np
 import warnings
+
+import numpy as np
+import pandas as pd
+
+from chainladder import __dt64_dtype__, _warn_dask_parallel_deprecated, options
+from chainladder._config.deprecation import _deprecated_rename_argument
+from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
 from chainladder.core.base import TriangleBase
-from chainladder.core.axis import TriangleAxis
-from chainladder.core.axis import _set_columns
-from chainladder.core.axis import _set_index
-from chainladder.utils.sparse import sp
-from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
+from chainladder.core.slice import VirtualColumns
+from chainladder.utils.sparse import sp
 from chainladder.utils.utility_functions import (
     concat,
     num_to_nan,
     num_to_value,
     to_period,
 )
-from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
-from chainladder._config.deprecation import _deprecated_rename_argument
 
 try:
     import dask.bag as db
@@ -32,21 +32,22 @@ except ImportError:
     db = None
 
 from typing import (
+    TYPE_CHECKING,
     Any,
-    cast,
     Literal,
     Optional,
-    TYPE_CHECKING,
     Self,
+    cast,
 )
 
 if TYPE_CHECKING:
-    from pandas import DataFrame, Series
-    from chainladder.core.style import Styler
-    from chainladder.core.typing import BackendArray
     from numpy.typing import ArrayLike
+    from pandas import DataFrame, Series
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
+
+    from chainladder.core.style import Styler
+    from chainladder.core.typing import BackendArray
 
 
 class Triangle(TriangleBase):
@@ -135,11 +136,13 @@ class Triangle(TriangleBase):
     development_grain: str
         The grain of the development vector ('Y', 'S', 'Q', 'M')
     shape: tuple
-        The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
+        The 4D shape of the triangle instance with axes corresponding to
+        (index, columns, origin, development)
     link_ratio, age_to_age: Triangle
         Displays age-to-age ratios for the triangle.
     disposal_rate_tri: Triangle
-        Displays actual disposal rates by origin and development; must have ``ultimate_``
+        Displays actual disposal rates by origin and development; must have
+        ``ultimate_``
     valuation_date : date
         The latest valuation date of the data
     latest_diagonal: Triangle
@@ -671,8 +674,9 @@ class Triangle(TriangleBase):
 
         if cumulative is None:
             warnings.warn(
-                "The cumulative property of your triangle is not set. This may result in "
-                "undesirable behavior. In a future release this will result in an error."
+                "The cumulative property of your triangle is not set. "
+                "This may result in undesirable behavior. In a future "
+                "release this will result in an error."
             )
 
         self.is_cumulative: bool = cumulative
@@ -1150,7 +1154,7 @@ class Triangle(TriangleBase):
 
             True
         """
-        return self._pattern
+        return getattr(self, "_pattern", False)
 
     @is_pattern.setter
     def is_pattern(self, pattern: bool):
@@ -1159,7 +1163,8 @@ class Triangle(TriangleBase):
     @property
     def is_disposal_rate(self) -> bool:
         """
-        Indicates whether the Triangle holds disposal rates (additive ratios going from head to tail)
+        Indicates whether the Triangle holds disposal rates (additive ratios
+        going from head to tail)
         """
         if hasattr(self, "_is_disposal_rate"):
             return self._is_disposal_rate
@@ -1173,7 +1178,8 @@ class Triangle(TriangleBase):
         self, X: Triangle, sample_weight: Triangle | None = None
     ) -> Triangle:
         """
-        Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
+        Vertically align a selected pattern to origin period latest diagonal.
+        Triangle must be a selected pattern.
 
         Parameters
         ----------
@@ -1308,9 +1314,10 @@ class Triangle(TriangleBase):
     @property
     def link_ratio(self) -> Triangle:
         """
-        Displays age-to-age ratios for the triangle. If the calling Triangle object already has the
-        self.is_pattern set to true (i.e., it is already a set of link ratios or development patterns),
-        this property simply returns itself.
+        Displays age-to-age ratios for the triangle. If the calling Triangle
+        object already has the self.is_pattern set to true (i.e., it is already
+        a set of link ratios or development patterns), this property simply
+        returns itself.
 
         Returns
         -------
