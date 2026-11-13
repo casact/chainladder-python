@@ -311,9 +311,9 @@ class Development(DevelopmentBase):
     ..  testoutput::
 
                   industry  standalone
-        comauto    1743192     1683207
+        comauto    1743192     1683249
         medmal     1330330     1455883
-        othliab    1640597   -14285800
+        othliab    1640597   -14285874
         ppauto    17138458    17327738
         prodliab    531648      577127
         wkcomp     2777812     2498151
