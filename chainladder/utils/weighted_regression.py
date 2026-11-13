@@ -262,17 +262,32 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def loglinear_interpolation(self, y):
-        """Use Cases: generally for filling in last element of sigma_"""
+        """
+        Fill undefined sigmas by regressing log(sigma) on development period.
+
+        As in R's ChainLadder (``estimate.sigma``), only positive sigmas enter
+        the regression: a zero sigma has no logarithm and would dominate the
+        fit. Zero sigmas are not filled. Where fewer than three positive sigmas
+        remain, the fill falls back to Mack's approximation. R's ``Mack.S.E``
+        does the same for a single point, and for two points, where the
+        slope's p-value is undefined.
+        """
         from chainladder.utils.utility_functions import num_to_nan
 
         xp = self.xp
-        ly = y.copy()
-        ly = xp.log(xp.where(ly == 0, 1e-320, ly))
+        ly = xp.log(xp.where(y > 0, y, xp.nan))
         w = xp.nan_to_num(ly * 0 + 1)
+        estimated = xp.nan_to_num(y * 0 + 1)
         reg = WeightedRegression(self.axis, False, xp=xp).fit(None, ly, w)
         slope, intercept = reg.slope_, reg.intercept_
-        fill_ = xp.exp(reg.x * slope + intercept) * (1 - w)
-        out = xp.nan_to_num(y) + xp.nan_to_num(fill_)
+        fill_ = xp.nan_to_num(xp.exp(reg.x * slope + intercept) * (1 - estimated))
+        use_mack = xp.sum(w, axis=self.axis, keepdims=True) < 3
+        if use_mack.any():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                mack_fill = xp.nan_to_num(self.mack_interpolation(y)) * (1 - estimated)
+            fill_ = xp.where(use_mack, mack_fill, fill_)
+        out = xp.nan_to_num(y) + fill_
         return num_to_nan(out)
 
     def mack_interpolation(self, y):
