@@ -356,6 +356,38 @@ class Development(DevelopmentBase):
         # Undeclared until fitted attributes - scikit-learn convention.
         self.average_: np.ndarray
 
+    def _validate_params(self, X: TriangleLike | None = None) -> None:
+        """
+        Check ``average``, ``n_periods`` and ``sigma_interpolation``.
+
+        ``average`` takes 'volume', 'simple', 'regression' or 'geometric',
+        ``n_periods`` takes -1 or a positive integer, and
+        ``sigma_interpolation`` takes 'log-linear' or 'mack'. A list, dict or
+        callable is checked value by value; see
+        ``DevelopmentBase._validate_params``.
+        """
+        averages = ("volume", "simple", "regression", "geometric")
+        for value in self._assumption_values(self.average, X):
+            if not (isinstance(value, str) and value in averages):
+                raise ValueError(
+                    "average must be 'volume', 'simple', 'regression' or "
+                    f"'geometric', got {value!r}."
+                )
+        for value in self._assumption_values(self.n_periods, X):
+            if (
+                isinstance(value, (bool, np.bool_))
+                or not isinstance(value, (int, np.integer))
+                or not (value == -1 or value >= 1)
+            ):
+                raise ValueError(
+                    f"n_periods must be -1 or a positive integer, got {value!r}."
+                )
+        if self.sigma_interpolation not in ("log-linear", "mack"):
+            raise ValueError(
+                "sigma_interpolation must be 'log-linear' or 'mack', "
+                f"got {self.sigma_interpolation!r}."
+            )
+
     def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
         """
         Fit the model with X.
@@ -375,6 +407,7 @@ class Development(DevelopmentBase):
             Returns the instance itself.
         """
 
+        self._validate_params(X)
         # Triangle must be cumulative and in "development" mode.
         obj: TriangleLike = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp: ModuleType = obj.get_array_module()
