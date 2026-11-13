@@ -1132,3 +1132,22 @@ def test_valid_params_pass_validation(raa):
     cl.Development(average=lambda age: "geometric", n_periods=[-1] * 9).fit(raa)
     dev = cl.Development(n_periods=4, average="simple")
     assert cl.read_json(dev.to_json()).get_params() == dev.get_params()
+
+
+def test_loglinear_sigma_skips_zero_sigmas(clrd):
+    # GH 1609: zero sigmas used to enter the log-linear fit as log(1e-320).
+    tri = clrd["CumPaidLoss"]
+
+    # One positive sigma: the fill falls back to Mack's approximation.
+    brotherhood = cl.Development().fit(tri.loc["Brotherhood Mut Ins Co", "prodliab"])
+    assert np.nanmax(brotherhood.sigma_.set_backend("numpy").values) < 1e3
+    assert np.isfinite(brotherhood.std_err_.set_backend("numpy").values).all()
+
+    # Five positive sigmas (24-36 to 72-84) and two zeros (84-96, 96-108):
+    # the 12-24 and 108-120 fills come from the five positive sigmas only.
+    buckeye = cl.Development().fit(tri.loc["Buckeye Ins Grp", "othliab"])
+    sigma = buckeye.sigma_.set_backend("numpy").values.ravel()
+    period = np.arange(1, sigma.size + 1)
+    slope, intercept = np.polyfit(period[1:6], np.log(sigma[1:6]), 1)
+    assert np.allclose(sigma[[0, 8]], np.exp(intercept + slope * period[[0, 8]]))
+    assert np.isclose(sigma[0], 7.1819, atol=1e-4)
