@@ -3,14 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 
 from scipy.special import comb
-
 from scipy.stats import binom, norm, rankdata
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder.core.triangle import Triangle
@@ -18,7 +17,7 @@ if TYPE_CHECKING:
 
 class DevelopmentCorrelation:
     """
-    Mack (1997) test for correlations between subsequent development
+    Mack (1994) test for correlations between subsequent development
     factors. Results should be within confidence interval range
     otherwise too much correlation
 
@@ -28,32 +27,40 @@ class DevelopmentCorrelation:
         Triangle on which to estimate correlation between subsequent development
         factors.
     p_critical: float (default=0.5)
-        Value between 0 and 1 representing the confidence level for the test. A
-        value of 0.5 implies a 50% confidence. The default value is based on the example
-        provided in the Mack 97 paper, the selection of which is justified on the basis of the
-        test being only an approximate measure of correlations and the desire to detect
-        correlations already in a substantial part of the triangle.
+        Value between 0 and 1 giving the significance level of the test. The
+        confidence level is ``1 - p_critical``, so a value of 0.5 implies 50%
+        confidence and a value of 0.1 implies 90% confidence. The default value
+        follows Appendix G of Mack (1994), which proposes a 50% confidence
+        interval because the test is only approximate and because the aim is
+        to detect correlations already in a substantial part of the triangle.
 
     Attributes
     ----------
     t_critical: DataFrame
-        Boolean value for whether correlation is too high based on ``p_critical``
-        confidence level.
+        Boolean value for whether correlation is too high at significance level
+        ``p_critical``.
     t_expectation: DataFrame
         Values representing the Spearman rank correlation
     t_variance: float
         Variance measure of Spearman rank correlation
     confidence_interval: tuple
-        Range within which ``t_expectation`` must fall for independence assumption
-        to be significant.
+        Range around zero that contains ``t_expectation`` with probability of
+        about ``1 - p_critical`` when the development factors are uncorrelated.
+        ``t_critical`` is True when ``t_expectation`` falls outside it.
+
+    References
+    ----------
+    Mack, T. (1994). Measuring the Variability of Chain Ladder Reserve
+    Estimates. Casualty Actuarial Society Forum, Spring 1994, Appendix G.
+    https://www.casact.org/sites/default/files/2021-02/pubs_forum_94spforum_94spf101.pdf
 
     Examples
     --------
 
-    Mack (1997) lists "successive development factors are uncorrelated" as
-    one of the assumptions underpinning the chain-ladder method. Before
-    relying on a ``Chainladder`` or ``MackChainladder`` ultimate it is good
-    practice to test that assumption on the triangle at hand.
+    Mack (1994) shows that the chain-ladder assumptions imply that
+    subsequent development factors are uncorrelated. Before relying on a
+    ``Chainladder`` or ``MackChainladder`` ultimate it is good practice to
+    test this on the triangle at hand.
     ``DevelopmentCorrelation`` performs Mack's weighted Spearman rank test
     across consecutive development columns and exposes both the test
     statistic ``t_expectation`` and the no-correlation
@@ -133,20 +140,22 @@ class DevelopmentCorrelation:
         m1.values = m1_val[..., : m2.shape[2], 1:]
 
         # Apply Spearman Rank Correlation formula
-        # numerator is the one in formula G4 of the Mack 97 paper
+        # numerator is the one in formula G4 of Mack (1994), "Measuring the
+        # Variability of Chain Ladder Reserve Estimates"
         numerator = ((m1 - m2) ** 2).sum("origin")
 
         # remove last column because it was not part of the comparison with m2
         numerator.values = numerator.values[..., :-1]
         numerator.ddims = numerator.ddims[:-1]
 
-        # n_dev_periods is the number of development periods in the triangle ("I" in the Mack 97).
+        # n_dev_periods is the number of development periods in the triangle
+        # ("I" in Mack (1994)).
         n_dev_periods = len(triangle.development)
 
         # k values are the column indexes for which we are calculating T_k
         k = xp.array(range(2, 2 + numerator.shape[3]))
 
-        # denominator is the one in formula G4 of the Mack 97 paper
+        # denominator is the one in formula G4 of Mack (1994)
         denominator = ((n_dev_periods - k) ** 3 - n_dev_periods + k)[None, None, None]
 
         # complete formula G4, results in array of each T_k value
@@ -176,7 +185,8 @@ class DevelopmentCorrelation:
             t_expectation[..., 0, 0], columns=triangle.columns, index=idx
         )
 
-        # table of Spearman's rank coefficients Tk, can be used to verify consistency with paper
+        # table of Spearman's rank coefficients Tk, can be used to verify consistency
+        # with paper
         self.corr = pd.concat([self.t, self.weights])
 
         self.corr.columns.names = ["k"]
@@ -198,7 +208,7 @@ class DevelopmentCorrelation:
 
 class ValuationCorrelation:
     """
-    Mack (1997) test for calendar year effect.A calendar period has impact
+    Mack (1994) test for calendar year effect. A calendar period has impact
     across developments if the probability of the number of small (or large)
     development factors, Z, in that period occurring randomly is less than
     ``p_critical``
@@ -209,24 +219,37 @@ class ValuationCorrelation:
         Triangle on which to test whether the calendar effects violate independence
         requirements of the chainladder method.
     p_critical: float (default=0.10)
-        Value between 0 and 1 representing the confidence level for the test. 0.1
+        Value between 0 and 1 giving the significance level of the test. 0.1
         implies 90% confidence.
     total: boolean
         Whether to calculate valuation correlation in total across all
-        years (True) consistent with Mack 1993 or for each year separately
-        (False) consistent with Mack 1997.
+        years (True), as in Appendix H of Mack (1994), or for each year
+        separately (False). A :doc:`gallery example
+        </gallery/plot_valuation_correlation>` compares how often the two
+        forms flag samples of claims at annual, semiannual and quarterly
+        grain.
 
     Attributes
     ----------
     z : Triangle or DataFrame
         Z values for each Valuation Period
     z_critical : Triangle or DataFrame
-        Boolean value for whether correlation is too high based on ``p_critical``
-        confidence level.
+        Boolean value for whether correlation is too high at significance level
+        ``p_critical``.
     z_expectation : Triangle or DataFrame
         The expected value of Z.
     z_variance : Triangle or DataFrame
         The variance value of Z.
+    range : tuple of arrays
+        Lower and upper bounds of the no-effect band, E(Z) plus or minus
+        ``norm.ppf(1 - p_critical / 2)`` standard deviations of Z. Only set
+        when ``total=True``.
+
+    References
+    ----------
+    Mack, T. (1994). Measuring the Variability of Chain Ladder Reserve
+    Estimates. Casualty Actuarial Society Forum, Spring 1994, Appendix H.
+    https://www.casact.org/sites/default/files/2021-02/pubs_forum_94spforum_94spf101.pdf
 
     Examples
     --------
@@ -253,15 +276,16 @@ class ValuationCorrelation:
                1982   1983   1984   1985   1986   1987   1988   1989   1990
         1981  False  False  False  False  False  False  False  False  False
 
-    No diagonal crosses the 90% threshold, so the calendar-effect assumption
-    is supported. If any cell read ``True`` you would inspect that diagonal
-    before relying on Mack or chain-ladder ultimates.
+    No diagonal is flagged at the 10% significance level, so the test finds
+    no calendar-year effect, though a pass does not prove there is none. A
+    ``True`` cell points to a diagonal worth inspecting before relying on
+    Mack or chain-ladder ultimates.
 
     The same test can be aggregated to a whole-triangle form
-    (``total=True``, Mack 1993) instead of the per-diagonal form
-    (``total=False``, Mack 1997) shown above. In total form the ``z`` and
-    ``z_critical`` attributes are returned as DataFrames rather than
-    Triangles:
+    (``total=True``, the default, as in Appendix H of Mack (1994)) instead
+    of the per-diagonal form (``total=False``) shown above. In total form the
+    ``z`` and ``z_critical`` attributes are returned as DataFrames rather
+    than Triangles:
 
     .. testcode::
 
@@ -274,8 +298,9 @@ class ValuationCorrelation:
         14.0
         False
 
-    The whole-triangle ``z`` statistic also falls inside the no-effect band,
-    confirming the per-diagonal result.
+    The whole-triangle ``z`` of 14 falls inside the no-effect band, so the
+    test does not reject the hypothesis of no calendar-year effect. Mack
+    (1994) reaches the same conclusion for this triangle.
     """
 
     def __init__(self, triangle: Triangle, p_critical: float = 0.1, total: bool = True):
@@ -342,14 +367,17 @@ class ValuationCorrelation:
             self.z_variance = self.z_critical.copy()
             self.z_variance.values = VarZ
         else:
+            # Appendix H of Mack, "Measuring the Variability of Chain Ladder
+            # Reserve Estimates" (CAS Forum, 1994): Z is approximately normal, so
+            # the test rejects "no calendar year effect" when Z falls outside
+            # E(Z) +/- norm.ppf(1 - p_critical / 2) * sqrt(Var(Z)). ci2 is that
+            # half-width with a negative sign, so range is (lower, upper).
             ci2 = norm.ppf(0.5 - (1 - p_critical) / 2) * xp.sqrt(xp.sum(VarZ, axis=-1))
-            self.range = (xp.sum(VarZ, axis=-1) + ci2, xp.sum(VarZ, axis=-1) - ci2)
+            self.range = (xp.sum(EZ, axis=-1) + ci2, xp.sum(EZ, axis=-1) - ci2)
             idx = triangle.index.set_index(triangle.key_labels).index
+            z_total = z.sum(axis=-1)
             self.z_critical = pd.DataFrame(
-                (
-                    (self.range[0] > VarZ.sum(axis=-1))
-                    | (VarZ.sum(axis=-1) > self.range[1])
-                )[..., 0],
+                ((self.range[0] > z_total) | (z_total > self.range[1]))[..., 0],
                 columns=triangle.columns,
                 index=idx,
             )
@@ -366,13 +394,14 @@ class ValuationCorrelation:
 
 def validate_critical(p_critical: float) -> None:
     """
-    Checks whether value passed to the p_critical parameter in ValuationCorrelation or DevelopmentCorrelation
-    classes is a percentage, that is, between 0 and 1.
+    Checks whether value passed to the p_critical parameter in ValuationCorrelation or
+    DevelopmentCorrelation classes is a percentage, that is, between 0 and 1.
 
     Parameters
     ----------
     p_critical: float
-        Critical value used to test null hypothesis in Mack correlation tests.
+        Significance level used to test the null hypothesis in Mack correlation
+        tests.
     """
     if 0 <= p_critical <= 1:
         pass
