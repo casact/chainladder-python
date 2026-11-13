@@ -162,7 +162,7 @@ class TailBondy(TailBase):
         b_optimized = []
         initial = xp.where(obj.ddims == earliest_age)[0][0] if earliest_age else 0
         for num in range(len(obj.columns)):
-            b0 = (xp.ones(obj.shape[0]) * 0.5)[:, None]
+            b0 = (xp.ones(obj.ldf_.shape[0]) * 0.5)[:, None]
             data = xp.log(obj.ldf_.values[:, num, 0, initial:])
             b0 = xp.concatenate((b0, data[..., 0:1]), axis=1)
             b_optimized.append(
@@ -191,7 +191,7 @@ class TailBondy(TailBase):
             (fitted, fitted[..., -1:] ** (self.b_ / (1 - self.b_))), axis=-1
         )
         fitted = xp.repeat(fitted, self.ldf_.shape[2], axis=2)
-        rows = X.index.set_index(X.key_labels).index
+        rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         self.b_ = pd.DataFrame(
             self.b_[..., 0, 0], index=rows, columns=X.columns.to_list()
         )
