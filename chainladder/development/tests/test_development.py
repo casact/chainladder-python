@@ -1151,3 +1151,14 @@ def test_read_json_loads_estimators_without_the_hook(name):
     """
     estimator = getattr(cl, name)()
     assert cl.read_json(estimator.to_json()).get_params() == estimator.get_params()
+
+
+def test_read_json_leaves_dict_params_to_fit():
+    """
+    Check that ``read_json`` loads a dict assumption without a triangle to
+    resolve it against, leaving its values to be checked in ``fit``.
+    """
+    dev = cl.Development(n_periods={12: 2, 24: -1})
+    loaded = cl.read_json(dev.to_json())
+    assert isinstance(loaded, cl.Development)
+    assert list(loaded.n_periods.values()) == [2, -1]
