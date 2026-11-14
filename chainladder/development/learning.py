@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from chainladder.development.base import DevelopmentBase
 from chainladder import options
+from chainladder._config import __grain_to_months__
 from chainladder import TriangleWeight
 
 
@@ -206,8 +207,8 @@ class DevelopmentML(DevelopmentBase):
             preds = self.estimator_ml.predict(df)
         X_r = [df]
         y_r = [preds]
-        dgrain = {"Y": 12, "S": 6, "Q": 3, "M": 1}[self.development_grain_]
-        ograin = {"Y": 1, "S": 2, "Q": 4, "M": 12}[self.origin_grain_]
+        dgrain = __grain_to_months__[self.development_grain_]
+        ograin = 12 // __grain_to_months__[self.origin_grain_]
         latest_filter = (df["origin"] + 1) * ograin + (
             df["development"] - dgrain
         ) / dgrain
@@ -323,7 +324,7 @@ class DevelopmentML(DevelopmentBase):
             zip(
                 X.origin.to_timestamp(how="s"),
                 (pd.Series(X.origin).rank() - 1)
-                / {"Y": 1, "S": 2, "Q": 4, "M": 12}[X.origin_grain],
+                / (12 // __grain_to_months__[X.origin_grain]),
             )
         )
         val = X.valuation.sort_values().unique()
@@ -331,7 +332,7 @@ class DevelopmentML(DevelopmentBase):
             zip(
                 val,
                 (pd.Series(val).rank() - 1)
-                / {"Y": 1, "S": 2, "Q": 4, "M": 12}[X.development_grain],
+                / (12 // __grain_to_months__[X.development_grain]),
             )
         )
         df = self._prep_X_ml(X)
