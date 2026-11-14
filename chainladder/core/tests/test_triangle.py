@@ -4009,3 +4009,52 @@ def test_clrd_samples_one_row_per_cell() -> None:
     """
     assert cl.load_sample("clrd", duplicates="raise").shape[0] == 779
     assert cl.load_sample("clrd2025", duplicates="raise").shape[0] == 772
+
+
+@pytest.mark.parametrize(
+    "date",
+    [
+        "1988",
+        1988,
+        "1988Q4",
+        "1988-12",
+        "1988-12-31",
+        pd.Timestamp("1988-12-31"),
+        pd.Period("1988", freq="Y"),
+    ],
+)
+def test_as_of_keeps_the_named_period(raa, date) -> None:
+    """
+    ``as_of`` keeps the diagonal valued at the end of the named period, which
+    a ``valuation <=`` filter with the same date leaves out (#1608).
+    """
+    expected = raa[raa.valuation < "1989"]
+    result = raa.as_of(date)
+    assert result.shape == (1, 1, 8, 8)
+    assert result.valuation_date == expected.valuation_date
+    assert result == expected
+
+
+def test_as_of_inside_a_period_stops_at_the_previous_one(raa) -> None:
+    """On an annual triangle a date inside 1988 stops at the end of 1987."""
+    result = raa.as_of("1988-06-30")
+    assert result.shape == (1, 1, 7, 7)
+    assert result == raa[raa.valuation < "1988"]
+
+
+def test_as_of_quarterly(qtr) -> None:
+    """A quarter and its last day give the same quarterly slice."""
+    expected = qtr[qtr.valuation < "1995-07-01"]
+    assert qtr.as_of("1995Q2") == expected
+    assert qtr.as_of("1995-06-30") == expected
+    assert qtr.as_of("1995-06-30").valuation_date == expected.valuation_date
+
+
+def test_as_of_latest_valuation_returns_the_whole_triangle(raa) -> None:
+    assert raa.as_of(raa.valuation_date) == raa
+    assert raa.as_of("2030") == raa
+
+
+def test_as_of_before_the_first_valuation_raises(raa) -> None:
+    with pytest.raises(ValueError):
+        raa.as_of("1980")
