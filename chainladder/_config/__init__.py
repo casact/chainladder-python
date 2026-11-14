@@ -14,6 +14,7 @@ from chainladder._config.deprecation import (
 from chainladder._config.options import (
     __dt64_dtype__,
     __dt64_unit__,
+    __grain_to_months__,
     Options,
     options,
 )
@@ -21,6 +22,7 @@ from chainladder._config.options import (
 __all__: list[str] = [
     "__dt64_dtype__",
     "__dt64_unit__",
+    "__grain_to_months__",
     "Options",
     "options",
     "_DEPRECATED_BACKENDS",
