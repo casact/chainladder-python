@@ -22,7 +22,7 @@ class BootstrapODPSample(DevelopmentBase):
     n_periods: integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    hat_adj: bool (default=False)
+    hat_adj: bool (default=True)
         Adjust standardized Pearson residuals with the hat matrix adjustment
         factor.  If false, Degree of Freedom adjustment is used.
     drop: tuple or list of tuples
@@ -211,8 +211,10 @@ class BootstrapODPSample(DevelopmentBase):
                 try:
                     self.hat_ = self._get_hat(X, exp_incr_triangle)
                 except np.linalg.LinAlgError:
-                    warn("Could not compute hat matrix.  Setting hat_adj to False")
-                    self.had_adj = False
+                    warn(
+                        "Could not compute hat matrix.  Resampling residuals "
+                        "without the hat matrix adjustment."
+                    )
                     self.hat_ = None
             else:
                 self.hat_ = None
