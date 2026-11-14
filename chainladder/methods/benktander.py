@@ -2,10 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.methods import MethodBase
+from chainladder.utils.utility_functions import RandomStateMixin
 import numpy as np
 
 
-class Benktander(MethodBase):
+class Benktander(MethodBase, RandomStateMixin):
     """
     The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
 
@@ -201,14 +202,9 @@ class Benktander(MethodBase):
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
-        from chainladder.utils.utility_functions import _record_seed
 
         super().fit(X, y, sample_weight)
-        self.random_state_ = (
-            _record_seed(self.random_state)
-            if self.apriori_sigma != 0
-            else self.random_state
-        )
+        self._record_random_state(draws=self.apriori_sigma != 0)
         self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
         self.process_variance_ = self._include_process_variance()
@@ -275,11 +271,7 @@ class Benktander(MethodBase):
         """Private method to establish Benktander Apriori"""
         xp = X.get_array_module()
         if self.apriori_sigma != 0:
-            from chainladder.utils.utility_functions import _check_random_state
-
-            random_state = _check_random_state(
-                getattr(self, "random_state_", self.random_state), xp
-            )
+            random_state = self._get_random_state(xp)
             # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
             cov = self.apriori_sigma / self.apriori
             sigma_log = np.sqrt(np.log1p(cov**2))

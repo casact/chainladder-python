@@ -1364,3 +1364,35 @@ def _record_seed(seed):
     if seed is None:
         return int(np.random.randint(np.iinfo(np.int32).max))
     return seed
+
+
+class RandomStateMixin:
+    """
+    Seed handling shared by estimators that take a ``random_state`` parameter.
+
+    ``fit`` calls ``_record_random_state`` to store the seed its draws use as
+    ``random_state_``, and the draws get their generator from
+    ``_get_random_state``.
+    """
+
+    def _record_random_state(self, draws=True):
+        """
+        Set ``random_state_`` from ``random_state``.
+
+        When ``draws`` is true, the seed comes from ``_record_seed``, which
+        draws an integer for ``None``. A fit that makes no random draws passes
+        ``draws=False`` and keeps ``random_state`` as it is.
+        """
+        self.random_state_ = (
+            _record_seed(self.random_state) if draws else self.random_state
+        )
+
+    def _get_random_state(self, xp=np):
+        """
+        Return a generator for the recorded seed on the array module ``xp``.
+
+        Before a fit has recorded a seed, ``random_state`` is used.
+        """
+        return _check_random_state(
+            getattr(self, "random_state_", self.random_state), xp
+        )

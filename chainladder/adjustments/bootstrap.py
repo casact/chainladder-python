@@ -4,13 +4,14 @@
 
 from chainladder.methods.chainladder import Chainladder
 from chainladder.development import DevelopmentBase, Development
+from chainladder.utils.utility_functions import RandomStateMixin
 import numpy as np
 import pandas as pd
 from warnings import warn
 import types
 
 
-class BootstrapODPSample(DevelopmentBase):
+class BootstrapODPSample(DevelopmentBase, RandomStateMixin):
     """
     Class to generate bootstrap samples of triangles.  Currently this Only
     supports 'single' triangles (single index and single column).
@@ -174,9 +175,7 @@ class BootstrapODPSample(DevelopmentBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
-        from chainladder.utils.utility_functions import _record_seed
-
-        self.random_state_ = _record_seed(self.random_state)
+        self._record_random_state()
         if X.shape[1] > 1:
             from chainladder.utils.utility_functions import concat
 
@@ -274,9 +273,7 @@ class BootstrapODPSample(DevelopmentBase):
         # Suggestions from Using the ODP Bootstrap Model: A Practitioners Guide
         adj_resid_dist = adj_resid_dist[adj_resid_dist != 0]
         adj_resid_dist = adj_resid_dist - xp.mean(adj_resid_dist)
-        from chainladder.utils.utility_functions import _check_random_state
-
-        random_state = _check_random_state(self.random_state_, xp)
+        random_state = self._get_random_state(xp)
         resampled_residual = [
             (
                 random_state.choice(
