@@ -1305,6 +1305,62 @@ class Triangle(TriangleBase):
         )
         return obj
 
+    def as_of(self, date) -> Triangle:
+        """
+        The Triangle as it stood at the end of a day or period.
+
+        Keeps every cell valued on or before the end of the period that
+        ``date`` names. Valuations are stamped at the last instant of their
+        period, while pandas reads a date bound as midnight at the start of
+        the day, so ``tri[tri.valuation <= "1988-12-31"]`` leaves out the
+        cells valued at the end of 1988. ``tri.as_of("1988-12-31")`` keeps
+        them.
+
+        Parameters
+        ----------
+        date : str, int, pandas.Period or date-like
+            A string or integer names the period it spells: ``"1988"`` or
+            ``1988`` is the year 1988, ``"1988Q2"`` a quarter, ``"1988-06"``
+            a month and ``"1988-06-30"`` a day. A ``pandas.Period`` is used
+            as given. A ``Timestamp``, ``datetime``, ``date`` or
+            ``numpy.datetime64`` names its whole day, whatever its time.
+
+        Returns
+        -------
+        Triangle
+            The cells valued on or before the end of the named period.
+
+        Raises
+        ------
+        ValueError
+            If ``date`` cannot be parsed, or if no cell is valued by then.
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            print(raa.as_of("1988").shape)
+            print(raa.as_of("1988-12-31").shape)
+            print(raa.as_of("1988-06-30").shape)
+
+        .. testoutput::
+
+            (1, 1, 8, 8)
+            (1, 1, 8, 8)
+            (1, 1, 7, 7)
+        """
+        if isinstance(date, (str, int, np.integer, pd.Period)):
+            period = pd.Period(date)
+        else:
+            period = pd.Period(pd.Timestamp(date), freq="D")
+        return self[self.valuation <= period.end_time]
+
     @property
     def link_ratio(self) -> Triangle:
         """
