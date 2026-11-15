@@ -184,8 +184,16 @@ class TailBondy(TailBase):
             tail = self.ldf_.values[..., 0, initial]
         tail = tail ** (self.b_ / (1 - self.b_))
         f0 = self.ldf_.values[..., 0:1, initial : initial + 1]
+        # One fitted factor per development period up to the end of the
+        # projection, so the tail columns match those TailBase.fit added.
+        n_projected = self._ave_period[0]
         fitted = f0 ** (
-            self.b_ ** (np.arange(sum(X.ddims >= earliest_age))[None, None, None, :])
+            self.b_
+            ** (
+                np.arange(sum(X.ddims >= earliest_age) + n_projected - 1)[
+                    None, None, None, :
+                ]
+            )
         )
         fitted = xp.concatenate(
             (fitted, fitted[..., -1:] ** (self.b_ / (1 - self.b_))), axis=-1
@@ -201,7 +209,7 @@ class TailBondy(TailBase):
         self.ldf_.values = xp.concatenate(
             (
                 self.ldf_.values[..., : sum(X.ddims <= attachment_age)],
-                fitted[..., -sum(X.ddims >= attachment_age) :],
+                fitted[..., -(sum(X.ddims >= attachment_age) + n_projected - 1) :],
             ),
             axis=-1,
         )
