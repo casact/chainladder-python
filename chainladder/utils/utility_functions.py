@@ -455,11 +455,9 @@ def _estimator_from_json(class_name, params):
     from chainladder.methods.base import MethodBase
 
     estimator = cl.__dict__[class_name]().set_params(**params)
-    # sklearn's BaseEstimator has a _validate_params of its own, which needs a
-    # _parameter_constraints attribute that chainladder estimators do not set,
-    # so only the chainladder hook is called.
+    # Only DevelopmentBase and MethodBase estimators define the hook.
     if isinstance(estimator, (DevelopmentBase, MethodBase)):
-        estimator._validate_params()
+        estimator._check_param_values()
     return estimator
 
 

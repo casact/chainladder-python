@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class MethodBase(BaseEstimator, EstimatorIO, Common):
     _estimator_type = "chainladder"
 
-    def _validate_params(self, X: Triangle | None = None) -> None:
+    def _check_param_values(self, X: Triangle | None = None) -> None:
         """
         Check the estimator's parameter values and raise a ``ValueError`` that
         names the first parameter with a value the estimator cannot use.

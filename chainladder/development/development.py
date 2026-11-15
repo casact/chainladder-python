@@ -356,7 +356,7 @@ class Development(DevelopmentBase):
         # Undeclared until fitted attributes - scikit-learn convention.
         self.average_: np.ndarray
 
-    def _validate_params(self, X: TriangleLike | None = None) -> None:
+    def _check_param_values(self, X: TriangleLike | None = None) -> None:
         """
         Check ``average``, ``n_periods`` and ``sigma_interpolation``.
 
@@ -364,7 +364,7 @@ class Development(DevelopmentBase):
         ``n_periods`` takes -1 or a positive integer, and
         ``sigma_interpolation`` takes 'log-linear' or 'mack'. A list, dict or
         callable is checked value by value; see
-        ``DevelopmentBase._validate_params``.
+        ``DevelopmentBase._check_param_values``.
         """
         averages = ("volume", "simple", "regression", "geometric")
         for value in self._assumption_values(self.average, X):
@@ -407,7 +407,7 @@ class Development(DevelopmentBase):
             Returns the instance itself.
         """
 
-        self._validate_params(X)
+        self._check_param_values(X)
         # Triangle must be cumulative and in "development" mode.
         obj: TriangleLike = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp: ModuleType = obj.get_array_module()
