@@ -1152,8 +1152,8 @@ def test_valid_params_pass_validation(raa):
 @pytest.mark.parametrize("name", ["Trend", "BerquistSherman", "ParallelogramOLF"])
 def test_read_json_loads_estimators_without_the_hook(name):
     """
-    Check that ``read_json`` still loads estimators outside ``DevelopmentBase``
-    and ``MethodBase``, which do not define ``_check_param_values``.
+    Check that ``read_json`` still loads estimators that do not define
+    ``_check_param_values``.
     """
     estimator = getattr(cl, name)()
     assert cl.read_json(estimator.to_json()).get_params() == estimator.get_params()

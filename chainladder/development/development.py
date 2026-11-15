@@ -369,14 +369,15 @@ class Development(DevelopmentBase):
 
     def _check_param_values(self, X: TriangleLike | None = None) -> None:
         """
-        Check ``average``, ``n_periods`` and ``sigma_interpolation``.
+        Check ``average``, ``n_periods`` and ``sigma_interpolation`` and raise
+        a ``ValueError`` naming the first one with a value ``fit`` cannot use.
 
-        ``average`` takes 'volume', 'simple', 'regression' or 'geometric',
-        ``n_periods`` takes -1 or a positive integer (0 is kept as an alias
-        for -1), and
-        ``sigma_interpolation`` takes 'log-linear' or 'mack'. A list, dict or
-        callable is checked value by value; see
-        ``DevelopmentBase._check_param_values``.
+        ``average`` takes the values of ``Average``, ``n_periods`` takes -1 or
+        a positive integer (0 is kept as an alias for -1), and
+        ``sigma_interpolation`` takes the values of ``SigmaInterpolation``. A
+        list is checked value by value. ``fit`` calls the method with the
+        triangle, so a dict or callable is checked once resolved against it;
+        ``read_json`` calls it with no triangle and skips those.
         """
         averages = get_args(Average)
         for value in self._assumption_values(self.average, X):

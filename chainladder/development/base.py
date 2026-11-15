@@ -22,17 +22,6 @@ if TYPE_CHECKING:
 
 
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
-    def _check_param_values(self, X: Triangle | None = None) -> None:
-        """
-        Check the estimator's parameter values and raise a ``ValueError`` that
-        names the first parameter with a value the estimator cannot use.
-
-        ``fit`` calls it with the triangle, so values given as a dict or a
-        callable are checked after they are resolved against it.
-        ``read_json`` calls it with no triangle and checks the other values.
-        Subclasses override it; the base class checks nothing.
-        """
-
     def fit(self, X, y=None, sample_weight=None):
         average_ = self._validate_assumption(y, self.average, axis=3)
         self.average_ = average_.flatten()
