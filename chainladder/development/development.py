@@ -37,11 +37,9 @@ class Development(DevelopmentBase):
 
         Setting n_periods to 1 does not allow enough degrees of freedom to support
         calculation of all regression statistics; only LDFs would be calculated.
-    average: literal (or list of literals), or float, optional (default = 'volume')
+    average: literal (or list of literals), optional (default = 'volume')
         type of averaging to use for ldf average calculation.
-        Options include 'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
-        then (2-average) in the style of Zehnwirth & Barnett is used
-        for the exponent of the regression weights.
+        Options include 'volume', 'simple', 'regression', and 'geometric'.
     sigma_interpolation: string optional (default = 'log-linear')
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
