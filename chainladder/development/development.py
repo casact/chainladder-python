@@ -16,6 +16,7 @@ from typing import (
     Literal,
     # Self,  # Make use of this once Python 3.10 is deprecated.
     TYPE_CHECKING,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -23,6 +24,18 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
     from pandas import Series
     from types import ModuleType
+
+# Allowed values of Development's string parameters. The annotations in
+# Development.__init__ use them, and _check_param_values reads them with
+# get_args.
+Average = Literal["volume", "simple", "regression", "geometric"]
+SigmaInterpolation = Literal["log-linear", "mack"]
+
+
+def _one_of(values: tuple) -> str:
+    """Return ``values`` as "'a', 'b' or 'c'" for an error message."""
+    quoted = [repr(v) for v in values]
+    return ", ".join(quoted[:-1]) + " or " + quoted[-1]
 
 
 class Development(DevelopmentBase):
@@ -326,8 +339,8 @@ class Development(DevelopmentBase):
     def __init__(
         self,
         n_periods: int = -1,
-        average: Literal["volume", "simple", "regression", "geometric"] = "volume",
-        sigma_interpolation: Literal["log-linear", "mack"] = "log-linear",
+        average: Average = "volume",
+        sigma_interpolation: SigmaInterpolation = "log-linear",
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
@@ -365,13 +378,10 @@ class Development(DevelopmentBase):
         callable is checked value by value; see
         ``DevelopmentBase._check_param_values``.
         """
-        averages = ("volume", "simple", "regression", "geometric")
+        averages = get_args(Average)
         for value in self._assumption_values(self.average, X):
             if not (isinstance(value, str) and value in averages):
-                raise ValueError(
-                    "average must be 'volume', 'simple', 'regression' or "
-                    f"'geometric', got {value!r}."
-                )
+                raise ValueError(f"average must be {_one_of(averages)}, got {value!r}.")
         for value in self._assumption_values(self.n_periods, X):
             if (
                 isinstance(value, (bool, np.bool_))
@@ -382,9 +392,10 @@ class Development(DevelopmentBase):
                     "n_periods must be -1 or a positive integer (0 is read as "
                     f"-1), got {value!r}."
                 )
-        if self.sigma_interpolation not in ("log-linear", "mack"):
+        interpolations = get_args(SigmaInterpolation)
+        if self.sigma_interpolation not in interpolations:
             raise ValueError(
-                "sigma_interpolation must be 'log-linear' or 'mack', "
+                f"sigma_interpolation must be {_one_of(interpolations)}, "
                 f"got {self.sigma_interpolation!r}."
             )
 
