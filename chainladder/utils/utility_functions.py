@@ -451,12 +451,10 @@ def _estimator_from_json(class_name, params):
     check the parameter values it can check without a triangle.
     """
     import chainladder as cl
-    from chainladder.development.base import DevelopmentBase
-    from chainladder.methods.base import MethodBase
 
     estimator = cl.__dict__[class_name]().set_params(**params)
-    # Only DevelopmentBase and MethodBase estimators define the hook.
-    if isinstance(estimator, (DevelopmentBase, MethodBase)):
+    # Only estimators with parameter checks define the hook.
+    if hasattr(estimator, "_check_param_values"):
         estimator._check_param_values()
     return estimator
 
