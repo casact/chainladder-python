@@ -1100,7 +1100,6 @@ def test_pct_reported_requires_ldf(raa):
         ({"average": ["volume"] * 8 + ["bogus"]}, "average"),
         ({"average": lambda age: "bogus" if age == 12 else "volume"}, "average"),
         ({"n_periods": -5}, "n_periods"),
-        ({"n_periods": 0}, "n_periods"),
         ({"n_periods": 2.5}, "n_periods"),
         ({"n_periods": True}, "n_periods"),
         ({"sigma_interpolation": "bogus"}, "sigma_interpolation"),
@@ -1128,6 +1127,14 @@ def test_read_json_rejects_invalid_params(params, name):
         cl.read_json(json_str)
     with pytest.raises(ValueError, match=name):
         cl.read_json(json.dumps([{"name": "dev", **json.loads(json_str)}]))
+
+
+def test_n_periods_zero_fits_as_all_periods(raa):
+    """Check that ``n_periods=0`` still fits as ``n_periods=-1`` (#1606)."""
+    zero = cl.Development(n_periods=0).fit(raa)
+    all_periods = cl.Development(n_periods=-1).fit(raa)
+    assert np.allclose(zero.ldf_.values, all_periods.ldf_.values)
+    assert np.allclose(zero.sigma_.values, all_periods.sigma_.values)
 
 
 def test_valid_params_pass_validation(raa):

@@ -361,7 +361,8 @@ class Development(DevelopmentBase):
         Check ``average``, ``n_periods`` and ``sigma_interpolation``.
 
         ``average`` takes 'volume', 'simple', 'regression' or 'geometric',
-        ``n_periods`` takes -1 or a positive integer, and
+        ``n_periods`` takes -1 or a positive integer (0 is kept as an alias
+        for -1), and
         ``sigma_interpolation`` takes 'log-linear' or 'mack'. A list, dict or
         callable is checked value by value; see
         ``DevelopmentBase._check_param_values``.
@@ -377,10 +378,11 @@ class Development(DevelopmentBase):
             if (
                 isinstance(value, (bool, np.bool_))
                 or not isinstance(value, (int, np.integer))
-                or not (value == -1 or value >= 1)
+                or not (value == -1 or value >= 0)
             ):
                 raise ValueError(
-                    f"n_periods must be -1 or a positive integer, got {value!r}."
+                    "n_periods must be -1 or a positive integer (0 is read as "
+                    f"-1), got {value!r}."
                 )
         if self.sigma_interpolation not in ("log-linear", "mack"):
             raise ValueError(
