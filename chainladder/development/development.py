@@ -69,7 +69,11 @@ class Development(DevelopmentBase):
         The minimum number of link ratio(s) required for LDF calculation.
         See order of operations below when combined with multiple drop parameters.
     drop_valuation: str or list of str (default = None)
-        Drops specific valuation periods. str must be date convertible.
+        Drops the link ratios whose starting value has the given valuation.
+        str must be date convertible. Each link ratio is keyed to the
+        valuation of its starting value, as in ``link_ratio``, so the latest
+        valuation of a triangle has no link ratios to drop. To leave out a
+        change that happened between valuations t-1 and t, pass t-1.
         See order of operations below when combined with multiple drop parameters.
     fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
@@ -90,7 +94,7 @@ class Development(DevelopmentBase):
 
             1. ``n_periods`` — limit to the most recent origin periods.
             2. ``drop`` — remove specific origin/development cells.
-            3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
+            3. ``drop_valuation`` — remove the link ratios that start on the given valuations.
             4. ``drop_high`` / ``drop_low`` — remove highest/lowest link ratios by rank
                (eligible factors from ``n_periods`` are used; protected by ``preserve``,
                which may relax exclusions from this step if too few ratios would remain then this step is skipped).
@@ -184,6 +188,36 @@ class Development(DevelopmentBase):
 
                   12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
         (All)  1.582216  1.339353  1.193406  1.095906  1.076968  1.033612  1.019016  0.997636  0.992918  0.999179
+
+    ``drop_valuation`` keys each link ratio to the valuation of its starting
+    value, the same valuation ``link_ratio`` shows. The latest valuation of
+    ``raa`` is 1990, so passing "1990" leaves ``ldf_`` unchanged, while "1989"
+    drops the last link ratio of every origin.
+
+    ..  testcode::
+
+        raa = cl.load_sample("raa")
+        base = cl.Development().fit(raa).ldf_
+        latest = cl.Development(drop_valuation="1990").fit(raa).ldf_
+        print((latest.values == base.values).all())
+        print(cl.Development(drop_valuation="1989").fit_transform(raa).link_ratio)
+
+    ..  testoutput::
+
+        True
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108  108-120
+        1981   1.649840  1.319023  1.082332  1.146887  1.195140  1.112972  1.033261  1.002902      NaN
+        1982  40.424528  1.259277  1.976649  1.292143  1.131839  0.993397  1.043431       NaN      NaN
+        1983   2.636950  1.542816  1.163483  1.160709  1.185695  1.029216       NaN       NaN      NaN
+        1984   2.043324  1.364431  1.348852  1.101524  1.113469       NaN       NaN       NaN      NaN
+        1985   8.759158  1.655619  1.399912  1.170779       NaN       NaN       NaN       NaN      NaN
+        1986   4.259749  1.815671  1.105367       NaN       NaN       NaN       NaN       NaN      NaN
+        1987   7.217235  2.722886       NaN       NaN       NaN       NaN       NaN       NaN      NaN
+        1988   5.142117       NaN       NaN       NaN       NaN       NaN       NaN       NaN      NaN
+        1989        NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN      NaN
+
+    To leave out a change that happened between valuations t-1 and t, pass
+    t-1: "1989" removes every link ratio that ends on the 1990 valuation.
 
     We can also drop all link ratio(s) above the given parameter by passing a list of floats to the drop_above parameter.
     Let's inspect the link ratios after the drop.
