@@ -16,6 +16,7 @@ from typing import (
     Literal,
     # Self,  # Make use of this once Python 3.10 is deprecated.
     TYPE_CHECKING,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -23,6 +24,18 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
     from pandas import Series
     from types import ModuleType
+
+# Allowed values of Development's string parameters. The annotations in
+# Development.__init__ use them, and _check_param_values reads them with
+# get_args.
+Average = Literal["volume", "simple", "regression", "geometric"]
+SigmaInterpolation = Literal["log-linear", "mack"]
+
+
+def _one_of(values: tuple) -> str:
+    """Return ``values`` as "'a', 'b' or 'c'" for an error message."""
+    quoted = [repr(v) for v in values]
+    return ", ".join(quoted[:-1]) + " or " + quoted[-1]
 
 
 class Development(DevelopmentBase):
@@ -37,11 +50,9 @@ class Development(DevelopmentBase):
 
         Setting n_periods to 1 does not allow enough degrees of freedom to support
         calculation of all regression statistics; only LDFs would be calculated.
-    average: literal (or list of literals), or float, optional (default = 'volume')
+    average: literal (or list of literals), optional (default = 'volume')
         type of averaging to use for ldf average calculation.
-        Options include 'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
-        then (2-average) in the style of Zehnwirth & Barnett is used
-        for the exponent of the regression weights.
+        Options include 'volume', 'simple', 'regression', and 'geometric'.
     sigma_interpolation: string optional (default = 'log-linear')
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
@@ -358,8 +369,8 @@ class Development(DevelopmentBase):
     def __init__(
         self,
         n_periods: int = -1,
-        average: Literal["volume", "simple", "regression", "geometric"] = "volume",
-        sigma_interpolation: Literal["log-linear", "mack"] = "log-linear",
+        average: Average = "volume",
+        sigma_interpolation: SigmaInterpolation = "log-linear",
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
@@ -386,6 +397,39 @@ class Development(DevelopmentBase):
         # Undeclared until fitted attributes - scikit-learn convention.
         self.average_: np.ndarray
 
+    def _check_param_values(self, X: TriangleLike | None = None) -> None:
+        """
+        Check ``average``, ``n_periods`` and ``sigma_interpolation`` and raise
+        a ``ValueError`` naming the first one with a value ``fit`` cannot use.
+
+        ``average`` takes the values of ``Average``, ``n_periods`` takes -1 or
+        a positive integer (0 is kept as an alias for -1), and
+        ``sigma_interpolation`` takes the values of ``SigmaInterpolation``. A
+        list is checked value by value. ``fit`` calls the method with the
+        triangle, so a dict or callable is checked once resolved against it;
+        ``read_json`` calls it with no triangle and skips those.
+        """
+        averages = get_args(Average)
+        for value in self._assumption_values(self.average, X):
+            if not (isinstance(value, str) and value in averages):
+                raise ValueError(f"average must be {_one_of(averages)}, got {value!r}.")
+        for value in self._assumption_values(self.n_periods, X):
+            if (
+                isinstance(value, (bool, np.bool_))
+                or not isinstance(value, (int, np.integer))
+                or not (value == -1 or value >= 0)
+            ):
+                raise ValueError(
+                    "n_periods must be -1 or a positive integer (0 is read as "
+                    f"-1), got {value!r}."
+                )
+        interpolations = get_args(SigmaInterpolation)
+        if self.sigma_interpolation not in interpolations:
+            raise ValueError(
+                f"sigma_interpolation must be {_one_of(interpolations)}, "
+                f"got {self.sigma_interpolation!r}."
+            )
+
     def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
         """
         Fit the model with X.
@@ -405,6 +449,7 @@ class Development(DevelopmentBase):
             Returns the instance itself.
         """
 
+        self._check_param_values(X)
         # Triangle must be cumulative and in "development" mode.
         obj: TriangleLike = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp: ModuleType = obj.get_array_module()

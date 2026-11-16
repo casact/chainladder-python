@@ -435,3 +435,22 @@ class Common:
         if axis == 2:
             arr = arr[None, None, :, None]
         return arr
+
+    def _assumption_values(self, value, X: TriangleLike | None, axis: int = 3) -> list:
+        """
+        Return the individual values of an assumption that can be checked.
+
+        A scalar gives itself and a list, tuple, set or array gives its
+        elements. A dict or callable gives the values it resolves to against
+        ``X`` along ``axis``, or nothing when ``X`` is ``None``.
+        """
+        if isinstance(value, dict) or callable(value):
+            if X is None:
+                return []
+            values = self._validate_assumption(X, value, axis=axis).flatten()
+        elif isinstance(value, (list, tuple, set, np.ndarray)):
+            values = np.asarray(list(value) if isinstance(value, set) else value)
+            values = values.flatten()
+        else:
+            return [value]
+        return [v.item() if isinstance(v, np.generic) else v for v in values]
