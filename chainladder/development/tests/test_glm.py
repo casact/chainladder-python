@@ -1,3 +1,5 @@
+import numpy as np
+
 import chainladder as cl
 
 
@@ -12,6 +14,40 @@ def test_basic_odp_cl(genins):
         ).max()
         < 1e-2
     )
+
+
+def test_drop_valuation_without_sample_weight(genins):
+    # https://github.com/casact/chainladder-python/issues/1619
+    # drop_valuation must take effect even when sample_weight is None, and
+    # must match the result of passing an all-ones sample_weight. The
+    # unweighted fit itself must be unchanged.
+    base = cl.TweedieGLM().fit(genins).ldf_.values[0, 0, 0, :4]
+    dropped = cl.TweedieGLM(drop_valuation="2005").fit(genins).ldf_.values[0, 0, 0, :4]
+    dropped_weighted = (
+        cl
+        .TweedieGLM(drop_valuation="2005")
+        .fit(genins, sample_weight=genins * 0 + 1)
+        .ldf_.values[0, 0, 0, :4]
+    )
+    assert np.round(base, 4).tolist() == [3.491, 1.7474, 1.4574, 1.1739]
+    assert np.round(dropped, 4).tolist() == [3.5057, 1.7861, 1.4546, 1.1711]
+    assert np.round(dropped_weighted, 4).tolist() == [3.5057, 1.7861, 1.4546, 1.1711]
+    # list form goes through the same TriangleWeight path
+    dropped_list = (
+        cl
+        .TweedieGLM(drop_valuation=["2005", "2006"])
+        .fit(genins)
+        .ldf_.values[0, 0, 0, :4]
+    )
+    assert np.round(dropped_list, 4).tolist() == [3.6441, 1.8049, 1.4452, 1.1695]
+
+
+def test_drop_without_sample_weight(genins):
+    # https://github.com/casact/chainladder-python/issues/1619
+    base = cl.TweedieGLM().fit(genins).ldf_.values[0, 0, 0, :4]
+    dropped = cl.TweedieGLM(drop=("2001", 12)).fit(genins).ldf_.values[0, 0, 0, :4]
+    assert np.round(base, 4).tolist() == [3.491, 1.7474, 1.4574, 1.1739]
+    assert np.round(dropped, 4).tolist() == [3.571, 1.755, 1.4606, 1.1748]
 
 
 def test_sample_weight(genins):
