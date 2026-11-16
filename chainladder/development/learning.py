@@ -215,10 +215,18 @@ class DevelopmentML(DevelopmentBase):
         latest_filter = latest_filter == latest_filter.max()
         preds = pd.DataFrame(preds.copy())[latest_filter].values
         out = df.loc[latest_filter].copy()
+        # valuation_encoder_ maps the i-th valuation date to i / periods_per_year.
+        # Step the integer index i and divide once so that projected valuations
+        # match the encoder's values exactly at every grain.
+        periods_per_year = 12 // dgrain
+        val_index = {
+            v: i for i, v in enumerate(sorted(self.valuation_encoder_.values()))
+        }
+        latest_val_index = out["valuation"].map(val_index)
         dev_lags = df["development"].drop_duplicates().sort_values()
-        for d in dev_lags[1:]:
+        for step, d in enumerate(dev_lags[1:], start=1):
             out["development"] = out["development"] + dgrain
-            out["valuation"] = out["valuation"] + dgrain / 12
+            out["valuation"] = (latest_val_index + step) / periods_per_year
             if len(preds.shape) == 1:
                 preds = preds[:, None]
             if self.autoregressive:
