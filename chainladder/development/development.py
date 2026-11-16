@@ -565,7 +565,9 @@ class Development(DevelopmentBase):
         obj = X[X.origin == X.origin.min()]
         xp = X.get_array_module()
         obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]
-        obj.ddims = X.link_ratio.ddims
+        # One label per link-ratio column. X.link_ratio can drop columns that
+        # have no ratio before the valuation date, so it cannot supply them.
+        obj.ddims = X.ddims[:-1]
         obj.valuation_date = pd.to_datetime(options.ULT_VAL)
         obj.is_pattern = True
         obj.is_cumulative = False
