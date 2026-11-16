@@ -1138,10 +1138,22 @@ def test_loglinear_sigma_skips_zero_sigmas(clrd):
     # GH 1609: zero sigmas used to enter the log-linear fit as log(1e-320).
     tri = clrd["CumPaidLoss"]
 
-    # One positive sigma: the fill falls back to Mack's approximation.
+    # One positive sigma (36-48) and a zero (48-60): no line is fitted, and
+    # Mack's approximation has no two positive sigmas in a row, so the
+    # 12-24 and 24-36 sigmas stay NaN instead of 1.8e308.
     brotherhood = cl.Development().fit(tri.loc["Brotherhood Mut Ins Co", "prodliab"])
     assert np.nanmax(brotherhood.sigma_.set_backend("numpy").values) < 1e3
     assert np.isfinite(brotherhood.std_err_.set_backend("numpy").values).all()
+
+    # Two positive sigmas (12-24, 24-36), then none at 36-48 and zeros after:
+    # the 36-48 fill comes from Mack's approximation, the same value as
+    # under sigma_interpolation="mack".
+    great_amer = tri.loc["Great Amer Grp", "medmal"]
+    loglinear = cl.Development().fit(great_amer).sigma_.set_backend("numpy")
+    mack = cl.Development(sigma_interpolation="mack").fit(great_amer)
+    fill = loglinear.values.ravel()[2]
+    assert np.isclose(fill, mack.sigma_.set_backend("numpy").values.ravel()[2])
+    assert np.isclose(fill, 14.9781, atol=1e-4)
 
     # Five positive sigmas (24-36 to 72-84) and two zeros (84-96, 96-108):
     # the 12-24 and 108-120 fills come from the five positive sigmas only.

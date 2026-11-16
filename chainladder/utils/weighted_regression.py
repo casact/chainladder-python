@@ -265,12 +265,15 @@ class WeightedRegression(BaseEstimator):
         """
         Fill undefined sigmas by regressing log(sigma) on development period.
 
-        As in R's ChainLadder (``estimate.sigma``), only positive sigmas enter
-        the regression: a zero sigma has no logarithm and would dominate the
-        fit. Zero sigmas are not filled. Where fewer than three positive sigmas
-        remain, the fill falls back to Mack's approximation. R's ``Mack.S.E``
-        does the same for a single point, and for two points, where the
-        slope's p-value is undefined.
+        Only positive sigmas enter the regression. A zero sigma has no
+        logarithm, and a stand-in such as 1e-320 puts a point near -737 on
+        the log scale that outweighs every other point in the least-squares
+        fit. Zero sigmas are left as they are.
+
+        With fewer than three positive sigmas, the fill comes from
+        ``mack_interpolation`` instead. One point gives no slope, and a line
+        through two points fits both exactly, so no residual is left to judge
+        it by.
         """
         from chainladder.utils.utility_functions import num_to_nan
 
@@ -283,8 +286,10 @@ class WeightedRegression(BaseEstimator):
         fill_ = xp.nan_to_num(xp.exp(reg.x * slope + intercept) * (1 - estimated))
         use_mack = xp.sum(w, axis=self.axis, keepdims=True) < 3
         if use_mack.any():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=RuntimeWarning)
+            # mack_interpolation divides by the square of the sigma two
+            # periods back. Where that sigma is zero, the quotient is inf or
+            # nan and the cell's fill comes out as 0.
+            with np.errstate(divide="ignore", invalid="ignore"):
                 mack_fill = xp.nan_to_num(self.mack_interpolation(y)) * (1 - estimated)
             fill_ = xp.where(use_mack, mack_fill, fill_)
         out = xp.nan_to_num(y) + fill_
