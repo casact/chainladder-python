@@ -190,34 +190,30 @@ class Development(DevelopmentBase):
         (All)  1.582216  1.339353  1.193406  1.095906  1.076968  1.033612  1.019016  0.997636  0.992918  0.999179
 
     ``drop_valuation`` keys each link ratio to the valuation of its starting
-    value, the same valuation ``link_ratio`` shows. The latest valuation of
-    ``raa`` is 1990, so passing "1990" leaves ``ldf_`` unchanged, while "1989"
-    drops the last link ratio of every origin.
+    value, the same valuation ``link_ratio`` shows. Passing "1986" drops the
+    six link ratios that start on the 1986 valuation, one for each origin from
+    1981 to 1986.
 
     ..  testcode::
 
         raa = cl.load_sample("raa")
-        base = cl.Development().fit(raa).ldf_
-        latest = cl.Development(drop_valuation="1990").fit(raa).ldf_
-        print((latest.values == base.values).all())
-        print(cl.Development(drop_valuation="1989").fit_transform(raa).link_ratio)
+        print(cl.Development(drop_valuation="1986").fit_transform(raa).link_ratio)
 
     ..  testoutput::
 
-        True
-                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108  108-120
-        1981   1.649840  1.319023  1.082332  1.146887  1.195140  1.112972  1.033261  1.002902      NaN
-        1982  40.424528  1.259277  1.976649  1.292143  1.131839  0.993397  1.043431       NaN      NaN
-        1983   2.636950  1.542816  1.163483  1.160709  1.185695  1.029216       NaN       NaN      NaN
-        1984   2.043324  1.364431  1.348852  1.101524  1.113469       NaN       NaN       NaN      NaN
-        1985   8.759158  1.655619  1.399912  1.170779       NaN       NaN       NaN       NaN      NaN
-        1986   4.259749  1.815671  1.105367       NaN       NaN       NaN       NaN       NaN      NaN
-        1987   7.217235  2.722886       NaN       NaN       NaN       NaN       NaN       NaN      NaN
-        1988   5.142117       NaN       NaN       NaN       NaN       NaN       NaN       NaN      NaN
-        1989        NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN      NaN
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120
+        1981   1.649840  1.319023  1.082332  1.146887  1.195140       NaN  1.033261  1.002902  1.009217
+        1982  40.424528  1.259277  1.976649  1.292143       NaN  0.993397  1.043431  1.033088       NaN
+        1983   2.636950  1.542816  1.163483       NaN  1.185695  1.029216  1.026374       NaN       NaN
+        1984   2.043324  1.364431       NaN  1.101524  1.113469  1.037726       NaN       NaN       NaN
+        1985   8.759158       NaN  1.399912  1.170779  1.008669       NaN       NaN       NaN       NaN
+        1986        NaN  1.815671  1.105367  1.225512       NaN       NaN       NaN       NaN       NaN
+        1987   7.217235  2.722886  1.124977       NaN       NaN       NaN       NaN       NaN       NaN
+        1988   5.142117  1.887433       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+        1989   1.721992       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
 
     To leave out a change that happened between valuations t-1 and t, pass
-    t-1: "1989" removes every link ratio that ends on the 1990 valuation.
+    t-1: "1986" removes every link ratio that ends on the 1987 valuation.
 
     We can also drop all link ratio(s) above the given parameter by passing a list of floats to the drop_above parameter.
     Let's inspect the link ratios after the drop.
