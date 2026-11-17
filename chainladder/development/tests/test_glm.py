@@ -95,4 +95,6 @@ def test_incremental_triangle_with_empty_cells(monthly):
             coef[name, drop] = model.model_.estimator_ml["model"].coef_
     for drop in (None, "2017Q2"):
         np.testing.assert_allclose(coef["incremental", drop], coef["cumulative", drop])
+    # Dropping 2017Q2 must change the fit. Without this check, the comparison
+    # above would also pass if both fits ignored drop_valuation (#1619).
     assert not np.allclose(coef["incremental", None], coef["incremental", "2017Q2"])
