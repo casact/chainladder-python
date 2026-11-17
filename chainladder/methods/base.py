@@ -155,15 +155,38 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         self.fit(X, y, sample_weight)
         return self.predict(X, sample_weight)
 
-    def _include_process_variance(self):
-        if hasattr(self.X_, "_get_process_variance"):
+    def _include_process_variance(self, X=None):
+        """
+        Add simulated process variance to an ultimate triangle.
+
+        With no argument this rewrites ``self.ultimate_`` from the
+        triangle the model was fit on (the ``fit()`` path). Pass the
+        predicted triangle from ``predict()`` to rewrite its
+        ``ultimate_`` instead, leaving the fitted state untouched.
+        Returns the process variance triangle, or ``None`` when the
+        triangle carries no simulated process variance. The full
+        triangle is only built when process variance is present, so
+        predicting on a plain triangle costs nothing extra.
+        """
+        if X is None:
+            if not hasattr(self.X_, "_get_process_variance"):
+                return None
             full = self.full_triangle_
             obj = self.X_._get_process_variance(full)
             self.ultimate_.values = obj.values[..., -1:]
-            process_var = obj - full
-        else:
-            process_var = None
-        return process_var
+            return obj - full
+        if not hasattr(X, "_get_process_variance"):
+            return None
+        full = X.full_triangle_
+        obj = X._get_process_variance(full)
+        if obj.values[..., -1:].shape != X.ultimate_.values.shape:
+            # e.g. a subset of simulations: the variance draw is bound to
+            # the full bootstrap, so it cannot apply here. Keep base
+            # behaviour (point estimates, correct shape) instead of
+            # corrupting ultimate_.
+            return None
+        X.ultimate_.values = obj.values[..., -1:]
+        return obj - full
 
     @staticmethod
     def validate_ldf(X: Triangle, ldf: Triangle) -> None:
