@@ -216,7 +216,10 @@ class Benktander(MethodBase):
         Returns
         -------
         X_new: Triangle
-            Loss data with Benktander ultimate applied
+            Loss data with Benktander ultimate applied. When ``X``
+            carries simulated process variance (for example from
+            ``BootstrapODPSample``), the predicted ultimate includes it,
+            matching ``fit()``.
 
         Examples
         --------
@@ -255,6 +258,7 @@ class Benktander(MethodBase):
         X_new = super().predict(X, sample_weight)
         X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)
+        X_new.process_variance_ = self._include_process_variance(X_new)
         X_new.n_iters = self.n_iters
         X_new.apriori = self.apriori
         return X_new
