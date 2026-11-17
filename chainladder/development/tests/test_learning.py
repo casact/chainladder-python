@@ -1,4 +1,5 @@
 import chainladder as cl
+import pytest
 from sklearn.linear_model import LinearRegression, TweedieRegressor
 from sklearn.pipeline import Pipeline
 from chainladder.utils.utility_functions import PatsyFormula
@@ -75,6 +76,7 @@ def test_grain():
         ).fit(tri)
         assert grains[period] == len(model.triangle_ml_.development)
         assert grains[period] == len(model.triangle_ml_.origin)
+        assert not np.isnan(model.triangle_ml_.values).any()
 
 
 def test_monthly_poisson_glm_matches_chainladder():
@@ -118,3 +120,19 @@ def test_monthly_poisson_glm_matches_chainladder():
     expected = cl.Chainladder().fit(tri).ultimate_.values
     actual = cl.Chainladder().fit(model.transform(tri)).ultimate_.values
     assert np.allclose(actual, expected, rtol=1e-4)
+
+
+@pytest.mark.parametrize(
+    "grain",
+    ["OMDM", "OQDM", "OSDM", "OYDM", "OQDQ", "OSDQ", "OYDQ", "OSDS", "OYDS", "OYDY"],
+)
+def test_projection_fills_future_cells(monthly, grain):
+    # DevelopmentML projects each origin forward from the latest diagonal, so
+    # every future cell of triangle_ml_ must be filled at every grain,
+    # including grains whose origin and development periods differ.
+    tri = monthly["reportedCount"].grain(grain)
+    ml = cl.TweedieGLM(response="reportedCount").fit(tri).triangle_ml_
+    values = ml.set_backend("numpy").values[0, 0]
+    future = np.isnan(tri.set_backend("numpy").nan_triangle)
+    assert values.shape == future.shape
+    assert not np.isnan(values[future]).any()
