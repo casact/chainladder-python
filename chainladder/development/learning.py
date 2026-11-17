@@ -208,11 +208,10 @@ class DevelopmentML(DevelopmentBase):
         X_r = [df]
         y_r = [preds]
         dgrain = __grain_to_months__[self.development_grain_]
-        ograin = 12 // __grain_to_months__[self.origin_grain_]
-        latest_filter = (df["origin"] + 1) * ograin + (
-            df["development"] - dgrain
-        ) / dgrain
-        latest_filter = latest_filter == latest_filter.max()
+        # The latest diagonal holds the cells at the latest valuation. Comparing
+        # encoded valuations finds it whether or not the origin and development
+        # grains match, as in OYDM.
+        latest_filter = df["valuation"] == df["valuation"].max()
         preds = pd.DataFrame(preds.copy())[latest_filter].values
         out = df.loc[latest_filter].copy()
         # valuation_encoder_ maps the i-th valuation date to i / periods_per_year.
