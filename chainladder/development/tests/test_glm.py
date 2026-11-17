@@ -17,10 +17,13 @@ def test_basic_odp_cl(genins):
 
 
 def test_drop_valuation_without_sample_weight(genins):
-    # https://github.com/casact/chainladder-python/issues/1619
-    # drop_valuation must take effect even when sample_weight is None, and
-    # must match the result of passing an all-ones sample_weight. The
-    # unweighted fit itself must be unchanged.
+    """
+    drop_valuation must take effect even when sample_weight is None, and
+    must match the result of passing an all-ones sample_weight. The
+    unweighted fit itself must be unchanged.
+
+    https://github.com/casact/chainladder-python/issues/1619
+    """
     base = cl.TweedieGLM().fit(genins).ldf_.values[0, 0, 0, :4]
     dropped = cl.TweedieGLM(drop_valuation="2005").fit(genins).ldf_.values[0, 0, 0, :4]
     dropped_weighted = (
@@ -43,7 +46,12 @@ def test_drop_valuation_without_sample_weight(genins):
 
 
 def test_drop_without_sample_weight(genins):
-    # https://github.com/casact/chainladder-python/issues/1619
+    """
+    drop must take effect even when sample_weight is None, while the
+    unweighted fit itself is unchanged.
+
+    https://github.com/casact/chainladder-python/issues/1619
+    """
     base = cl.TweedieGLM().fit(genins).ldf_.values[0, 0, 0, :4]
     dropped = cl.TweedieGLM(drop=("2001", 12)).fit(genins).ldf_.values[0, 0, 0, :4]
     assert np.round(base, 4).tolist() == [3.491, 1.7474, 1.4574, 1.1739]
