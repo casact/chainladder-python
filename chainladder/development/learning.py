@@ -283,7 +283,10 @@ class DevelopmentML(DevelopmentBase):
     def _prep_w_ml(self, X, sample_weight=None):
         # scikit-learn requires a dense sample_weight
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
-        obj = X.set_backend(backend)
+        # _prep_X_ml builds one row per cell of the cumulative triangle. An
+        # incremental triangle can leave some of those cells empty, so the
+        # weights come from the cumulative triangle to get the same rows.
+        obj = X.set_backend(backend).incr_to_cum()
         weight_base = (~np.isnan(obj.values)).astype(float)
         weight = weight_base.copy()
         weight = (

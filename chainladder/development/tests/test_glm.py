@@ -74,3 +74,25 @@ def test_sample_weight(genins):
         ).max()
         < 1e-2
     )
+
+
+def test_incremental_triangle_with_empty_cells(monthly):
+    """
+    An incremental triangle can leave a cell empty, such as a development
+    quarter with no records, where its cumulative triangle has a value.
+    TweedieGLM must fit the incremental triangle, with or without
+    drop_valuation, the same way it fits the cumulative one.
+
+    https://github.com/casact/chainladder-python/issues/1640
+    """
+    incremental = monthly["reportedCount"].grain("OYDQ")
+    cumulative = incremental.incr_to_cum()
+    assert np.isnan(incremental.values).sum() > np.isnan(cumulative.values).sum()
+    coef = {}
+    for name, X in (("incremental", incremental), ("cumulative", cumulative)):
+        for drop in (None, "2017Q2"):
+            model = cl.TweedieGLM(drop_valuation=drop).fit(X)
+            coef[name, drop] = model.model_.estimator_ml["model"].coef_
+    for drop in (None, "2017Q2"):
+        np.testing.assert_allclose(coef["incremental", drop], coef["cumulative", drop])
+    assert not np.allclose(coef["incremental", None], coef["incremental", "2017Q2"])
