@@ -32,6 +32,70 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """Vertically align CDF to origin period latest diagonal."""
         return X.cdf_.align_pattern(X, sample_weight)
 
+    @staticmethod
+    def _align_weight_origins(X, sample_weight):
+        """
+        Match ``sample_weight`` to the origins of ``X`` by label.
+
+        The methods read ``sample_weight`` by position along the origin axis.
+        When ``X`` and ``sample_weight`` each have more than one origin at the
+        same grain and their origins differ, this reindexes the weight to the
+        origins of ``X``, with NaN for an origin of ``X`` that the weight lacks,
+        and drops origins found only in the weight. A warning names the origins
+        found on one side only.
+
+        Returns the weight and the origins of ``X`` that it lacks, which get
+        no ultimate.
+        """
+        none = pd.DatetimeIndex([])
+        if (
+            sample_weight is None
+            or len(X.odims) == 1
+            or len(sample_weight.odims) == 1
+            or X.origin_grain != sample_weight.origin_grain
+        ):
+            return sample_weight, none
+        x_origins = pd.DatetimeIndex(X.odims)
+        w_origins = pd.DatetimeIndex(sample_weight.odims)
+        if x_origins.equals(w_origins):
+            return sample_weight, none
+        missing = x_origins.difference(w_origins)
+        only_x = X.origin[x_origins.isin(missing)].astype(str).tolist()
+        only_w = sample_weight.origin[~w_origins.isin(x_origins)]
+        only_w = only_w.astype(str).tolist()
+        if only_x or only_w:
+            import warnings
+
+            warnings.warn(
+                "sample_weight is matched to X by origin. "
+                f"Origins of X with no weight get no ultimate: {only_x}. "
+                f"Origins only in sample_weight are left out: {only_w}."
+            )
+        backend = sample_weight.array_backend
+        obj = sample_weight.set_backend("numpy")
+        xp = obj.get_array_module()
+        positions = w_origins.get_indexer(x_origins)
+        values = xp.full(
+            obj.shape[:2] + (len(x_origins), obj.shape[3]), xp.nan, dtype=float
+        )
+        found = positions >= 0
+        values[:, :, found, :] = obj.values[:, :, positions[found], :]
+        obj.values = values
+        obj.odims = X.odims.copy()
+        return obj.set_backend(backend), missing
+
+    @staticmethod
+    def _drop_ultimates(ultimate, origins):
+        """Set ``ultimate`` to NaN at ``origins``, which have no weight."""
+        if len(origins) == 0:
+            return ultimate
+        backend = ultimate.array_backend
+        obj = ultimate.set_backend("numpy")
+        values = obj.values.copy()
+        values[:, :, pd.DatetimeIndex(obj.odims).isin(origins), :] = float("nan")
+        obj.values = values
+        return obj.set_backend(backend)
+
     def _set_ult_attr(self, ultimate):
         """Ultimate scaffolding"""
         from chainladder import options

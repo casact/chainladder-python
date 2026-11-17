@@ -194,11 +194,13 @@ class Benktander(MethodBase):
             2008  50708.755370
 
         """
+        sample_weight, missing = self._align_weight_origins(X, sample_weight)
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         super().fit(X, y, sample_weight)
         self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
+        self.ultimate_ = self._drop_ultimates(self.ultimate_, missing)
         self.process_variance_ = self._include_process_variance()
         return self
 
@@ -250,11 +252,13 @@ class Benktander(MethodBase):
             2012  15914.716737
             2013  17193.715555
         """
+        sample_weight, missing = self._align_weight_origins(X, sample_weight)
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = super().predict(X, sample_weight)
         X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)
+        X_new.ultimate_ = self._drop_ultimates(X_new.ultimate_, missing)
         X_new.n_iters = self.n_iters
         X_new.apriori = self.apriori
         return X_new
