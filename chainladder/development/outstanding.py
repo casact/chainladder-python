@@ -254,7 +254,9 @@ class CaseOutstanding(DevelopmentBase):
         # Convert the paid/incurred to multiplicative LDF
         dev = (dev.iloc[..., -1] / dev).iloc[..., :-1]
         dev.valuation_date = pd.Timestamp(options.ULT_VAL)
-        dev.ddims = X.link_ratio.ddims
+        # One label per link-ratio column. X.link_ratio can drop columns that
+        # have no ratio before the valuation date, so it cannot supply them.
+        dev.ddims = X.ddims[:-1]
         dev.is_pattern = True
         dev.is_cumulative = True
 

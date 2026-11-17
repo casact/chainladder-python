@@ -1,5 +1,6 @@
 import chainladder as cl
 import numpy as np
+import pytest
 
 
 def test_basic_case_outstanding():
@@ -345,3 +346,65 @@ def test_unweighted_ratios_preserved_when_n_periods_set():
     assert np.allclose(
         m.case_to_prior_case_.values, m_full.case_to_prior_case_.values, equal_nan=True
     )
+
+
+def _hand_case_outstanding_unpaid(paid, incurred):
+    """
+    Unpaid claims from the case outstanding development technique (Friedland,
+    2010, ch. 12, Approach 1) on 2D cumulative arrays with NaN in unobserved
+    cells. Each ratio is the simple average over the origins observed at both
+    ages. An age with no such origin keeps case outstanding unchanged and adds
+    no payment.
+    """
+    case = incurred - paid
+    n_ages = paid.shape[1]
+    case_ratio = np.ones(n_ages)
+    paid_ratio = np.zeros(n_ages)
+    for j in range(1, n_ages):
+        both = ~np.isnan(case[:, j]) & ~np.isnan(case[:, j - 1])
+        if both.any():
+            case_ratio[j] = np.mean(case[both, j] / case[both, j - 1])
+            paid_ratio[j] = np.mean(
+                (paid[both, j] - paid[both, j - 1]) / case[both, j - 1]
+            )
+    unpaid = 0.0
+    for row in case:
+        last = np.flatnonzero(~np.isnan(row))[-1]
+        outstanding = row[last]
+        for j in range(last + 1, n_ages):
+            unpaid += outstanding * paid_ratio[j]
+            outstanding *= case_ratio[j]
+    return unpaid
+
+
+@pytest.mark.parametrize(
+    "sample, columns, first_origin, expected",
+    [
+        ("clrd", ("CumPaidLoss", "IncurLoss"), "1992", 1205826.14),
+        ("clrd", ("CumPaidLoss", "IncurLoss"), "1994", 849163.92),
+        ("usauto", ("paid", "incurred"), "2002", 61733801.04),
+    ],
+)
+def test_origin_subset_with_more_ages_than_origins(
+    sample, columns, first_origin, expected
+):
+    """
+    Check that dropping the oldest origins leaves one age label per pattern
+    value, and that the paid IBNR then matches a hand case outstanding
+    development (Friedland, 2010, ch. 12) although no remaining origin
+    reaches the last ages.
+    """
+    tri = cl.load_sample(sample)
+    if sample == "clrd":
+        tri = tri.groupby("LOB").sum().loc["comauto"]
+    tri = tri[list(columns)]
+    tri = tri[tri.origin >= first_origin]
+    model = cl.CaseOutstanding(paid_to_incurred=columns).fit(tri)
+    for pattern in (model.ldf_, model.paid_ldf_, model.case_ldf_):
+        assert len(pattern.ddims) == pattern.shape[-1]
+    ibnr = float(cl.Chainladder().fit(model.transform(tri)).ibnr_[columns[0]].sum())
+    hand = _hand_case_outstanding_unpaid(
+        tri[columns[0]].values[0, 0], tri[columns[1]].values[0, 0]
+    )
+    assert np.isclose(ibnr, hand, rtol=1e-10)
+    assert np.isclose(ibnr, expected, atol=0.01)

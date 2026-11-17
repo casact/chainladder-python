@@ -1132,3 +1132,49 @@ def test_valid_params_pass_validation(raa):
     cl.Development(average=lambda age: "geometric", n_periods=[-1] * 9).fit(raa)
     dev = cl.Development(n_periods=4, average="simple")
     assert cl.read_json(dev.to_json()).get_params() == dev.get_params()
+
+
+def _hand_chainladder_ibnr(values):
+    """
+    Volume-weighted chain ladder IBNR from a 2D cumulative array with NaN in
+    unobserved cells. Each factor uses the origins observed at both ages, and a
+    factor with no such origin is 1.
+    """
+    factors = np.ones(values.shape[1] - 1)
+    for j in range(values.shape[1] - 1):
+        both = ~np.isnan(values[:, j]) & ~np.isnan(values[:, j + 1])
+        if both.any():
+            factors[j] = values[both, j + 1].sum() / values[both, j].sum()
+    ibnr = 0.0
+    for row in values:
+        last = np.flatnonzero(~np.isnan(row))[-1]
+        ibnr += row[last] * (np.prod(factors[last:]) - 1)
+    return ibnr
+
+
+@pytest.mark.parametrize("backend", ["numpy", "sparse"])
+@pytest.mark.parametrize(
+    "sample, first_origin, expected",
+    [
+        ("raa", "1982", 54901.61),
+        ("raa", "1983", 44554.44),
+        ("genins", "2004", 12013150.15),
+    ],
+)
+def test_origin_subset_with_more_ages_than_origins(
+    sample, first_origin, expected, backend
+):
+    """
+    Check that dropping the oldest origins leaves one age label per fitted
+    parameter, and that ``Chainladder`` then matches a hand chain ladder
+    (Mack, 1993) although no remaining origin reaches the last ages.
+    """
+    tri = cl.load_sample(sample)
+    tri = tri[tri.origin >= first_origin].set_backend(backend)
+    dev = cl.Development().fit(tri)
+    for param in (dev.ldf_, dev.sigma_, dev.std_err_):
+        assert len(param.ddims) == param.shape[-1]
+    ibnr = float(cl.Chainladder().fit(tri).ibnr_.sum())
+    hand = _hand_chainladder_ibnr(tri.set_backend("numpy").values[0, 0])
+    assert np.isclose(ibnr, hand)
+    assert round(ibnr, 2) == expected
