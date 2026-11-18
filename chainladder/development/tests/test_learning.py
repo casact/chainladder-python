@@ -95,9 +95,11 @@ GRAINS = [
 
 @pytest.fixture
 def exact_monthly():
-    # Two years of monthly origins whose cumulative values follow one
-    # multiplicative development pattern, so every grain has at least two
-    # origins and a full upper triangle.
+    """
+    Two years of monthly origins whose cumulative values follow one
+    multiplicative development pattern, so every grain has at least two
+    origins and a full upper triangle.
+    """
     n = 24
     origins = pd.date_range("2020-01-01", periods=n, freq="MS")
     pattern = 1 - 0.5 ** np.arange(1, n + 1)
@@ -125,10 +127,12 @@ def exact_monthly():
 @pytest.mark.filterwarnings("ignore:invalid value encountered in matmul:RuntimeWarning")
 @pytest.mark.parametrize("grain", GRAINS)
 def test_poisson_glm_matches_chainladder(exact_monthly, grain):
-    # A cross-classified Poisson GLM reproduces chain ladder (Renshaw and
-    # Verrall, 1998, renshaw1998 in docs/library/references.bib), so at every
-    # grain the projected square must be complete and its chain ladder
-    # ultimates must equal the ultimates of chain ladder on the triangle.
+    """
+    A cross-classified Poisson GLM reproduces chain ladder (Renshaw and
+    Verrall, 1998, renshaw1998 in docs/library/references.bib), so at every
+    grain the projected square must be complete and its chain ladder
+    ultimates must equal the ultimates of chain ladder on the triangle.
+    """
     tri = exact_monthly.grain(grain)
     model = cl.DevelopmentML(
         Pipeline(
@@ -156,9 +160,11 @@ def test_poisson_glm_matches_chainladder(exact_monthly, grain):
 
 @pytest.mark.parametrize("grain", GRAINS)
 def test_projection_fills_future_cells(monthly, grain):
-    # DevelopmentML projects each origin forward from the latest diagonal, so
-    # every future cell of triangle_ml_ must be filled at every grain,
-    # including grains whose origin and development periods differ.
+    """
+    DevelopmentML projects each origin forward from the latest diagonal, so
+    every future cell of triangle_ml_ must be filled at every grain,
+    including grains whose origin and development periods differ.
+    """
     tri = monthly["reportedCount"].grain(grain)
     ml = cl.TweedieGLM(response="reportedCount").fit(tri).triangle_ml_
     values = ml.set_backend("numpy").values[0, 0]
