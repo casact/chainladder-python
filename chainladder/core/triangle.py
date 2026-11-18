@@ -1195,7 +1195,7 @@ class Triangle(TriangleBase):
             Triangle of selected pattern across origin periods
 
         """
-        if not self.pattern:
+        if not self.is_pattern:
             raise ValueError(
                 "Triangle is not a selected pattern, such as .ldf_ or .cdf_"
             )
