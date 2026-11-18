@@ -270,6 +270,10 @@ class WeightedRegression(BaseEstimator):
         the log scale that outweighs every other point in the least-squares
         fit. Zero sigmas are left as they are.
 
+        Where the fitted line rises, a fill after the last positive sigma is
+        capped at that sigma, so the tail sigmas never rise above the last one
+        observed.
+
         With fewer than three positive sigmas, the fill comes from
         ``mack_interpolation`` instead. One point gives no slope, and a line
         through two points fits both exactly, so no residual is left to judge
@@ -284,6 +288,17 @@ class WeightedRegression(BaseEstimator):
         reg = WeightedRegression(self.axis, False, xp=xp).fit(None, ly, w)
         slope, intercept = reg.slope_, reg.intercept_
         fill_ = xp.nan_to_num(xp.exp(reg.x * slope + intercept) * (1 - estimated))
+        # Where the fitted line rises, a fill after the last positive sigma
+        # stays at or below that sigma, as each Mack fill stays at or below
+        # the sigmas before it. A rising line would otherwise grow the tail
+        # sigmas without bound.
+        last_x = xp.max(reg.x * w, axis=self.axis, keepdims=True)
+        last_sigma = xp.sum(
+            xp.nan_to_num(y) * (reg.x == last_x), axis=self.axis, keepdims=True
+        )
+        fill_ = xp.where(
+            (reg.x > last_x) & (slope >= 0), xp.minimum(fill_, last_sigma), fill_
+        )
         use_mack = xp.sum(w, axis=self.axis, keepdims=True) < 3
         if use_mack.any():
             # mack_interpolation divides by the square of the sigma two

@@ -1163,3 +1163,13 @@ def test_loglinear_sigma_skips_zero_sigmas(clrd):
     slope, intercept = np.polyfit(period[1:6], np.log(sigma[1:6]), 1)
     assert np.allclose(sigma[[0, 8]], np.exp(intercept + slope * period[[0, 8]]))
     assert np.isclose(sigma[0], 7.1819, atol=1e-4)
+
+
+def test_loglinear_sigma_tail_capped_at_last_sigma(clrd):
+    # GH 1609: Marysville's three positive sigmas (12-24 to 36-48) rise, and
+    # the line through them filled 107.6 at 108-120. A fill after the last
+    # positive sigma now stays at or below that sigma, as Mack's fill does.
+    tri = clrd["IncurLoss"].loc["Marysville Mut Ins Co", "othliab"]
+    sigma = cl.Development().fit(tri).sigma_.set_backend("numpy").values.ravel()
+    assert np.isclose(sigma[-1], sigma[2])
+    assert np.nanmax(sigma) == np.nanmax(sigma[:3])
