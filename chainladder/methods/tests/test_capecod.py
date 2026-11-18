@@ -224,3 +224,31 @@ def test_capecod_onlevel_friedland_exhibit_ii():
 
     # Exhibit II, Sheet 2 - projected ultimate claims total 504,300
     assert np.isclose(cc.ultimate_.sum().sum(), 504300, rtol=5e-3)
+
+
+def test_capecod_apriori_sigma_predict_redraws_without_a_seed(genins):
+    """
+    Check that ``CapeCod.predict`` draws new aprioris when ``random_state`` is
+    None and repeats the fit's when it is an integer (#1568).
+    """
+    premium = genins.latest_diagonal * 0 + 8e6
+
+    model = cl.CapeCod(apriori_sigma=0.5).fit(genins, sample_weight=premium)
+    first = (
+        model
+        .predict(genins, sample_weight=premium)
+        .expectation_.set_backend("numpy")
+        .values
+    )
+    assert not np.array_equal(model.expectation_.set_backend("numpy").values, first)
+
+    model = cl.CapeCod(apriori_sigma=0.5, random_state=7).fit(
+        genins, sample_weight=premium
+    )
+    np.testing.assert_array_equal(
+        model.expectation_.set_backend("numpy").values,
+        model
+        .predict(genins, sample_weight=premium)
+        .expectation_.set_backend("numpy")
+        .values,
+    )
