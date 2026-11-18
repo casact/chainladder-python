@@ -22,9 +22,10 @@ class BootstrapODPSample(DevelopmentBase):
     n_periods: integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    hat_adj: bool (default=False)
+    hat_adj: bool (default=True)
         Adjust standardized Pearson residuals with the hat matrix adjustment
-        factor.  If false, Degree of Freedom adjustment is used.
+        factor.  If False, or if the hat matrix cannot be computed, the
+        residuals are resampled without an adjustment.
     drop: tuple or list of tuples
         Drops specific origin/development combination(s) from residual sample
     drop_high: bool or list of bool (default=None)
@@ -131,20 +132,20 @@ class BootstrapODPSample(DevelopmentBase):
     Two further levers control how the residual pool is built. ``n_periods``
     restricts the internal ``Development`` fit to the most recent origin
     periods, which changes the Pearson residuals and therefore ``scale_``,
-    while ``hat_adj`` swaps the hat matrix adjustment for the simpler
-    degree-of-freedom adjustment when standardizing residuals before
-    resampling.
+    while ``hat_adj=False`` resamples the residuals without the hat matrix
+    adjustment. ``scale_`` comes from the unadjusted residuals either way,
+    so the second value below matches the default fit.
 
     .. testcode::
 
         short_hist = cl.BootstrapODPSample(
             n_sims=100, random_state=42, n_periods=3
         ).fit(raa)
-        dof = cl.BootstrapODPSample(
+        no_hat = cl.BootstrapODPSample(
             n_sims=100, random_state=42, hat_adj=False
         ).fit(raa)
         print(round(float(short_hist.scale_), 2))
-        print(round(float(dof.scale_), 2))
+        print(round(float(no_hat.scale_), 2))
 
     .. testoutput::
 
@@ -228,8 +229,10 @@ class BootstrapODPSample(DevelopmentBase):
                 try:
                     self.hat_ = self._get_hat(X, exp_incr_triangle)
                 except np.linalg.LinAlgError:
-                    warn("Could not compute hat matrix.  Setting hat_adj to False")
-                    self.had_adj = False
+                    warn(
+                        "Could not compute hat matrix.  Resampling residuals "
+                        "without the hat matrix adjustment."
+                    )
                     self.hat_ = None
             else:
                 self.hat_ = None

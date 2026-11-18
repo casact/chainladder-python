@@ -214,10 +214,13 @@ class TweedieGLM(DevelopmentBase):
 
     def fit(self, X, y=None, sample_weight=None):
         response = X.columns[0] if not self.response else self.response
-        if sample_weight is None:
-            weight = None
-        else:
-            weight = "model"
+        # Always forward the weights: DevelopmentML builds them from
+        # drop/drop_valuation in _prep_w_ml, but only passes them to the
+        # estimator when weighted_step is set. Passing "model" unconditionally
+        # (as BarnettZehnwirth does) makes the exclusions take effect even
+        # when sample_weight is None; with no exclusions the weights are all
+        # ones, so the unweighted fit is unchanged.
+        weight = "model"
         self.model_ = DevelopmentML(
             Pipeline(
                 steps=[

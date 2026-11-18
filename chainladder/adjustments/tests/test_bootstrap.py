@@ -1,6 +1,7 @@
 import chainladder as cl
 import numpy as np
 import pandas as pd
+import pytest
 
 
 def test_bs_sample(raa):
@@ -162,3 +163,16 @@ def test_check_random_state_on_a_module_with_its_own_generator():
     built = _check_random_state(42, xp)
     assert isinstance(built, StubRandomState) and built.seed == 42
     assert _check_random_state(built, xp) is built
+
+
+def test_hat_matrix_fallback_leaves_hat_adj_unchanged():
+    # The hat matrix of this quarterly triangle cannot be computed (#33), so
+    # fit falls back to residuals without the hat matrix adjustment.
+    tri = cl.load_sample("quarterly")["paid"]
+    est = cl.BootstrapODPSample(n_sims=10, random_state=42)
+    with pytest.warns(UserWarning, match="Could not compute hat matrix"):
+        est.fit(tri)
+    assert est.hat_ is None
+    assert est.hat_adj is True
+    assert est.get_params()["hat_adj"] is True
+    assert not hasattr(est, "had_adj")
