@@ -1,6 +1,7 @@
 import chainladder as cl
 import numpy as np
 import pandas as pd
+import pytest
 
 
 def test_bs_sample(raa):
@@ -27,3 +28,39 @@ def test_multi_index(clrd):
     expected = pd.concat([tri.index] * 1000, ignore_index=True)
     expected["Simulation_#"] = np.arange(1000)
     pd.testing.assert_frame_equal(resampled_triangles.index, expected)
+
+
+def test_hat_adjustment_is_zero_at_corners(genins):
+    """
+    Check that the hat adjustment factor is exactly 0 at the two corner cells,
+    and that one ``random_state`` gives one hat matrix and one set of draws.
+
+    Each corner cell has a parameter of its own, so 1 - H_ii is 0 there and its
+    residual stays out of the resampling pool (Shapland and Leong 2010,
+    section 3.2). Any other value at those cells can change the draws for a fixed
+    ``random_state``, so every fit must match the first in all of ``hat_`` and
+    ``resampled_triangles_``.
+    """
+    tri = genins
+    first = cl.BootstrapODPSample(n_sims=10, random_state=42).fit(tri)
+    assert first.hat_[0, -1] == 0
+    assert first.hat_[-1, 0] == 0
+    for _ in range(4):
+        model = cl.BootstrapODPSample(n_sims=10, random_state=42).fit(tri)
+        np.testing.assert_array_equal(model.hat_, first.hat_)
+        np.testing.assert_array_equal(
+            model.resampled_triangles_.values, first.resampled_triangles_.values
+        )
+
+
+def test_hat_matrix_fallback_leaves_hat_adj_unchanged():
+    # The hat matrix of this quarterly triangle cannot be computed (#33), so
+    # fit falls back to residuals without the hat matrix adjustment.
+    tri = cl.load_sample("quarterly")["paid"]
+    est = cl.BootstrapODPSample(n_sims=10, random_state=42)
+    with pytest.warns(UserWarning, match="Could not compute hat matrix"):
+        est.fit(tri)
+    assert est.hat_ is None
+    assert est.hat_adj is True
+    assert est.get_params()["hat_adj"] is True
+    assert not hasattr(est, "had_adj")

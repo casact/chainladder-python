@@ -16,6 +16,7 @@ from typing import (
     Literal,
     # Self,  # Make use of this once Python 3.10 is deprecated.
     TYPE_CHECKING,
+    get_args,
 )
 
 if TYPE_CHECKING:
@@ -23,6 +24,18 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
     from pandas import Series
     from types import ModuleType
+
+# Allowed values of Development's string parameters. The annotations in
+# Development.__init__ use them, and _check_param_values reads them with
+# get_args.
+Average = Literal["volume", "simple", "regression", "geometric"]
+SigmaInterpolation = Literal["log-linear", "mack"]
+
+
+def _one_of(values: tuple) -> str:
+    """Return ``values`` as "'a', 'b' or 'c'" for an error message."""
+    quoted = [repr(v) for v in values]
+    return ", ".join(quoted[:-1]) + " or " + quoted[-1]
 
 
 class Development(DevelopmentBase):
@@ -37,11 +50,9 @@ class Development(DevelopmentBase):
 
         Setting n_periods to 1 does not allow enough degrees of freedom to support
         calculation of all regression statistics; only LDFs would be calculated.
-    average: literal (or list of literals), or float, optional (default = 'volume')
+    average: literal (or list of literals), optional (default = 'volume')
         type of averaging to use for ldf average calculation.
-        Options include 'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
-        then (2-average) in the style of Zehnwirth & Barnett is used
-        for the exponent of the regression weights.
+        Options include 'volume', 'simple', 'regression', and 'geometric'.
     sigma_interpolation: string optional (default = 'log-linear')
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
@@ -69,7 +80,11 @@ class Development(DevelopmentBase):
         The minimum number of link ratio(s) required for LDF calculation.
         See order of operations below when combined with multiple drop parameters.
     drop_valuation: str or list of str (default = None)
-        Drops specific valuation periods. str must be date convertible.
+        Drops the link ratios whose starting value has the given valuation.
+        str must be date convertible. Each link ratio is keyed to the
+        valuation of its starting value, as in ``link_ratio``, so the latest
+        valuation of a triangle has no link ratios to drop. To leave out a
+        change that happened between valuations t-1 and t, pass t-1.
         See order of operations below when combined with multiple drop parameters.
     fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
@@ -90,7 +105,7 @@ class Development(DevelopmentBase):
 
             1. ``n_periods`` — limit to the most recent origin periods.
             2. ``drop`` — remove specific origin/development cells.
-            3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
+            3. ``drop_valuation`` — remove the link ratios that start on the given valuations.
             4. ``drop_high`` / ``drop_low`` — remove highest/lowest link ratios by rank
                (eligible factors from ``n_periods`` are used; protected by ``preserve``,
                which may relax exclusions from this step if too few ratios would remain then this step is skipped).
@@ -184,6 +199,32 @@ class Development(DevelopmentBase):
 
                   12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
         (All)  1.582216  1.339353  1.193406  1.095906  1.076968  1.033612  1.019016  0.997636  0.992918  0.999179
+
+    ``drop_valuation`` keys each link ratio to the valuation of its starting
+    value, the same valuation ``link_ratio`` shows. Passing "1986" drops the
+    six link ratios that start on the 1986 valuation, one for each origin from
+    1981 to 1986.
+
+    ..  testcode::
+
+        raa = cl.load_sample("raa")
+        print(cl.Development(drop_valuation="1986").fit_transform(raa).link_ratio)
+
+    ..  testoutput::
+
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120
+        1981   1.649840  1.319023  1.082332  1.146887  1.195140       NaN  1.033261  1.002902  1.009217
+        1982  40.424528  1.259277  1.976649  1.292143       NaN  0.993397  1.043431  1.033088       NaN
+        1983   2.636950  1.542816  1.163483       NaN  1.185695  1.029216  1.026374       NaN       NaN
+        1984   2.043324  1.364431       NaN  1.101524  1.113469  1.037726       NaN       NaN       NaN
+        1985   8.759158       NaN  1.399912  1.170779  1.008669       NaN       NaN       NaN       NaN
+        1986        NaN  1.815671  1.105367  1.225512       NaN       NaN       NaN       NaN       NaN
+        1987   7.217235  2.722886  1.124977       NaN       NaN       NaN       NaN       NaN       NaN
+        1988   5.142117  1.887433       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+        1989   1.721992       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+
+    To leave out a change that happened between valuations t-1 and t, pass
+    t-1: "1986" removes every link ratio that ends on the 1987 valuation.
 
     We can also drop all link ratio(s) above the given parameter by passing a list of floats to the drop_above parameter.
     Let's inspect the link ratios after the drop.
@@ -328,8 +369,8 @@ class Development(DevelopmentBase):
     def __init__(
         self,
         n_periods: int = -1,
-        average: Literal["volume", "simple", "regression", "geometric"] = "volume",
-        sigma_interpolation: Literal["log-linear", "mack"] = "log-linear",
+        average: Average = "volume",
+        sigma_interpolation: SigmaInterpolation = "log-linear",
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
@@ -356,6 +397,39 @@ class Development(DevelopmentBase):
         # Undeclared until fitted attributes - scikit-learn convention.
         self.average_: np.ndarray
 
+    def _check_param_values(self, X: TriangleLike | None = None) -> None:
+        """
+        Check ``average``, ``n_periods`` and ``sigma_interpolation`` and raise
+        a ``ValueError`` naming the first one with a value ``fit`` cannot use.
+
+        ``average`` takes the values of ``Average``, ``n_periods`` takes -1 or
+        a positive integer (0 is kept as an alias for -1), and
+        ``sigma_interpolation`` takes the values of ``SigmaInterpolation``. A
+        list is checked value by value. ``fit`` calls the method with the
+        triangle, so a dict or callable is checked once resolved against it;
+        ``read_json`` calls it with no triangle and skips those.
+        """
+        averages = get_args(Average)
+        for value in self._assumption_values(self.average, X):
+            if not (isinstance(value, str) and value in averages):
+                raise ValueError(f"average must be {_one_of(averages)}, got {value!r}.")
+        for value in self._assumption_values(self.n_periods, X):
+            if (
+                isinstance(value, (bool, np.bool_))
+                or not isinstance(value, (int, np.integer))
+                or not (value == -1 or value >= 0)
+            ):
+                raise ValueError(
+                    "n_periods must be -1 or a positive integer (0 is read as "
+                    f"-1), got {value!r}."
+                )
+        interpolations = get_args(SigmaInterpolation)
+        if self.sigma_interpolation not in interpolations:
+            raise ValueError(
+                f"sigma_interpolation must be {_one_of(interpolations)}, "
+                f"got {self.sigma_interpolation!r}."
+            )
+
     def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
         """
         Fit the model with X.
@@ -375,6 +449,7 @@ class Development(DevelopmentBase):
             Returns the instance itself.
         """
 
+        self._check_param_values(X)
         # Triangle must be cumulative and in "development" mode.
         obj: TriangleLike = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp: ModuleType = obj.get_array_module()

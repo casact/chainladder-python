@@ -140,6 +140,50 @@ def test_origin_broadcasting(raa: Triangle) -> None:
     assert result.equals(raa + 500)
 
 
+@pytest.mark.parametrize(
+    "op", [operator.add, operator.sub, operator.mul, operator.truediv]
+)
+def test_one_axis_broadcasting_with_union(clrd: Triangle, op) -> None:
+    """
+    A one-origin operand with fewer development periods, or a one-development
+    operand with fewer origins, applies its values to every origin or
+    development period of the other operand, with or without a single index
+    and column (#1574). In the period the short operand lacks, addition and
+    subtraction treat it as 0, and multiplication and division give NaN.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+    op: Callable
+        The arithmetic operator under test.
+
+    Returns
+    -------
+    None
+    """
+    origin_case = np.s_[..., :-1], np.s_[..., -1:]
+    development_case = np.s_[..., :-1, :], np.s_[..., -1:, :]
+    for short, (overlap, gap) in (
+        (clrd.iloc[..., :-1].sum("origin"), origin_case),
+        (clrd.iloc[:1, :1, :, :-1].sum("origin"), origin_case),
+        (clrd.iloc[..., :-1, :].sum("development"), development_case),
+        (clrd.iloc[:1, :1, :-1, :].sum("development"), development_case),
+    ):
+        for column in short.columns:
+            short[column] = 500
+        for result, expected, gap_operands in (
+            (op(clrd, short), op(clrd.iloc[overlap], 500), (clrd.iloc[gap], 0)),
+            (op(short, clrd), op(500, clrd.iloc[overlap]), (0, clrd.iloc[gap])),
+        ):
+            assert result.shape == clrd.shape
+            assert result.iloc[overlap].equals(expected)
+            if op in (operator.add, operator.sub):
+                assert result.iloc[gap].equals(op(*gap_operands))
+            else:
+                assert np.isnan(result.iloc[gap].set_backend("numpy").values).all()
+
+
 def test_arithmetic_union(raa):
     assert raa.shape == (raa - raa[raa.valuation < "1987"]).shape
     assert (raa[raa.valuation < "1986"] + raa[raa.valuation >= "1986"]).equals(raa)
