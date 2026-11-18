@@ -146,23 +146,23 @@ def test_random_state_none_independent_columns():
 
 def test_check_random_state_on_a_module_with_its_own_generator():
     """
-    Check that ``_check_random_state`` builds a generator from the array
-    module's own ``random.RandomState`` when it has one, as cupy does, and
-    returns an instance of that class unchanged. A stub module stands in for
-    cupy, which the test suite does not install.
+    Check that ``RandomStateMixin._check_random_state`` builds a generator
+    from the array module's own ``random.RandomState`` when it has one, as
+    cupy does, and returns an instance of that class unchanged. A stub module
+    stands in for cupy, which the test suite does not install.
     """
     from types import SimpleNamespace
 
-    from chainladder.utils.utility_functions import _check_random_state
+    from chainladder.utils.utility_functions import RandomStateMixin
 
     class StubRandomState:
         def __init__(self, seed=None):
             self.seed = seed
 
     xp = SimpleNamespace(random=SimpleNamespace(RandomState=StubRandomState))
-    built = _check_random_state(42, xp)
+    built = RandomStateMixin._check_random_state(42, xp)
     assert isinstance(built, StubRandomState) and built.seed == 42
-    assert _check_random_state(built, xp) is built
+    assert RandomStateMixin._check_random_state(built, xp) is built
 
 
 def test_hat_matrix_fallback_leaves_hat_adj_unchanged():

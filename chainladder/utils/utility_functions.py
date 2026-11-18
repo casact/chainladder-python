@@ -1318,64 +1318,72 @@ def _get_axis_name(axis: int | str) -> str:
     return _axis_orders[_get_axis_number(axis)]
 
 
-def _check_random_state(seed, xp=np):
-    """
-    Return a random number generator for ``seed`` on the array module ``xp``.
-
-    ``sklearn.utils.check_random_state`` handles the three accepted forms:
-    ``None`` gives the global ``np.random`` generator, an integer seeds a new
-    ``RandomState``, and a ``RandomState`` instance is returned as it is. It
-    serves numpy and every module without a ``random.RandomState`` of its own,
-    such as ``sparse``, whose draws numpy then makes. A module that has one,
-    such as cupy, gets a ``RandomState`` built from ``seed`` unless ``seed`` is
-    already one.
-    """
-    if xp is np or not hasattr(getattr(xp, "random", None), "RandomState"):
-        from sklearn.utils import check_random_state
-
-        return check_random_state(seed)
-    if isinstance(seed, xp.random.RandomState):
-        return seed
-    return xp.random.RandomState(seed)
-
-
-def _process_variance_seed(seed):
-    """
-    Return the seed for the process-variance draws that follow the draws
-    seeded by ``seed``.
-
-    An integer seed is offset by 1 so the two sets of draws differ, including
-    for seed 0. A ``RandomState`` instance or ``None`` is passed through.
-    """
-    if isinstance(seed, (int, np.integer)) and not isinstance(seed, bool):
-        return int(seed) + 1
-    return seed
-
-
-def _record_seed(seed):
-    """
-    Return the seed a fit records as ``random_state_``.
-
-    For ``None``, one integer is drawn from the global ``np.random`` generator,
-    so ``np.random.seed`` still repeats a run and the drawn integer can be
-    passed back as ``random_state``. An integer or a ``RandomState`` instance
-    is returned as it is.
-    """
-    if seed is None:
-        return int(np.random.randint(np.iinfo(np.int32).max))
-    return seed
-
-
 class RandomStateMixin:
     """
     Seed handling shared by estimators that take a ``random_state`` parameter.
 
     ``fit`` calls ``_record_random_state`` to store the seed its draws use as
     ``random_state_``, and the draws get their generator from
-    ``_get_random_state``.
+    ``_get_random_state``. The static helpers below build generators and
+    seeds, and code outside an estimator, such as the process-variance step
+    of ``BootstrapODPSample``, calls them through the class.
     """
 
-    def _record_random_state(self, draws=True):
+    @staticmethod
+    def _check_random_state(
+        seed: int | np.random.RandomState | None, xp: ModuleType = np
+    ) -> np.random.RandomState:
+        """
+        Return a random number generator for ``seed`` on the array module ``xp``.
+
+        ``sklearn.utils.check_random_state`` handles the three accepted forms:
+        ``None`` gives the global ``np.random`` generator, an integer seeds a new
+        ``RandomState``, and a ``RandomState`` instance is returned as it is. It
+        serves numpy and every module without a ``random.RandomState`` of its own,
+        such as ``sparse``, whose draws numpy then makes. A module that has one,
+        such as cupy, gets a ``RandomState`` built from ``seed`` unless ``seed`` is
+        already one.
+        """
+        if xp is np or not hasattr(getattr(xp, "random", None), "RandomState"):
+            from sklearn.utils import check_random_state
+
+            return check_random_state(seed)
+        if isinstance(seed, xp.random.RandomState):
+            return seed
+        return xp.random.RandomState(seed)
+
+    @staticmethod
+    def _process_variance_seed(
+        seed: int | np.random.RandomState | None,
+    ) -> int | np.random.RandomState | None:
+        """
+        Return the seed for the process-variance draws that follow the draws
+        seeded by ``seed``.
+
+        An integer seed is offset by 1 so the two sets of draws differ, including
+        for seed 0. A ``RandomState`` instance or ``None`` is passed through.
+        """
+        if isinstance(seed, (int, np.integer)) and not isinstance(seed, bool):
+            return int(seed) + 1
+        return seed
+
+    @staticmethod
+    def _record_seed(
+        seed: int | np.random.RandomState | None,
+    ) -> int | np.random.RandomState:
+        """
+        Return the seed a fit records as ``random_state_``.
+
+        For ``None``, one integer is drawn from the global ``np.random`` generator,
+        so ``np.random.seed`` still repeats a run and the drawn integer can be
+        passed back as ``random_state``. An integer or a ``RandomState`` instance
+        is returned as it is.
+        """
+        if seed is None:
+            return int(np.random.randint(np.iinfo(np.int32).max))
+        return seed
+
+    def _record_random_state(self, draws: bool = True) -> None:
         """
         Set ``random_state_`` from ``random_state``.
 
@@ -1384,10 +1392,12 @@ class RandomStateMixin:
         ``draws=False`` and keeps ``random_state`` as it is.
         """
         self.random_state_ = (
-            _record_seed(self.random_state) if draws else self.random_state
+            self._record_seed(self.random_state) if draws else self.random_state
         )
 
-    def _get_random_state(self, xp=np, redraw=False):
+    def _get_random_state(
+        self, xp: ModuleType = np, redraw: bool = False
+    ) -> np.random.RandomState:
         """
         Return a generator for the recorded seed on the array module ``xp``.
 
@@ -1397,7 +1407,7 @@ class RandomStateMixin:
         after the fit differ from the fit's.
         """
         if redraw and self.random_state is None:
-            return _check_random_state(_record_seed(None), xp)
-        return _check_random_state(
+            return self._check_random_state(self._record_seed(None), xp)
+        return self._check_random_state(
             getattr(self, "random_state_", self.random_state), xp
         )

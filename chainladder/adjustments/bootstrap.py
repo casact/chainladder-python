@@ -387,12 +387,9 @@ def _get_process_variance(self, full_triangle):
     #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
     xp = full_triangle.get_array_module()
     lower_tri = full_triangle.cum_to_incr() - self.cum_to_incr()
-    from chainladder.utils.utility_functions import (
-        _check_random_state,
-        _process_variance_seed,
+    random_state = RandomStateMixin._check_random_state(
+        RandomStateMixin._process_variance_seed(self.random_state), xp
     )
-
-    random_state = _check_random_state(_process_variance_seed(self.random_state), xp)
     lower_tri.values = random_state.gamma(
         shape=abs(lower_tri.values) / self.scale_, scale=self.scale_
     ) * xp.sign(xp.nan_to_num(lower_tri.values))
