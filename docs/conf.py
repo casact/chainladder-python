@@ -68,7 +68,7 @@ html_theme_options = {
     },
     "path_to_docs": "docs",
     "repository_branch": "main",
-    "repository_url": "https://github.com/casact/chainladder-python",
+    "repository_url": "https://github.com/casact/chainladder",
     "search_bar_text": "Search this website...",
     "use_edit_page_button": False,
     "use_issues_button": True,

@@ -1,6 +1,6 @@
 # Contributing
 
-**`chainladder-python`** welcomes volunteers at all levels, whether you are new to actuarial reserving, Python, or both. Feedback, questions, suggestions, and contributions are all highly encouraged.
+**`chainladder`** welcomes volunteers at all levels, whether you are new to actuarial reserving, Python, or both. Feedback, questions, suggestions, and contributions are all highly encouraged.
 
 ---
 
@@ -17,11 +17,11 @@
 
 You can help improve and shape the project in many ways:  
 
-1. Submit bugs or enhancement requests via the [issue tracker](https://github.com/casact/chainladder-python/issues).  
+1. Submit bugs or enhancement requests via the [issue tracker](https://github.com/casact/chainladder/issues).  
 2. Volunteer to implement code changes for existing issues.  
-3. Ask questions or discuss ideas on the [discussion forum](https://github.com/casact/chainladder-python/discussions).  
+3. Ask questions or discuss ideas on the [discussion forum](https://github.com/casact/chainladder/discussions).  
 4. Improve documentation where it is unclear.  
-5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/main/gallery/index.html).  
+5. Create new examples or tutorials in the [examples section](https://chainladder.readthedocs.io/main/gallery/index.html).  
 
 ---
 
@@ -37,13 +37,13 @@ We welcome contributors of all skill levels, including CAS members, its affiliat
 
 ## API Guidelines
 
-`chainladder-python` is designed to follow the style of **pandas** and **scikit-learn**. This ensures a consistent API and simplifies new development:  
+`chainladder` is designed to follow the style of **pandas** and **scikit-learn**. This ensures a consistent API and simplifies new development:  
 
 1. Estimators and transformers should follow the [scikit-learn estimator API](https://scikit-learn.org/stable/developers/develop.html).  
 2. `Triangle` methods should align with **pandas** (then **NumPy**) naming and signature conventions. Domain-specific methods with no equivalent should follow [PEP8](https://www.python.org/dev/peps/pep-0008/#method-names-and-instance-variables).  
 3. `Triangle` methods are non-mutating by default. Mutation is allowed only via an `inplace` argument.  
 
-For domain-specific exceptions, discuss on the [issue tracker](https://github.com/casact/chainladder-python/issues).
+For domain-specific exceptions, discuss on the [issue tracker](https://github.com/casact/chainladder/issues).
 
 ---
 
@@ -60,7 +60,7 @@ echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 
 # Navigate to your working directory
-cd chainladder-python
+cd chainladder
 
 # Create virtual environment and install all dependencies
 uv sync --extra all

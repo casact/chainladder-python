@@ -19,7 +19,7 @@
 <!-- Checklists below should be completed, but do not edit any words below. -->
 
 ## Submitter's Checklist
-- [ ] I have reviewed and am adhering to the standards outlined in the project [Governing Doc](https://github.com/casact/chainladder-python/blob/main/docs/library/governance.md).
+- [ ] I have reviewed and am adhering to the standards outlined in the project [Governing Doc](https://github.com/casact/chainladder/blob/main/docs/library/governance.md).
 - [ ] The PR subject title summarizes the changes, with one proper prefix (`[FIX]`, `[FEAT]`, `[DOCS]`, `[TST]`, `[CHORE]`, or `[BRK]`).
 - [ ] I am a human (not a bot), and this PR form is written by a human.
 

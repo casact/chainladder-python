@@ -18,14 +18,14 @@
 .. |License| image:: https://badgen.net/pypi/license/chainladder
    :target: https://pypi.python.org/pypi/chainladder
 
-.. |Build Status| image:: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml/badge.svg
-   :target: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml
+.. |Build Status| image:: https://github.com/casact/chainladder/actions/workflows/pytest.yml/badge.svg
+   :target: https://github.com/casact/chainladder/actions/workflows/pytest.yml
 
-.. |codecov io| image:: https://codecov.io/gh/casact/chainladder-python/branch/main/graphs/badge.svg
-   :target: https://codecov.io/github/casact/chainladder-python?branch=latest
+.. |codecov io| image:: https://codecov.io/gh/casact/chainladder/branch/main/graphs/badge.svg
+   :target: https://codecov.io/github/casact/chainladder?branch=latest
 
-.. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=main
-   :target: https://chainladder-python.readthedocs.io/main/
+.. |Documentation Status| image:: https://readthedocs.org/projects/chainladder/badge/?version=main
+   :target: https://chainladder.readthedocs.io/main/
 
 chainladder (python)
 ====================
@@ -54,9 +54,9 @@ Documentation Site
 
 We have a documentation website, where you can find installation instructions, tutorials, example galleries, sample datasets,  API references, change log history, and more.
 
-Visit `Chainladder-Python on Read the Docs`_.
+Visit `Chainladder on Read the Docs`_.
 
-.. _Chainladder-Python on Read the Docs: https://chainladder-python.readthedocs.io/stable/
+.. _Chainladder on Read the Docs: https://chainladder.readthedocs.io/stable/
 
 Contributors Working Group
 ----------------------------
@@ -71,4 +71,4 @@ Licenses
 -------------------
 This package is released under `Mozilla Public License 2.0`_.
 
-.. _Mozilla Public License 2.0: https://github.com/casact/chainladder-python/blob/master/LICENSE
+.. _Mozilla Public License 2.0: https://github.com/casact/chainladder/blob/master/LICENSE

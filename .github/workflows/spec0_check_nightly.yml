@@ -25,7 +25,7 @@ jobs:
   check:
     name: Check SPEC 0 support windows
     runs-on: ubuntu-latest
-    if: github.repository == 'casact/chainladder-python' || vars.ENABLE_SPEC0_CHECK == 'true'
+    if: github.repository == 'casact/chainladder' || vars.ENABLE_SPEC0_CHECK == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 

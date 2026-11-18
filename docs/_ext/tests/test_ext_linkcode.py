@@ -13,7 +13,7 @@ def test_linkcode_resolve_url_lines() -> None:
     )
 
     assert url is not None
-    assert url.startswith("https://github.com/casact/chainladder-python/blob/master/")
+    assert url.startswith("https://github.com/casact/chainladder/blob/master/")
 
     # Extract the line numbers.
     lines: str = url.split("#")[1]

@@ -3,7 +3,7 @@
 ## 1. Directory Structure
 
 ```
-chainladder-python/
+chainladder/
 ├── chainladder/                    # Main package
 │   ├── __init__.py                 # Public API, package metadata
 │   ├── py.typed                    # PEP 561 marker (ships inline type hints)
