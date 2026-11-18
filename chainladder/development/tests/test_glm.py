@@ -4,15 +4,20 @@ import chainladder as cl
 
 
 def test_basic_odp_cl(genins):
-    assert (
-        abs(
-            (
-                cl.Chainladder().fit(genins).ultimate_
-                - cl.Chainladder().fit(cl.TweedieGLM().fit_transform(genins)).ultimate_
-            )
-            / genins.latest_diagonal
-        ).max()
-        < 1e-2
+    """
+    Without the penalty, the over-dispersed Poisson GLM reproduces chain
+    ladder, so TweedieGLM(alpha=0) must match its factors and ultimates.
+    """
+    glm = cl.TweedieGLM(alpha=0).fit(genins)
+    np.testing.assert_allclose(
+        glm.ldf_.values[..., :1, :],
+        cl.Development().fit(genins).ldf_.values,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        cl.Chainladder().fit(glm.transform(genins)).ultimate_.values,
+        cl.Chainladder().fit(genins).ultimate_.values,
+        rtol=1e-5,
     )
 
 
@@ -59,20 +64,11 @@ def test_drop_without_sample_weight(genins):
 
 
 def test_sample_weight(genins):
-    assert (
-        abs(
-            (
-                cl.Chainladder().fit(genins).ultimate_
-                - cl
-                .Chainladder()
-                .fit(
-                    cl.TweedieGLM().fit_transform(genins, sample_weight=genins / genins)
-                )
-                .ultimate_
-            )
-            / genins.latest_diagonal
-        ).max()
-        < 1e-2
+    glm = cl.TweedieGLM(alpha=0).fit(genins, sample_weight=genins / genins)
+    np.testing.assert_allclose(
+        cl.Chainladder().fit(glm.transform(genins)).ultimate_.values,
+        cl.Chainladder().fit(genins).ultimate_.values,
+        rtol=1e-5,
     )
 
 
@@ -111,13 +107,13 @@ def test_alpha_reaches_regressor():
     ukmotor = cl.load_sample("ukmotor")
     glm = cl.TweedieGLM(alpha=0).fit(ukmotor)
     assert glm.model_.estimator_ml.named_steps["model"].alpha == 0
-    assert (
-        abs(
-            (
-                cl.Chainladder().fit(ukmotor).ultimate_
-                - cl.Chainladder().fit(glm.transform(ukmotor)).ultimate_
-            )
-            / ukmotor.latest_diagonal
-        ).max()
-        < 1e-3
+    np.testing.assert_allclose(
+        glm.ldf_.values[..., :1, :],
+        cl.Development().fit(ukmotor).ldf_.values,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        cl.Chainladder().fit(glm.transform(ukmotor)).ultimate_.values,
+        cl.Chainladder().fit(ukmotor).ultimate_.values,
+        rtol=1e-5,
     )
