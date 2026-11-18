@@ -33,56 +33,64 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return X.cdf_.align_pattern(X, sample_weight)
 
     @staticmethod
-    def _align_weight_origins(X, sample_weight):
+    def _slice_weight_origins(X, sample_weight):
         """
-        Match ``sample_weight`` to the origins of ``X`` by label.
+        Slice ``sample_weight`` to the origin range it shares with ``X``.
 
         The methods read ``sample_weight`` by position along the origin axis.
-        When ``X`` and ``sample_weight`` each have more than one origin at the
-        same grain and their origins differ, this reindexes the weight to the
-        origins of ``X``, with NaN for an origin of ``X`` that the weight lacks,
-        and drops origins found only in the weight. A warning names the origins
-        found on one side only.
+        When ``X`` and ``sample_weight`` each have more than one origin, this
+        keeps the weight from the later of the two first origins to the
+        earlier of the two last origins, and gives NaN weight to origins of
+        ``X`` outside that range. A warning names those origins of ``X``.
+
+        Both triangles need consecutive origins at the same origin grain.
+        A ValueError is raised when the grains differ, when the ranges share
+        no origin, or when the origins in the shared range do not line up.
 
         Returns the weight and the origins of ``X`` that it lacks, which get
         no ultimate.
         """
         none = pd.DatetimeIndex([])
-        if (
-            sample_weight is None
-            or len(X.odims) == 1
-            or len(sample_weight.odims) == 1
-            or X.origin_grain != sample_weight.origin_grain
-        ):
+        if sample_weight is None or len(X.odims) == 1 or len(sample_weight.odims) == 1:
             return sample_weight, none
+        if X.origin_grain != sample_weight.origin_grain:
+            raise ValueError(
+                f"X has origin grain {X.origin_grain} but sample_weight has "
+                f"origin grain {sample_weight.origin_grain}. They must match."
+            )
         x_origins = pd.DatetimeIndex(X.odims)
         w_origins = pd.DatetimeIndex(sample_weight.odims)
         if x_origins.equals(w_origins):
             return sample_weight, none
-        missing = x_origins.difference(w_origins)
-        only_x = X.origin[x_origins.isin(missing)].astype(str).tolist()
-        only_w = sample_weight.origin[~w_origins.isin(x_origins)]
-        only_w = only_w.astype(str).tolist()
-        if only_x or only_w:
+        start = max(x_origins[0], w_origins[0])
+        end = min(x_origins[-1], w_origins[-1])
+        x_shared = (x_origins >= start) & (x_origins <= end)
+        w_shared = (w_origins >= start) & (w_origins <= end)
+        if not x_shared.any():
+            raise ValueError("X and sample_weight share no origin.")
+        if not x_origins[x_shared].equals(w_origins[w_shared]):
+            raise ValueError(
+                "The origins of X and sample_weight do not line up in the range "
+                "they share. Both need consecutive origins."
+            )
+        if not x_shared.all():
             import warnings
 
             warnings.warn(
-                "sample_weight is matched to X by origin. "
-                f"Origins of X with no weight get no ultimate: {only_x}. "
-                f"Origins only in sample_weight are left out: {only_w}."
+                "sample_weight is sliced to the origins it shares with X. "
+                "Origins of X with no weight get no ultimate: "
+                f"{X.origin[~x_shared].astype(str).tolist()}."
             )
         backend = sample_weight.array_backend
         obj = sample_weight.set_backend("numpy")
         xp = obj.get_array_module()
-        positions = w_origins.get_indexer(x_origins)
         values = xp.full(
             obj.shape[:2] + (len(x_origins), obj.shape[3]), xp.nan, dtype=float
         )
-        found = positions >= 0
-        values[:, :, found, :] = obj.values[:, :, positions[found], :]
+        values[:, :, x_shared, :] = obj.values[:, :, w_shared, :]
         obj.values = values
         obj.odims = X.odims.copy()
-        return obj.set_backend(backend), missing
+        return obj.set_backend(backend), x_origins[~x_shared]
 
     @staticmethod
     def _drop_ultimates(ultimate, origins):

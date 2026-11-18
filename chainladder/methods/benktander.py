@@ -194,7 +194,7 @@ class Benktander(MethodBase):
             2008  50708.755370
 
         """
-        sample_weight, missing = self._align_weight_origins(X, sample_weight)
+        sample_weight, missing = self._slice_weight_origins(X, sample_weight)
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         super().fit(X, y, sample_weight)
@@ -252,7 +252,7 @@ class Benktander(MethodBase):
             2012  15914.716737
             2013  17193.715555
         """
-        sample_weight, missing = self._align_weight_origins(X, sample_weight)
+        sample_weight, missing = self._slice_weight_origins(X, sample_weight)
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = super().predict(X, sample_weight)

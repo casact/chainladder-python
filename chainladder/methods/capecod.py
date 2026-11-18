@@ -237,7 +237,7 @@ class CapeCod(Benktander):
             raise ValueError("sample_weight is required.")
         self.apriori = 1.0
         self.X_ = self.validate_X(X)
-        sample_weight, missing = self._align_weight_origins(X, sample_weight)
+        sample_weight, missing = self._slice_weight_origins(X, sample_weight)
         sample_weight = sample_weight.set_backend(self.X_.array_backend)
         self.apriori_, self.detrended_apriori_ = self._get_capecod_aprioris(
             self.X_, sample_weight
@@ -337,7 +337,7 @@ class CapeCod(Benktander):
             2012  15991.144199
             2013  17489.630279
         """
-        sample_weight, missing = self._align_weight_origins(X, sample_weight)
+        sample_weight, missing = self._slice_weight_origins(X, sample_weight)
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
