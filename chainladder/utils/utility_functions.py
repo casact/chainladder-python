@@ -253,7 +253,10 @@ def read_pickle(path):
 
     """
     with open(path, "rb") as pkl:
-        return dill.load(pkl)
+        obj = dill.load(pkl)
+        if "is_pattern" in obj.__dict__ and "_is_pattern" not in obj.__dict__:
+            obj.__dict__["_is_pattern"] = obj.__dict__.pop("is_pattern")
+        return obj
 
 
 @_deprecated_rename_argument("development", "valuation", remove_in_version="v2.0")
