@@ -61,6 +61,17 @@ def _bootstrap_run(tri, random_state):
     return sims.values, cl.Chainladder().fit(sims).ultimate_.values
 
 
+def _dense(values):
+    """Return ``values`` as a numpy array, densifying a sparse array."""
+    return np.asarray(values.todense() if hasattr(values, "todense") else values)
+
+
+def _assert_runs_differ(first, second):
+    """Check that two runs differ in both the resampled values and the ultimates."""
+    for a, b in zip(first, second):
+        assert not np.array_equal(_dense(a), _dense(b), equal_nan=True)
+
+
 def test_random_state_zero_reproduces_ultimates(raa):
     """
     Check that ``random_state=0`` reproduces the process-variance draws.
@@ -100,6 +111,24 @@ def test_random_state_accepts_random_state_instance(raa):
     np.testing.assert_array_equal(from_instance[0], _bootstrap_run(raa, 42)[0])
 
 
+def test_different_seeds_give_different_draws(raa):
+    """
+    Check the converse of the three tests above. Different integer seeds,
+    different global ``np.random`` seeds with ``random_state=None``, and
+    ``RandomState`` instances built from different seeds give different
+    resampled triangles and ultimates.
+    """
+    _assert_runs_differ(_bootstrap_run(raa, 0), _bootstrap_run(raa, 1))
+    np.random.seed(1)
+    first = _bootstrap_run(raa, None)
+    np.random.seed(2)
+    _assert_runs_differ(first, _bootstrap_run(raa, None))
+    _assert_runs_differ(
+        _bootstrap_run(raa, np.random.RandomState(42)),
+        _bootstrap_run(raa, np.random.RandomState(43)),
+    )
+
+
 def test_random_state_none_records_the_seed(raa):
     """
     Check that ``fit`` records the integer it draws for ``random_state=None``
@@ -124,23 +153,26 @@ def test_random_state_given_is_recorded(raa):
     assert model.random_state_ is generator
 
 
-def test_random_state_none_independent_columns():
+def test_random_state_none_independent_columns(raa):
     """
     Check that with several columns and ``random_state=None`` each column draws
     its own seed, so two identical columns resample differently, that
     ``np.random.seed`` repeats the run, and that an integer seed is still shared
     by every column.
     """
-    tri = cl.load_sample("raa")
+    tri = raa.copy()
     tri["copy"] = tri["values"]
+
+    def resampled(random_state=None):
+        model = cl.BootstrapODPSample(n_sims=5, random_state=random_state).fit(tri)
+        return _dense(model.resampled_triangles_.values)
+
     np.random.seed(3)
-    first = cl.BootstrapODPSample(n_sims=5).fit(tri).resampled_triangles_.values
+    first = resampled()
     assert not np.allclose(np.nan_to_num(first[:, 0]), np.nan_to_num(first[:, 1]))
     np.random.seed(3)
-    second = cl.BootstrapODPSample(n_sims=5).fit(tri).resampled_triangles_.values
-    np.testing.assert_array_equal(first, second)
-    seeded = cl.BootstrapODPSample(n_sims=5, random_state=7).fit(tri)
-    seeded = seeded.resampled_triangles_.values
+    np.testing.assert_array_equal(first, resampled())
+    seeded = resampled(7)
     np.testing.assert_array_equal(seeded[:, 0], seeded[:, 1])
 
 
