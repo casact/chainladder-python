@@ -208,17 +208,24 @@ class DevelopmentML(DevelopmentBase):
         X_r = [df]
         y_r = [preds]
         dgrain = __grain_to_months__[self.development_grain_]
-        ograin = 12 // __grain_to_months__[self.origin_grain_]
-        latest_filter = (df["origin"] + 1) * ograin + (
-            df["development"] - dgrain
-        ) / dgrain
-        latest_filter = latest_filter == latest_filter.max()
+        # The latest diagonal holds the cells at the latest valuation. Comparing
+        # encoded valuations finds it whether or not the origin and development
+        # grains match, as in OYDM.
+        latest_filter = df["valuation"] == df["valuation"].max()
         preds = pd.DataFrame(preds.copy())[latest_filter].values
         out = df.loc[latest_filter].copy()
+        # valuation_encoder_ maps the i-th valuation date to i / periods_per_year.
+        # Step the integer index i and divide once so that projected valuations
+        # match the encoder's values exactly at every grain.
+        periods_per_year = 12 // dgrain
+        val_index = {
+            v: i for i, v in enumerate(sorted(self.valuation_encoder_.values()))
+        }
+        latest_val_index = out["valuation"].map(val_index)
         dev_lags = df["development"].drop_duplicates().sort_values()
-        for d in dev_lags[1:]:
+        for step, d in enumerate(dev_lags[1:], start=1):
             out["development"] = out["development"] + dgrain
-            out["valuation"] = out["valuation"] + dgrain / 12
+            out["valuation"] = (latest_val_index + step) / periods_per_year
             if len(preds.shape) == 1:
                 preds = preds[:, None]
             if self.autoregressive:
@@ -283,7 +290,10 @@ class DevelopmentML(DevelopmentBase):
     def _prep_w_ml(self, X, sample_weight=None):
         # scikit-learn requires a dense sample_weight
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
-        obj = X.set_backend(backend)
+        # _prep_X_ml builds one row per cell of the cumulative triangle. An
+        # incremental triangle can leave some of those cells empty, so the
+        # weights come from the cumulative triangle to get the same rows.
+        obj = X.set_backend(backend).incr_to_cum()
         weight_base = (~np.isnan(obj.values)).astype(float)
         weight = weight_base.copy()
         weight = (
