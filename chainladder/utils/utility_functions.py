@@ -1387,12 +1387,17 @@ class RandomStateMixin:
             _record_seed(self.random_state) if draws else self.random_state
         )
 
-    def _get_random_state(self, xp=np):
+    def _get_random_state(self, xp=np, redraw=False):
         """
         Return a generator for the recorded seed on the array module ``xp``.
 
-        Before a fit has recorded a seed, ``random_state`` is used.
+        Before a fit has recorded a seed, ``random_state`` is used. With
+        ``redraw`` true and ``random_state`` None, the generator uses a new
+        seed from ``_record_seed`` instead of the recorded one, so draws made
+        after the fit differ from the fit's.
         """
+        if redraw and self.random_state is None:
+            return _check_random_state(_record_seed(None), xp)
         return _check_random_state(
             getattr(self, "random_state_", self.random_state), xp
         )

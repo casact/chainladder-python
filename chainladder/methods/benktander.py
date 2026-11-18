@@ -30,7 +30,11 @@ class Benktander(MethodBase, RandomStateMixin):
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, ``fit`` draws an integer seed from the RandomState instance
-        used by np.random and keeps it as ``random_state_``.
+        used by np.random and keeps it as ``random_state_``, and each
+        ``predict`` draws a new seed the same way, so its aprioris differ from
+        the fit's. Pass an integer to get the same aprioris from ``fit`` and
+        every ``predict``. A RandomState instance keeps advancing, so each
+        ``predict`` continues its sequence.
 
     Attributes
     ----------
@@ -261,17 +265,24 @@ class Benktander(MethodBase, RandomStateMixin):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = super().predict(X, sample_weight)
-        X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        X_new.expectation_ = self._get_benktander_aprioris(
+            X, sample_weight, redraw=True
+        )
         X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)
         X_new.n_iters = self.n_iters
         X_new.apriori = self.apriori
         return X_new
 
-    def _get_benktander_aprioris(self, X, sample_weight):
-        """Private method to establish Benktander Apriori"""
+    def _get_benktander_aprioris(self, X, sample_weight, redraw=False):
+        """
+        Private method to establish Benktander Apriori
+
+        ``predict`` passes ``redraw=True`` so that with ``random_state=None`` it
+        draws new aprioris instead of repeating the fit's.
+        """
         xp = X.get_array_module()
         if self.apriori_sigma != 0:
-            random_state = self._get_random_state(xp)
+            random_state = self._get_random_state(xp, redraw=redraw)
             # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
             cov = self.apriori_sigma / self.apriori
             sigma_log = np.sqrt(np.log1p(cov**2))

@@ -29,7 +29,11 @@ class BornhuetterFerguson(Benktander):
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, ``fit`` draws an integer seed from the RandomState instance
-        used by np.random and keeps it as ``random_state_``.
+        used by np.random and keeps it as ``random_state_``, and each
+        ``predict`` draws a new seed the same way, so its aprioris differ from
+        the fit's. Pass an integer to get the same aprioris from ``fit`` and
+        every ``predict``. A RandomState instance keeps advancing, so each
+        ``predict`` continues its sequence.
 
     Attributes
     ----------
