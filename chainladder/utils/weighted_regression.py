@@ -266,13 +266,14 @@ class WeightedRegression(BaseEstimator):
         Fill undefined sigmas by regressing log(sigma) on development period.
 
         Only positive sigmas enter the regression. A zero sigma has no
-        logarithm, and a stand-in such as 1e-320 puts a point near -737 on
-        the log scale that outweighs every other point in the least-squares
-        fit. Zero sigmas are left as they are.
+        logarithm, so it stays out of the fit and is left as it is.
 
-        Where the fitted line rises, a fill after the last positive sigma is
-        capped at that sigma, so the tail sigmas never rise above the last one
-        observed.
+        Sigmas before the first positive sigma stay unfilled. A fill there
+        would extend the line past the data, and Mack's approximation never
+        fills those cells either. Between the first and last positive sigma
+        the fill interpolates. After the last one, where the fitted line
+        rises, a fill is capped at that sigma, so the tail sigmas never rise
+        above the last one observed.
 
         With fewer than three positive sigmas, the fill comes from
         ``mack_interpolation`` instead. One point gives no slope, and a line
@@ -307,6 +308,8 @@ class WeightedRegression(BaseEstimator):
             with np.errstate(divide="ignore", invalid="ignore"):
                 mack_fill = xp.nan_to_num(self.mack_interpolation(y)) * (1 - estimated)
             fill_ = xp.where(use_mack, mack_fill, fill_)
+        first_x = xp.min(xp.where(w > 0, reg.x, xp.inf), axis=self.axis, keepdims=True)
+        fill_ = xp.where(reg.x < first_x, 0, fill_)
         out = xp.nan_to_num(y) + fill_
         return num_to_nan(out)
 
@@ -320,7 +323,6 @@ class WeightedRegression(BaseEstimator):
 
         xp = self.xp
         ly = y.copy()
-        ly = xp.where(ly == 0, 1e-320, ly)
         w = xp.nan_to_num(ly * 0 + 1)
         slicer_n, slicer_d, slicer_a = (
             ([slice(None)] * 4),
@@ -337,14 +339,17 @@ class WeightedRegression(BaseEstimator):
             tuple(slicer_d),
             tuple(slicer_a),
         )
-        fill_ = xp.sqrt(
-            abs(
-                xp.minimum(
-                    (ly[slicer_n] ** 4 / ly[slicer_d] ** 2),
-                    xp.minimum(ly[slicer_d] ** 2, ly[slicer_n] ** 2),
+        # A zero sigma two periods back makes the quotient inf or nan, and
+        # nan_to_num below turns that cell's fill into 0.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            fill_ = xp.sqrt(
+                abs(
+                    xp.minimum(
+                        (ly[slicer_n] ** 4 / ly[slicer_d] ** 2),
+                        xp.minimum(ly[slicer_d] ** 2, ly[slicer_n] ** 2),
+                    )
                 )
             )
-        )
         fill_ = xp.concatenate((w[slicer_a], xp.nan_to_num(fill_)), axis=self.axis) * (
             1 - w
         )
