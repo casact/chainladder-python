@@ -41,6 +41,7 @@
    plot_voting_chainladder
    plot_loss_development
    plot_valuation_correlation
+   plot_group_health_ibnr
 
 ```
 
@@ -547,6 +548,20 @@ alt: Loss Development Patterns
 ```{image} ../images/plot_valuation_correlation.png
 ---
 alt: Share of prism claim samples flagged by the per-diagonal and total tests at three grains
+---
+```
++++
+{bdg-warning}`medium`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_group_health_ibnr
+:link-type: doc
+**Group Health IBNR**
+```{image} ../images/plot_group_health_ibnr.png
+---
+alt: Paid to date and IBNR for each incurred month of 2021, with December's projected IBNR the largest
 ---
 ```
 +++
