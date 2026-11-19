@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from chainladder.development.base import DevelopmentBase
 from chainladder import options
+from chainladder._config import __grain_to_months__
 from chainladder import TriangleWeight
 
 
@@ -206,18 +207,25 @@ class DevelopmentML(DevelopmentBase):
             preds = self.estimator_ml.predict(df)
         X_r = [df]
         y_r = [preds]
-        dgrain = {"Y": 12, "S": 6, "Q": 3, "M": 1}[self.development_grain_]
-        ograin = {"Y": 1, "S": 2, "Q": 4, "M": 12}[self.origin_grain_]
-        latest_filter = (df["origin"] + 1) * ograin + (
-            df["development"] - dgrain
-        ) / dgrain
-        latest_filter = latest_filter == latest_filter.max()
+        dgrain = __grain_to_months__[self.development_grain_]
+        # The latest diagonal holds the cells at the latest valuation. Comparing
+        # encoded valuations finds it whether or not the origin and development
+        # grains match, as in OYDM.
+        latest_filter = df["valuation"] == df["valuation"].max()
         preds = pd.DataFrame(preds.copy())[latest_filter].values
         out = df.loc[latest_filter].copy()
+        # valuation_encoder_ maps the i-th valuation date to i / periods_per_year.
+        # Step the integer index i and divide once so that projected valuations
+        # match the encoder's values exactly at every grain.
+        periods_per_year = 12 // dgrain
+        val_index = {
+            v: i for i, v in enumerate(sorted(self.valuation_encoder_.values()))
+        }
+        latest_val_index = out["valuation"].map(val_index)
         dev_lags = df["development"].drop_duplicates().sort_values()
-        for d in dev_lags[1:]:
+        for step, d in enumerate(dev_lags[1:], start=1):
             out["development"] = out["development"] + dgrain
-            out["valuation"] = out["valuation"] + dgrain / 12
+            out["valuation"] = (latest_val_index + step) / periods_per_year
             if len(preds.shape) == 1:
                 preds = preds[:, None]
             if self.autoregressive:
@@ -282,7 +290,10 @@ class DevelopmentML(DevelopmentBase):
     def _prep_w_ml(self, X, sample_weight=None):
         # scikit-learn requires a dense sample_weight
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
-        obj = X.set_backend(backend)
+        # _prep_X_ml builds one row per cell of the cumulative triangle. An
+        # incremental triangle can leave some of those cells empty, so the
+        # weights come from the cumulative triangle to get the same rows.
+        obj = X.set_backend(backend).incr_to_cum()
         weight_base = (~np.isnan(obj.values)).astype(float)
         weight = weight_base.copy()
         weight = (
@@ -323,7 +334,7 @@ class DevelopmentML(DevelopmentBase):
             zip(
                 X.origin.to_timestamp(how="s"),
                 (pd.Series(X.origin).rank() - 1)
-                / {"Y": 1, "S": 2, "Q": 4, "M": 12}[X.origin_grain],
+                / (12 // __grain_to_months__[X.origin_grain]),
             )
         )
         val = X.valuation.sort_values().unique()
@@ -331,7 +342,7 @@ class DevelopmentML(DevelopmentBase):
             zip(
                 val,
                 (pd.Series(val).rank() - 1)
-                / {"Y": 1, "S": 2, "Q": 4, "M": 12}[X.development_grain],
+                / (12 // __grain_to_months__[X.development_grain]),
             )
         )
         df = self._prep_X_ml(X)

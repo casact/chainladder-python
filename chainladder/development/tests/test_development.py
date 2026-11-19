@@ -1090,3 +1090,45 @@ def test_pct_reported_requires_ldf(raa):
         _ = raa.pct_reported_
     with pytest.raises(AttributeError):
         _ = raa.pct_unreported_
+
+
+@pytest.mark.parametrize(
+    "params, name",
+    [
+        ({"average": "bogus"}, "average"),
+        ({"average": 1.5}, "average"),
+        ({"average": ["volume"] * 8 + ["bogus"]}, "average"),
+        ({"average": lambda age: "bogus" if age == 12 else "volume"}, "average"),
+        ({"n_periods": -5}, "n_periods"),
+        ({"n_periods": 2.5}, "n_periods"),
+        ({"n_periods": True}, "n_periods"),
+        ({"sigma_interpolation": "bogus"}, "sigma_interpolation"),
+    ],
+)
+def test_fit_rejects_invalid_params(raa, params, name):
+    """
+    Check that ``fit`` raises a ``ValueError`` naming a parameter whose value
+    it cannot use, instead of failing later or fitting silently (#1569).
+    """
+    with pytest.raises(ValueError, match=name):
+        cl.Development(**params).fit(raa)
+
+
+def test_n_periods_zero_fits_as_all_periods(raa):
+    """Check that ``n_periods=0`` still fits as ``n_periods=-1`` (#1606)."""
+    zero = cl.Development(n_periods=0).fit(raa)
+    all_periods = cl.Development(n_periods=-1).fit(raa)
+    assert np.allclose(zero.ldf_.values, all_periods.ldf_.values)
+    assert np.allclose(zero.sigma_.values, all_periods.sigma_.values)
+
+
+def test_valid_params_pass_validation(raa):
+    """Check that lists, dicts and callables of valid values still fit."""
+    cl.Development(
+        average=["volume", "simple"] * 4 + ["regression"],
+        n_periods={age: -1 if age < 60 else 3 for age in raa.development},
+        sigma_interpolation="mack",
+    ).fit(raa)
+    cl.Development(average=lambda age: "geometric", n_periods=[-1] * 9).fit(raa)
+    dev = cl.Development(n_periods=4, average="simple")
+    assert cl.read_json(dev.to_json()).get_params() == dev.get_params()

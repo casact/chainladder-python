@@ -9,7 +9,7 @@ chainladder-python/
 │   ├── py.typed                    # PEP 561 marker (ships inline type hints)
 │   │
 │   ├── _config/                    # Package-wide configuration
-│   │   ├── options.py              # Datetime constants, package options
+│   │   ├── options.py              # Datetime and grain constants, package options
 │   │   ├── deprecation.py          # Deprecation utilities
 │   │   └── tests/
 │   │
