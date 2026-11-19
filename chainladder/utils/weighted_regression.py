@@ -268,17 +268,13 @@ class WeightedRegression(BaseEstimator):
         Only positive sigmas enter the regression. A zero sigma has no
         logarithm, so it stays out of the fit and is left as it is.
 
-        Sigmas before the first positive sigma stay unfilled. A fill there
-        would extend the line past the data, and Mack's approximation never
-        fills those cells either. Between the first and last positive sigma
-        the fill interpolates. After the last one, where the fitted line
-        rises, a fill is capped at that sigma, so the tail sigmas never rise
-        above the last one observed.
+        Where the fitted line rises, a fill after the last positive sigma is
+        capped at that sigma, so the tail sigmas never rise above the last one
+        observed.
 
-        With fewer than three positive sigmas, the fill comes from
-        ``mack_interpolation`` instead. One point gives no slope, and a line
-        through two points fits both exactly, so no residual is left to judge
-        it by.
+        A triangle with fewer than three positive sigmas gets no fill. One
+        point gives no slope, and a line through two points fits both exactly,
+        so no residual is left to judge it by.
         """
         from chainladder.utils.utility_functions import num_to_nan
 
@@ -300,16 +296,7 @@ class WeightedRegression(BaseEstimator):
         fill_ = xp.where(
             (reg.x > last_x) & (slope >= 0), xp.minimum(fill_, last_sigma), fill_
         )
-        use_mack = xp.sum(w, axis=self.axis, keepdims=True) < 3
-        if use_mack.any():
-            # mack_interpolation divides by the square of the sigma two
-            # periods back. Where that sigma is zero, the quotient is inf or
-            # nan and the cell's fill comes out as 0.
-            with np.errstate(divide="ignore", invalid="ignore"):
-                mack_fill = xp.nan_to_num(self.mack_interpolation(y)) * (1 - estimated)
-            fill_ = xp.where(use_mack, mack_fill, fill_)
-        first_x = xp.min(xp.where(w > 0, reg.x, xp.inf), axis=self.axis, keepdims=True)
-        fill_ = xp.where(reg.x < first_x, 0, fill_)
+        fill_ = xp.where(xp.sum(w, axis=self.axis, keepdims=True) < 3, 0, fill_)
         out = xp.nan_to_num(y) + fill_
         return num_to_nan(out)
 

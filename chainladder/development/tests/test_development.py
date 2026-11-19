@@ -1146,26 +1146,25 @@ def test_loglinear_sigma_skips_zero_sigmas(clrd):
     assert np.isfinite(brotherhood.std_err_.set_backend("numpy").values).all()
 
     # Two positive sigmas (12-24, 24-36), then none at 36-48 and zeros after:
-    # the 36-48 fill comes from Mack's approximation, the same value as
-    # under sigma_interpolation="mack".
+    # a line through two points fits both exactly, so 36-48 stays unfilled.
     great_amer = tri.loc["Great Amer Grp", "medmal"]
     loglinear = cl.Development().fit(great_amer).sigma_.set_backend("numpy")
+    assert np.isnan(loglinear.values.ravel()[2])
+    # Mack's approximation fills 36-48 and reports the zero sigmas after it
+    # as NaN, with no 1e-320.
     mack = cl.Development(sigma_interpolation="mack").fit(great_amer)
-    fill = loglinear.values.ravel()[2]
-    assert np.isclose(fill, mack.sigma_.set_backend("numpy").values.ravel()[2])
-    assert np.isclose(fill, 14.9781, atol=1e-4)
-    # Both paths report the zero sigmas after 36-48 as NaN, with no 1e-320.
-    assert np.isnan(mack.sigma_.set_backend("numpy").values.ravel()[3:]).all()
+    mack = mack.sigma_.set_backend("numpy").values.ravel()
+    assert np.isclose(mack[2], 14.9781, atol=1e-4)
+    assert np.isnan(mack[3:]).all()
 
     # Five positive sigmas (24-36 to 72-84) and two zeros (84-96, 96-108):
-    # the 108-120 fill comes from the five positive sigmas only, and 12-24,
-    # before the first positive sigma, stays unfilled.
+    # the 12-24 and 108-120 fills come from the five positive sigmas only.
     buckeye = cl.Development().fit(tri.loc["Buckeye Ins Grp", "othliab"])
     sigma = buckeye.sigma_.set_backend("numpy").values.ravel()
     period = np.arange(1, sigma.size + 1)
     slope, intercept = np.polyfit(period[1:6], np.log(sigma[1:6]), 1)
     assert np.isclose(sigma[8], np.exp(intercept + slope * period[8]))
-    assert np.isnan(sigma[0])
+    assert np.isclose(sigma[0], np.exp(intercept + slope * period[0]))
 
 
 def test_loglinear_sigma_tail_capped_at_last_sigma(clrd):
@@ -1176,15 +1175,3 @@ def test_loglinear_sigma_tail_capped_at_last_sigma(clrd):
     sigma = cl.Development().fit(tri).sigma_.set_backend("numpy").values.ravel()
     assert np.isclose(sigma[-1], sigma[2])
     assert np.nanmax(sigma) == np.nanmax(sigma[:3])
-
-
-def test_loglinear_sigma_not_filled_before_first_positive(clrd):
-    # GH 1609: IL State Bar's positive sigmas start at 60-72, and the line
-    # through them filled 3,341,035 at 24-36. Mack's approximation leaves
-    # that cell unfilled, and so does the log-linear fill now.
-    tri = clrd["CumPaidLoss"].loc["IL State Bar Assoc Mut Ins Co", "othliab"]
-    loglinear = cl.Development().fit(tri).sigma_.set_backend("numpy").values.ravel()
-    mack = cl.Development(sigma_interpolation="mack").fit(tri)
-    mack = mack.sigma_.set_backend("numpy").values.ravel()
-    assert np.isnan(loglinear[1]) and np.isnan(mack[1])
-    assert np.nanmax(loglinear) < 15
