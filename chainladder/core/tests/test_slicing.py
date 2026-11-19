@@ -458,6 +458,149 @@ def test_set_fancy_development_raises(raa: Triangle) -> None:
             raa_copy.loc["Total", "values", :, [12, 24, 48]] = raa.iloc[0, 0, :, :3]
 
 
+@pytest.mark.parametrize(
+    "origin_key",
+    [slice(None, None, 2), [0, 2, 4], [4, 2, 0]],
+    ids=["step_2", "evenly_spaced_list", "descending_list"],
+)
+def test_get_idx_stepped_origin_raises(raa: Triangle, origin_key) -> None:
+    """
+    Attempt stepped indexing on the origin axis, raise an error. Evenly spaced positions convert to
+    a stepped slice, which would leave gaps between origin periods (#1649).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+    origin_key: slice | list
+        A stepped origin key.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(
+        ValueError, match="Fancy indexing on origin/development is not supported"
+    ):
+        _ = raa.iloc[..., origin_key, :]
+
+
+@pytest.mark.parametrize(
+    "development_key",
+    [slice(None, None, 2), [0, 2, 4]],
+    ids=["step_2", "evenly_spaced_list"],
+)
+def test_get_idx_stepped_development_raises(raa: Triangle, development_key) -> None:
+    """
+    Attempt stepped indexing on the development axis, raise an error (#1649).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+    development_key: slice | list
+        A stepped development key.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(
+        ValueError, match="Fancy indexing on origin/development is not supported"
+    ):
+        _ = raa.iloc[..., :, development_key]
+
+
+def test_non_contiguous_boolean_mask_raises(raa: Triangle) -> None:
+    """
+    Filter origin and development with boolean masks that keep non-adjacent periods, raise an error.
+    A contiguous mask still works (#1649).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(
+        ValueError, match="Fancy indexing on origin/development is not supported"
+    ):
+        _ = raa[raa.origin.year % 2 == 0]
+    with pytest.raises(
+        ValueError, match="Fancy indexing on origin/development is not supported"
+    ):
+        _ = raa[raa.origin != "1985"]
+    with pytest.raises(
+        ValueError, match="Fancy indexing on origin/development is not supported"
+    ):
+        _ = raa[raa.development % 24 == 0]
+    assert raa[raa.origin >= "1985"].shape == (1, 1, 6, 10)
+
+
+def test_set_stepped_origin_development_raises(raa: Triangle) -> None:
+    """
+    Attempt setting with stepped indexing on the origin and development axes, raise an error (#1649).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa_copy = raa.copy()
+    if raa.array_backend == "numpy":
+        # Test is specific to the numpy backend.
+        with pytest.raises(
+            ValueError,
+            match="Setting while fancy indexing on origin/development is not supported.",
+        ):
+            raa_copy.iloc[0, 0, [0, 2, 4], :] = raa.iloc[0, 0, :3, :]
+        with pytest.raises(
+            ValueError,
+            match="Setting while fancy indexing on origin/development is not supported.",
+        ):
+            raa_copy.iloc[0, 0, :, ::2] = raa.iloc[0, 0, :, :5]
+
+
+def test_reversed_and_coarser_grain_still_work(raa: Triangle) -> None:
+    """
+    Reverse the origin and development axes and coarsen the development grain. Each keeps working
+    after stepped slices started to raise (#1649).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    reversed_tr = raa.iloc[..., ::-1, ::-1]
+    assert reversed_tr.shape == raa.shape
+    assert list(reversed_tr.origin.year) == list(raa.origin.year)[::-1]
+    assert raa.latest_diagonal.shape == (1, 1, 10, 1)
+    quarterly = cl.load_sample("quarterly")
+    yearly = quarterly.grain("OYDY")
+    assert yearly.shape == (1, 2, 12, 12)
+    assert list(yearly.ddims) == list(range(3, 136, 12))
+    keep = np.isin(quarterly.ddims, yearly.ddims)
+    np.testing.assert_allclose(
+        np.nan_to_num(yearly.values), np.nan_to_num(quarterly.values[..., keep])
+    )
+
+
 def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     """
     Pass lists of non-contiguous index expressions of the index and column axes to Triangle.iloc. Check the values

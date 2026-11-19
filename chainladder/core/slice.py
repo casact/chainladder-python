@@ -36,7 +36,11 @@ class _LocBase:
     def __init__(self, obj: TriangleProtocol):
         self.obj = obj
 
-    def get_idx(self, idx: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]) -> Triangle:
+    def get_idx(
+        self,
+        idx: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey],
+        allow_gaps: bool = False,
+    ) -> Triangle:
         """
         Returns a slice of the original Triangle
 
@@ -44,6 +48,10 @@ class _LocBase:
         ----------
         idx: tuple
             The index to slice on.
+        allow_gaps: bool
+            Accept stepped slices on origin and development. Library code that builds a coarser
+            development grain or keeps a valuation diagonal sets this. User-facing indexers leave it
+            False, so a stepped pick raises.
 
         Returns
         -------
@@ -57,6 +65,10 @@ class _LocBase:
         o_idx: slice | np.ndarray = _LocBase._contig_slice(idx[2])
         d_idx: slice | np.ndarray = _LocBase._contig_slice(idx[3])
         if type(o_idx) is not slice or type(d_idx) is not slice:
+            raise ValueError("Fancy indexing on origin/development is not supported.")
+        if not allow_gaps and (
+            not _LocBase._is_unit_slice(o_idx) or not _LocBase._is_unit_slice(d_idx)
+        ):
             raise ValueError("Fancy indexing on origin/development is not supported.")
         if type(i_idx) is slice or type(c_idx) is slice:
             obj.values = obj.values[i_idx, c_idx, o_idx, d_idx]
@@ -76,6 +88,25 @@ class _LocBase:
                 pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date)
             )
         return obj
+
+    @staticmethod
+    def _is_unit_slice(key: object) -> bool:
+        """
+        Check whether an origin or development key keeps a contiguous run of periods.
+
+        Parameters
+        ----------
+        key: object
+            The key after conversion by ``_contig_slice``.
+
+        Returns
+        -------
+        bool
+            True when ``key`` is a slice with a step of None, 1 or -1. A larger step would leave
+            gaps between periods, so it returns False. A step of -1 keeps adjacent periods in
+            reverse order, which ``sort_axis`` can undo.
+        """
+        return isinstance(key, slice) and key.step in (None, 1, -1)
 
     @staticmethod
     def _contig_slice(arr: _AxisKey) -> slice | np.ndarray:
@@ -152,7 +183,9 @@ class _LocBase:
             for item in contig_key
         ])
         norm_key = self._normalize_index(tuple_key)
-        if type(norm_key[2]) is not slice or type(norm_key[3]) is not slice:
+        if not _LocBase._is_unit_slice(norm_key[2]) or not _LocBase._is_unit_slice(
+            norm_key[3]
+        ):
             raise ValueError(
                 "Setting while fancy indexing on origin/development is not supported."
             )
@@ -990,12 +1023,15 @@ class TriangleSlicer:
             "BackendArray", num_to_nan(obj.values * obj.get_array_module().array(key))
         )
         # Recalculate size of the origin and development axes and return the slice.
-        return _LocBase(obj).get_idx((
-            slice(None),
-            slice(None),
-            np.arange(obj.shape[2])[np.sum(~key, 1) != obj.shape[3]],
-            np.arange(obj.shape[3])[np.sum(~key, 0) != obj.shape[2]],
-        ))
+        return _LocBase(obj).get_idx(
+            (
+                slice(None),
+                slice(None),
+                np.arange(obj.shape[2])[np.sum(~key, 1) != obj.shape[3]],
+                np.arange(obj.shape[3])[np.sum(~key, 0) != obj.shape[2]],
+            ),
+            allow_gaps=True,
+        )
 
     def _slice(
         self: TriangleProtocol,
@@ -1013,11 +1049,15 @@ class TriangleSlicer:
             The axis to which the slice would apply, `ddims` for development, `odims` for origin.
         """
 
+        # noinspection PyProtectedMember
+        axis_slice = _LocBase._contig_slice(np.arange(len(key))[key])
+        # noinspection PyProtectedMember
+        if not _LocBase._is_unit_slice(axis_slice):
+            raise ValueError("Fancy indexing on origin/development is not supported.")
         # Update the axis, then the values.
         obj = self.copy()
         setattr(obj, axis, getattr(obj, axis)[key])
-        # noinspection PyProtectedMember
-        slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key])
+        slicer = ..., axis_slice
         if axis == "odims":
             slicer = tuple(list(slicer) + [slice(None)])
         obj.values = obj.values[slicer]
