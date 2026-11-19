@@ -2026,7 +2026,9 @@ class Triangle(TriangleBase):
                 # Keeping every step-th age is how a cumulative triangle moves to a coarser
                 # development grain, so this pick may be a stepped slice.
                 # noinspection PyProtectedMember
-                obj = obj.iloc.get_idx(obj.iloc._normalize_index((..., d)), allow_gaps=True)
+                obj = obj.iloc.get_idx(
+                    obj.iloc._normalize_index((..., d)), allow_gaps=True
+                )
             else:
                 ddims = obj.ddims[d]
                 d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
