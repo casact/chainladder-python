@@ -102,6 +102,19 @@ def test_json_df():
     assert abs(cl.read_json(x.to_json()).lambda_ - x.lambda_).sum() < 1e-5
 
 
+def test_json_pattern_keeps_development():
+    """
+    Round-trip a fitted MunichAdjustment through JSON. dropna trims the development patterns by
+    position, so the string labels of the patterns keep their order and no gap appears (#1649).
+    """
+    x = cl.MunichAdjustment(paid_to_incurred=("paid", "incurred")).fit_transform(
+        cl.load_sample("mcl")
+    )
+    y = cl.read_json(x.to_json())
+    assert list(y.ldf_.development) == list(x.ldf_.development)
+    assert y.ldf_.shape == x.ldf_.shape
+
+
 def test_read_csv_single(raa):
     # Test the read_csv function for a single dimensional input.
 
