@@ -558,7 +558,7 @@ alt: Share of prism claim samples flagged by the per-diagonal and total tests at
 :columns: 4
 :link: plot_paired_bootstrap
 :link-type: doc
-**Comparing Methods on Shared Bootstrap Draws**
+**Comparing Tail Estimators on Shared Bootstrap Draws**
 ```{image} ../images/plot_paired_bootstrap.png
 ---
 alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared bootstrap draws and wide for independent draws
