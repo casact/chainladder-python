@@ -41,6 +41,7 @@
    plot_voting_chainladder
    plot_loss_development
    plot_valuation_correlation
+   plot_leave_one_out
 
 ```
 
@@ -547,6 +548,19 @@ alt: Loss Development Patterns
 ```{image} ../images/plot_valuation_correlation.png
 ---
 alt: Share of prism claim samples flagged by the per-diagonal and total tests at three grains
+---
+```
++++
+{bdg-warning}`medium`
+:::
+:::{grid-item-card} 
+:columns: 4
+:link: plot_leave_one_out
+:link-type: doc
+**Leave-One-Out Link Ratios**
+```{image} ../images/plot_leave_one_out.png
+---
+alt: Change in total IBNR on raa and genins when each link ratio is dropped in turn
 ---
 ```
 +++
