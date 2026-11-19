@@ -360,10 +360,10 @@ def test_case_outstanding_zero_case_reserve_warning():
     assert not model.case_ldf_.to_frame().isna().any().any()
 
 
-def test_case_outstanding_synthetic_zero_prior_case_warning():
+def test_case_outstanding_synthetic_zero_prior_case_warning(genins):
     import warnings
 
-    p = cl.load_sample("genins")
+    p = genins.set_backend("numpy").copy()
     p.columns = ["paid"]
     i = p.copy()
     i.columns = ["incurred"]
