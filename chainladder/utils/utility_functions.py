@@ -1363,7 +1363,7 @@ class RandomStateMixin:
         An integer seed is offset by 1 so the two sets of draws differ, including
         for seed 0. A ``RandomState`` instance or ``None`` is passed through.
         """
-        if isinstance(seed, (int, np.integer)) and not isinstance(seed, bool):
+        if isinstance(seed, (int, np.integer)):
             return int(seed) + 1
         return seed
 
@@ -1395,19 +1395,14 @@ class RandomStateMixin:
             self._record_seed(self.random_state) if draws else self.random_state
         )
 
-    def _get_random_state(
-        self, xp: ModuleType = np, redraw: bool = False
-    ) -> np.random.RandomState:
+    def _get_random_state(self, xp: ModuleType = np) -> np.random.RandomState:
         """
-        Return a generator for the recorded seed on the array module ``xp``.
+        Return a generator for the seed ``fit`` recorded, on the array module ``xp``.
 
-        Before a fit has recorded a seed, ``random_state`` is used. With
-        ``redraw`` true and ``random_state`` None, the generator uses a new
-        seed from ``_record_seed`` instead of the recorded one, so draws made
-        after the fit differ from the fit's.
+        Before a fit has recorded a seed, ``random_state`` is used. Draws made
+        after the fit, such as in ``predict``, take their generator from
+        ``random_state`` through ``_check_random_state`` instead.
         """
-        if redraw and self.random_state is None:
-            return self._check_random_state(self._record_seed(None), xp)
         return self._check_random_state(
             getattr(self, "random_state_", self.random_state), xp
         )
