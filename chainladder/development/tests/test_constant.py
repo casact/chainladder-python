@@ -553,6 +553,27 @@ def test_constant_estimator_pattern(raa):
     assert np.allclose(dev.ldf_.values, model_only_ldf.cdf_.values)
 
 
+def test_constant_pattern_with_several_index_rows_or_columns(clrd):
+    # A pattern fit to several lines or measures holds one vector each, so
+    # DevelopmentConstant raises instead of giving every line the first one.
+    tri = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss"]]
+    dev = cl.Development().fit(tri)
+    for pattern in (
+        dev.ldf_,
+        dev,
+        dev.ldf_["CumPaidLoss"],
+        dev.ldf_.loc["wkcomp"],
+    ):
+        with pytest.raises(ValueError, match="one index row and one column"):
+            cl.DevelopmentConstant(patterns=pattern, style="ldf").fit(tri)
+
+    # One line and one measure still work, and apply to every line.
+    one = dev.ldf_.loc["wkcomp"]["CumPaidLoss"]
+    model = cl.DevelopmentConstant(patterns=one, style="ldf").fit(tri["CumPaidLoss"])
+    assert model.ldf_.shape == (6, 1, 1, 9)
+    assert np.allclose(model.ldf_.values, one.values)
+
+
 def test_constant_invalid_pattern_types(raa):
     # Invalid DataFrame shape (>1 row and >1 col)
     df_invalid = pd.DataFrame([[1.2, 1.1], [1.0, 1.0]], columns=[12, 24])
