@@ -14,6 +14,7 @@ from chainladder.development.base import DevelopmentBase
 
 if TYPE_CHECKING:  # pragma: no cover
     from types import ModuleType
+    from typing import Any
 
     from numpy import ndarray
 
@@ -38,6 +39,15 @@ class ClarkLDF(DevelopmentBase):
         An option to group levels of the triangle index together for the purposes
         of estimating patterns.  If omitted, each level of the triangle
         index will receive its own patterns.
+    minimizer_kwargs: dict, optional
+        Keyword arguments passed to ``scipy.optimize.minimize`` for each curve
+        fit, such as ``method``, ``options``, ``tol`` or ``callback``. The
+        fitted parameters are (omega, theta) for the LDF method and (omega,
+        theta, ELR) for the Cape Cod method. By default each fit starts at
+        omega = 1, theta = the development interval in months and ELR = 1,
+        and every parameter is bounded below by 1e-6. ``x0`` and ``bounds``
+        given here replace those defaults. ``fun`` and ``args`` cannot be
+        set, because ClarkLDF supplies the objective function.
 
     Attributes
     ----------
@@ -58,6 +68,10 @@ class ClarkLDF(DevelopmentBase):
         The scale parameter of the model.
     norm_resid_: Triangle
         The "Normalized" Residuals of the model according to Clark.
+    minimizer_results_: DataFrame
+        The ``scipy.optimize.OptimizeResult`` of each curve fit, with the same
+        index and columns as ``omega_``. Each result's fields, such as
+        ``success``, ``message``, ``nit`` and ``nfev``, show how that fit ended.
 
     Examples
     --------
@@ -163,11 +177,35 @@ class ClarkLDF(DevelopmentBase):
         prodliab       64.35
         wkcomp         20.11
 
+    The parameters are found numerically with ``scipy.optimize.minimize``.
+    To choose the algorithm or its settings, pass ``minimizer_kwargs``. To
+    report how each search ended, read ``minimizer_results_``. Here
+    Nelder-Mead replaces the default L-BFGS-B.
+
+    .. testcode::
+
+        tri = cl.load_sample("genins")
+        m = cl.ClarkLDF(minimizer_kwargs={"method": "Nelder-Mead"}).fit(tri)
+        result = m.minimizer_results_.iloc[0, 0]
+        print(result.success)
+        print(round(float(m.theta_.iloc[0, 0]), 1))
+
+    .. testoutput::
+
+        True
+        48.5
+
     """
 
-    def __init__(self, growth: str = "loglogistic", groupby=None):
+    def __init__(
+        self,
+        growth: str = "loglogistic",
+        groupby=None,
+        minimizer_kwargs: dict[str, Any] | None = None,
+    ):
         self.growth: str = growth
         self.groupby = groupby
+        self.minimizer_kwargs: dict[str, Any] | None = minimizer_kwargs
 
     def _G(self, age, theta: float = None, omega: float = None):  # noqa: N802
         """
@@ -241,6 +279,13 @@ class ClarkLDF(DevelopmentBase):
         """
         from chainladder import options
 
+        minimizer_kwargs = dict(self.minimizer_kwargs or {})
+        fixed = sorted({"fun", "args"} & set(minimizer_kwargs))
+        if fixed:
+            raise ValueError(
+                f"minimizer_kwargs cannot set {' or '.join(map(repr, fixed))}, "
+                "because ClarkLDF supplies the objective function."
+            )
         backend = X.array_backend
         if backend != "numpy":
             obj = X.set_backend("numpy", deep=True)
@@ -279,8 +324,10 @@ class ClarkLDF(DevelopmentBase):
         ]
 
         params = []
+        results = []
         for idx in range(len(X.index)):
             idx_params = []
+            idx_results = []
             for col in range(len(X.columns)):
 
                 def solver(x: ndarray):
@@ -314,12 +361,13 @@ class ClarkLDF(DevelopmentBase):
                 else:
                     x0 = xp.array([[[[1.0, age_interval]]]])
                     bounds = ((1e-6, None), (1e-6, None))
-                idx_params.append(
-                    minimize(fun=solver, x0=x0.flatten(), bounds=bounds).x.reshape(
-                        1, 1, 1, -1
-                    )
-                )
+                kwargs = {"x0": x0.flatten(), "bounds": bounds}
+                kwargs.update(minimizer_kwargs)
+                result = minimize(fun=solver, **kwargs)
+                idx_results.append(result)
+                idx_params.append(result.x.reshape(1, 1, 1, -1))
             params.append(xp.concatenate(idx_params, axis=1))
+            results.append(idx_results)
         params = xp.concatenate(params, axis=0)
         cdf = self._G(
             latest_age - age_offset, theta=params[..., 1:2], omega=params[..., 0:1]
@@ -338,6 +386,9 @@ class ClarkLDF(DevelopmentBase):
         )
         self.theta_ = pd.DataFrame(
             params[..., 0, 1], index=rows, columns=X.columns.to_list()
+        )
+        self.minimizer_results_ = pd.DataFrame(
+            results, index=rows, columns=X.columns.to_list()
         )
         if sample_weight:
             self.elr_ = pd.DataFrame(
