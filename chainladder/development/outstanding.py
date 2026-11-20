@@ -9,10 +9,10 @@ from chainladder.development import DevelopmentBase
 from chainladder import options
 from chainladder.utils import TriangleWeight
 from chainladder.utils.utility_functions import concat
-from chainladder.utils.utility_functions import num_to_nan
 
 import numpy as np
 import pandas as pd
+import warnings
 
 if TYPE_CHECKING:
     from chainladder.core import Triangle
@@ -304,9 +304,6 @@ class CaseOutstanding(DevelopmentBase):
             preserve=paid_preserve,
         ).fit(paid_ratio)
         self.paid_w_ = tw_paid.w_
-        self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2)
-        xp = self.paid_ldf_.get_array_module()
-        self.paid_ldf_.values[xp.isnan(self.paid_ldf_.values)] = 0.0
 
         case_ratio = self.case_to_prior_case_
         tw_case = TriangleWeight(
@@ -332,10 +329,25 @@ class CaseOutstanding(DevelopmentBase):
         )
         is_zero_runoff = has_usable_c & (sum_c == 0.0)
 
-        self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2)
-        xp = self.case_ldf_.get_array_module()
-        self.case_ldf_.values[xp.isnan(self.case_ldf_.values)] = 1.0
-        self.case_ldf_.values[is_zero_runoff] = 0.0
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*empty slice.*",
+            )
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*All-NaN slice.*",
+            )
+            self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2)
+            xp = self.paid_ldf_.get_array_module()
+            self.paid_ldf_.values[xp.isnan(self.paid_ldf_.values)] = 0.0
+
+            self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2)
+            xp = self.case_ldf_.get_array_module()
+            self.case_ldf_.values[xp.isnan(self.case_ldf_.values)] = 1.0
+            self.case_ldf_.values[is_zero_runoff] = 0.0
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
@@ -430,18 +442,19 @@ class CaseOutstanding(DevelopmentBase):
 
         case_raw = incurred_tri.values - paid_tri.values
         obj = incurred_tri.iloc[..., :-1].copy()
+        xp = obj.get_array_module()
+        num = case_raw[..., 1:].copy()
+        den = xp.copy(case_raw[..., :-1])
+        den[den == 0] = xp.nan
+        ratio = num / den
+        obj.values = ratio
+
         if not obj.is_full:
             out = obj[obj.valuation < obj.valuation_date]
         else:
             out = obj
 
-        num_origins = out.shape[2]
-        case_sliced = case_raw[..., :num_origins, :]
-        num = case_sliced[..., 1:].copy()
-        xp = out.get_array_module()
-        den = xp.copy(case_sliced[..., :-1])
-        den[den == 0] = xp.nan
-        out.values = num / den
+        out.values = ratio[..., : out.shape[2], : out.shape[3]]
         out.is_pattern = True
         out.is_cumulative = False
 
@@ -460,19 +473,19 @@ class CaseOutstanding(DevelopmentBase):
         paid_incr = paid_tri.cum_to_incr().values
 
         obj = incurred_tri.iloc[..., :-1].copy()
+        xp = obj.get_array_module()
+        num = paid_incr[..., 1:].copy()
+        den = xp.copy(case_raw[..., :-1])
+        den[den == 0] = xp.nan
+        ratio = num / den
+        obj.values = ratio
+
         if not obj.is_full:
             out = obj[obj.valuation < obj.valuation_date]
         else:
             out = obj
 
-        num_origins = out.shape[2]
-        case_sliced = case_raw[..., :num_origins, :]
-        paid_sliced = paid_incr[..., :num_origins, :]
-        num = paid_sliced[..., 1:].copy()
-        xp = out.get_array_module()
-        den = xp.copy(case_sliced[..., :-1])
-        den[den == 0] = xp.nan
-        out.values = num / den
+        out.values = ratio[..., : out.shape[2], : out.shape[3]]
         out.is_pattern = True
         out.is_cumulative = False
 

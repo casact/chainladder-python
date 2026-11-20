@@ -161,6 +161,36 @@ def floor(x: COO) -> COO:
     return x
 
 
+def broadcast_origin_development(arr: COO, n_origin: int, n_development: int) -> COO:
+    """
+    Return a copy of a 4D COO array with a length-1 origin or development
+    axis repeated ``n_origin`` or ``n_development`` times, as numpy slice
+    assignment broadcasts it.
+
+    Parameters
+    ----------
+    arr : COO
+        Triangle values with axes (index, column, origin, development).
+    n_origin : int
+        Origin length to use when ``arr`` has one origin.
+    n_development : int
+        Development length to use when ``arr`` has one development period.
+
+    Returns
+    -------
+    out : COO
+        A new array; axes longer than 1 keep their length.
+    """
+    shape = (
+        *arr.shape[:2],
+        n_origin if arr.shape[2] == 1 else arr.shape[2],
+        n_development if arr.shape[3] == 1 else arr.shape[3],
+    )
+    if shape == arr.shape:
+        return arr.copy()
+    return sp.broadcast_to(arr, shape)
+
+
 sp.nansum = nansum
 sp.minimum = np.minimum
 sp.maximum = np.maximum

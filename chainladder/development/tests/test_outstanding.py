@@ -474,3 +474,18 @@ def test_case_outstanding_zero_runoff_preserved():
     m = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri_zero)
     # The 36-48 ratio (development column index 2) should be 0.0, not 1.0
     assert m.case_ldf_.values[0, 0, 0, 2] == 0.0
+
+
+def test_case_outstanding_dropped_development_periods():
+    """Verify ratio assignment handles triangles where valuation filter drops trailing lags."""
+    tri = cl.load_sample("usauto").iloc[..., :3, :4]
+    # Set valuation_date so the last development lag has no observed cell and gets dropped
+    tri.valuation_date = tri.valuation[2]
+    m = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred"))
+    m.X_ = tri
+    case_ratio = m.case_to_prior_case_
+    paid_ratio = m.paid_to_prior_case_
+    assert case_ratio.shape[-1] == 2
+    assert paid_ratio.shape[-1] == 2
+    assert case_ratio.values.shape == case_ratio.shape
+    assert paid_ratio.values.shape == paid_ratio.shape

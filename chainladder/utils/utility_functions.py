@@ -21,7 +21,7 @@ from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from typing import Union, Optional, TYPE_CHECKING
+from typing import Literal, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle, MethodBase, Pipeline
@@ -273,6 +273,7 @@ def read_csv(
     pattern=False,
     trailing: bool = True,
     age: Optional[str] = None,
+    duplicates: Literal["sum", "raise", "warn"] = "sum",
     *args,
     **kwargs,
 ) -> Triangle:
@@ -320,6 +321,9 @@ def read_csv(
         ensure the most recent origin period is a full period and the oldest
         origin is partial. If full origin periods are present in the data, then
         trailing has no effect.
+    duplicates: {'sum', 'raise', 'warn'}, default 'sum'
+        What to do when more than one row falls in the same triangle cell:
+        ``'sum'``, ``'raise'`` or ``'warn'``. See :class:`~chainladder.Triangle`.
     """
 
     from chainladder import Triangle
@@ -344,6 +348,7 @@ def read_csv(
         array_backend=array_backend,
         pattern=pattern,
         trailing=trailing,
+        duplicates=duplicates,
     )
 
     return local_triangle
@@ -388,13 +393,11 @@ def read_json(json_str, array_backend=None):
         array_backend = options.ARRAY_BACKEND
     json_dict = json.loads(json_str)
     if type(json_dict) is list:
-        import chainladder as cl
-
         return Pipeline(
             steps=[
                 (
                     item["name"],
-                    cl.__dict__[item["__class__"]]().set_params(**item["params"]),
+                    _estimator_from_json(item["__class__"], item["params"]),
                 )
                 for item in json_dict
             ]
@@ -439,9 +442,21 @@ def read_json(json_str, array_backend=None):
         else:
             return tri
     else:
-        import chainladder as cl
+        return _estimator_from_json(json_dict["__class__"], json_dict["params"])
 
-        return cl.__dict__[json_dict["__class__"]]().set_params(**json_dict["params"])
+
+def _estimator_from_json(class_name, params):
+    """
+    Build the chainladder estimator named ``class_name`` with ``params`` and
+    check the parameter values it can check without a triangle.
+    """
+    import chainladder as cl
+
+    estimator = cl.__dict__[class_name]().set_params(**params)
+    # Only estimators with parameter checks define the hook.
+    if hasattr(estimator, "_check_param_values"):
+        estimator._check_param_values()
+    return estimator
 
 
 def _origin_periods(index, grain):
