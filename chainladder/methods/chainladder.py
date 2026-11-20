@@ -117,7 +117,9 @@ class Chainladder(MethodBase):
         Parameters
         ----------
         X: Triangle-like
-            Data to which the model will be applied.
+            Data to which the model will be applied. When X has one more age
+            than its development pattern, ``fit`` adds a ``TailConstant`` with
+            ``tail=1.0``.
         y: Ignored
         sample_weight : Ignored
 
