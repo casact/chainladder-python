@@ -265,8 +265,10 @@ class WeightedRegression(BaseEstimator):
         """
         Fill undefined sigmas by regressing log(sigma) on development period.
 
-        Only positive sigmas enter the regression. A zero sigma has no
-        logarithm, so it stays out of the fit and is left as it is.
+        Only positive sigmas enter the regression. A sigma at or below zero
+        has no logarithm, so it stays out of the fit and gets a fill like a
+        missing one. An age with no link ratios divides zero by minus one and
+        gives -0.0, and an age whose link ratios all agree gives +0.0.
 
         Where the fitted line rises, a fill after the last positive sigma is
         capped at that sigma, so the tail sigmas never rise above the last one
@@ -279,7 +281,8 @@ class WeightedRegression(BaseEstimator):
         from chainladder.utils.utility_functions import num_to_nan
 
         xp = self.xp
-        ly = xp.log(xp.where(y > 0, y, xp.nan))
+        y = xp.where(y > 0, y, xp.nan)
+        ly = xp.log(y)
         w = xp.nan_to_num(ly * 0 + 1)
         estimated = xp.nan_to_num(y * 0 + 1)
         reg = WeightedRegression(self.axis, False, xp=xp).fit(None, ly, w)
