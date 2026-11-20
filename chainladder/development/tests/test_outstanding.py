@@ -457,3 +457,12 @@ def test_case_outstanding_dropped_development_periods():
     assert paid_ratio.shape[-1] == 2
     assert case_ratio.values.shape == case_ratio.shape
     assert paid_ratio.values.shape == paid_ratio.shape
+
+
+def test_case_outstanding_full_triangle():
+    """Verify ratio properties on an already full rectangular triangle."""
+    tri_full = cl.load_sample("usauto").iloc[..., :2, :2]
+    m = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred"))
+    m.X_ = tri_full
+    assert m.case_to_prior_case_ is not None
+    assert m.paid_to_prior_case_ is not None
