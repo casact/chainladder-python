@@ -242,8 +242,9 @@ class TrianglePandas(_TrianglePandasBase):
             When all dimensions are returned, whether the origin vector
             should be converted from PeriodIndex into a datetime dtype.
         keepdims : bool (default = False)
-            Converted DataFrame will keep all dimensions intact and maintain a consistent
-            format regardless of whether any dimensions are of length 1.
+            Converted DataFrame will keep all dimensions intact and maintain
+            a consistent format regardless of whether any dimensions are of
+            length 1.
 
             Ignored when 3 or more dimensions (index, column, origin, and development)
             have lengths greater than 1
@@ -256,7 +257,8 @@ class TrianglePandas(_TrianglePandasBase):
         DataFrame or Series representation of the Triangle.
         """
 
-        # Identify the axes that increase the dimensionality of the triangle, i.e., those whose length is > 1.
+        # Identify the axes that increase the dimensionality of the triangle, i.e.,
+        # those whose length is > 1.
         axes: list[int] = [num for num, item in enumerate(self.shape) if item > 1]
 
         # Long format.
@@ -328,7 +330,8 @@ class TrianglePandas(_TrianglePandasBase):
             # Case when there is a single triangle, for a single segment.
             if self.shape[:2] == (1, 1):
                 return self._repr_format(origin_as_datetime)
-            # Case when triangle is multidimensional but is of unusual shape, such as a collection of latest diagonals.
+            # Case when triangle is multidimensional but is of unusual shape, such as
+            # a collection of latest diagonals.
             elif len(axes) in [1, 2]:
                 tri: ndarray = np.squeeze(self.set_backend("numpy").values)
                 axes_lookup: dict = {
@@ -338,10 +341,12 @@ class TrianglePandas(_TrianglePandasBase):
                     3: self.development,
                 }
 
-                # Set the index to be key dimension if the key dimension is greater than length 1.
+                # Set the index to be key dimension if the key dimension is greater
+                # than length 1.
                 if axes[0] == 0:
                     idx = self.index.set_index(self.key_labels).index
-                # Otherwise, find the axis that is greater than length 0 and set that to be the index.
+                # Otherwise, find the axis that is greater than length 0 and set that
+                # to be the index.
                 else:
                     idx = axes_lookup[axes[0]]
 
@@ -441,8 +446,8 @@ class TrianglePandas(_TrianglePandasBase):
         """
         Method that removes origin/development vectors from edge of a
         triangle that are all missing values. Does not work on the interior
-        of a triangle, i.e., when a period has all NaNs but is not the first or last period
-        of the dimension.
+        of a triangle, i.e., when a period has all NaNs but is not the first
+        or last period of the dimension.
 
         This may come in handy for a
         new line of business that doesn't have origins/developments of an
@@ -455,7 +460,8 @@ class TrianglePandas(_TrianglePandasBase):
         Examples
         --------
 
-        In a single-dimension case, an origin period will be dropped if it contains all NaN.
+        In a single-dimension case, an origin period will be dropped if it contains
+        all NaN.
 
         .. testsetup::
 
@@ -528,7 +534,8 @@ class TrianglePandas(_TrianglePandasBase):
             1985  500.0  600.0
             1986  600.0    NaN
 
-        If both the earliest origin and development periods are all NaN, both will be dropped.
+        If both the earliest origin and development periods are all NaN, both will
+        be dropped.
 
         .. testcode::
 
@@ -561,7 +568,8 @@ class TrianglePandas(_TrianglePandasBase):
                      24
             1986  600.0
 
-        If a period in the middle of the Triangle is all NaN, `Triangle.dropna()` will have no effect.
+        If a period in the middle of the Triangle is all NaN, `Triangle.dropna()` will
+        have no effect.
 
         .. testcode::
 
@@ -631,8 +639,8 @@ class TrianglePandas(_TrianglePandasBase):
             1986  500.0  600.0
             1987  500.0    NaN
 
-        In the case of a multi-dimensional Triangle, periods will only be dropped if their aggregate sum across
-        the index and columns results in all NaN for the period.
+        In the case of a multi-dimensional Triangle, periods will only be dropped if their
+        aggregate sum across the index and columns results in all NaN for the period.
 
         .. testcode::
 
@@ -672,13 +680,15 @@ class TrianglePandas(_TrianglePandasBase):
         # Aggregate the triangle across the index and columns.
         obj = self.sum(axis=0).sum(axis=1)
         xp = obj.get_array_module()
-        # Check which origins have all NaNs and indicate with a boolean. 0 means that the nth origin is all NaN.
+        # Check which origins have all NaNs and indicate with a boolean. 0 means that the
+        # nth origin is all NaN.
         odim = list((xp.nansum(obj.values[0, 0, :], -1) != 0).astype("int"))
         # Find the first origin period with data.
         min_odim = obj.origin[odim.index(1)]
         # Find the last origin period with data.
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
-        # Case when triangle has multiple development periods, e.g., not latest diagonal or ultimate.
+        # Case when triangle has multiple development periods, e.g., not latest diagonal
+        # or ultimate.
         if obj.shape[-1] != 1:
             # Flag the development periods that have data.
             ddim = list((xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
@@ -690,7 +700,8 @@ class TrianglePandas(_TrianglePandasBase):
             obj = cast("TriangleProtocol", cast(object, obj))
             # Slice the triangle by the origin periods that have data.
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
-        # Case when Triangle has a single development period, e.g., latest diagonal or ultimate.
+        # Case when Triangle has a single development period,
+        # e.g., latest diagonal or ultimate.
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
@@ -720,8 +731,9 @@ class TrianglePandas(_TrianglePandasBase):
             raise TypeError("Must specify a fill value.")
         if inplace:
             xp = self.get_array_module()
-            # Create a triangle will the fill value in the original Triangle's NaN positions.
-            # Positions corresponding to populated positions in teh original Triangle are set to NaN.
+            # Create a triangle will the fill value in the original Triangle's
+            # NaN positions. Positions corresponding to populated positions in
+            # the original Triangle are set to NaN.
             fill = (xp.nan_to_num(self.values) == 0) * (self * 0 + value)
             self.values = (self + fill).values
             return cast("Triangle", cast(object, self))
@@ -734,7 +746,8 @@ class TrianglePandas(_TrianglePandasBase):
 
     def fillzero(self, inplace: bool = False) -> Triangle:
         """
-        Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working.
+        Fill nan with 0 by axis. separate function from fillna() because
+        fillna(0) isn't working.
 
         Parameters
         ----------
@@ -940,7 +953,8 @@ class TrianglePandas(_TrianglePandasBase):
         labels:  str | int | list | None
             Index or column labels to drop. A single label or list-like.
 
-        axis: {0 or ‘index’, 1 or ‘columns’, 2 or 'origin', 3 or 'development'}, default 1
+        axis: {0 or ‘index’, 1 or ‘columns’, 2 or 'origin', 3 or 'development'},
+        default 1
             The axis to drop ``labels`` from.
 
         index: str | int | list | None
@@ -1211,7 +1225,8 @@ class TrianglePandas(_TrianglePandasBase):
                 self.columns = self.columns.map(full_dict)
             else:
                 raise ValueError(
-                    "Invalid value provided to the 'value' parameter. Accepted values for index, origin, and development axes are a str or a list"
+                    "Invalid value provided to the 'value' parameter. Accepted values "
+                    "for index, origin, and development axes are a str or a list"
                 )
         else:
             value = [value] if type(value) is str else value
@@ -1225,9 +1240,10 @@ class TrianglePandas(_TrianglePandasBase):
                 self.development = value
             else:
                 raise ValueError(
-                    "Invalid value provided to the 'axis' parameter. Accepted values are a string of 'index', "
-                    "'columns', 'origin', or 'development', or an integer in the interval [0, 4] specifying the"
-                    " axis to be modified."
+                    "Invalid value provided to the 'axis' parameter. Accepted values "
+                    "are a string of 'index', 'columns', 'origin', or 'development', "
+                    "or an integer in the interval [0, 4] specifying the axis to be "
+                    "modified."
                 )
         return cast("Triangle", cast(object, self))
 
@@ -1406,7 +1422,8 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
-            Cross-section from the original Triangle corresponding to the selected index levels.
+            Cross-section from the original Triangle corresponding to the selected
+            index levels.
         """
         mi = pd.MultiIndex.from_frame(self.index)
 
@@ -1489,7 +1506,7 @@ def _triangle_aggregate(
         )
     obj._set_slicers()
     if auto_sparse:
-        obj = obj._auto_sparse()
+        obj._auto_sparse()
     obj.values = cast("BackendArray", num_to_nan(obj.values))
     if not keepdims and obj.shape == (1, 1, 1, 1):
         return obj.values[0, 0, 0, 0]
@@ -1555,5 +1572,5 @@ def _groupby_aggregate(
         obj.odims = odims.values
     obj._set_slicers()
     if auto_sparse:
-        obj = obj._auto_sparse()
+        obj._auto_sparse()
     return obj
