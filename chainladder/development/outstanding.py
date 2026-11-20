@@ -424,7 +424,6 @@ class CaseOutstanding(DevelopmentBase):
         else:
             out = obj
 
-        out.values = ratio[..., : out.shape[2], : out.shape[3]]
         out.is_pattern = True
         out.is_cumulative = False
 
@@ -455,7 +454,6 @@ class CaseOutstanding(DevelopmentBase):
         else:
             out = obj
 
-        out.values = ratio[..., : out.shape[2], : out.shape[3]]
         out.is_pattern = True
         out.is_cumulative = False
 
