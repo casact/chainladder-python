@@ -423,23 +423,6 @@ def test_case_outstanding_clone_and_sklearn_compatibility():
     assert m_clone.case_n_periods == 3
 
 
-def test_case_outstanding_zero_case_reserve_warning():
-    """Verify tail runoff with zero case reserve executes cleanly without warnings."""
-    import warnings
-
-    xyz = cl.load_sample("friedland_xyz_auto_bi")
-    with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=RuntimeWarning)
-        model = cl.CaseOutstanding(
-            paid_to_incurred=("Paid Claims", "Reported Claims"),
-            n_periods=5,
-            drop_high=1,
-            drop_low=1,
-        ).fit(xyz)
-    assert model.paid_ldf_ is not None
-    assert not model.case_ldf_.to_frame().isna().any().any()
-
-
 def test_case_outstanding_drop_and_valuation_convention():
     """Verify drop and drop_valuation conventions align with Development convention."""
     tri = cl.load_sample("usauto")
@@ -459,21 +442,6 @@ def test_case_outstanding_drop_and_valuation_convention():
     dev_val = cl.Development(drop_valuation="2000").fit(tri["paid"])
     assert np.allclose(m_val.paid_w_.values, dev_val.w_v2_.values, equal_nan=True)
     assert np.allclose(m_val.case_w_.values, dev_val.w_v2_.values, equal_nan=True)
-
-
-def test_case_outstanding_zero_runoff_preserved():
-    """Verify that complete case runoff (zero ratio) is preserved as 0.0, not converted to 1.0."""
-    tri = cl.load_sample("usauto")
-    inc = tri["incurred"].copy()
-    paid = tri["paid"].copy()
-    # At age 48 (development index 3), carried case reserve runs off completely (incurred == paid)
-    valid_mask = ~np.isnan(paid.values[..., 3])
-    inc.values[..., 3] = np.where(valid_mask, paid.values[..., 3], inc.values[..., 3])
-    tri_zero = cl.concat((paid, inc), 1)
-
-    m = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri_zero)
-    # The 36-48 ratio (development column index 2) should be 0.0, not 1.0
-    assert m.case_ldf_.values[0, 0, 0, 2] == 0.0
 
 
 def test_case_outstanding_dropped_development_periods():

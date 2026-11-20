@@ -12,7 +12,6 @@ from chainladder.utils.utility_functions import concat
 
 import numpy as np
 import pandas as pd
-import warnings
 
 if TYPE_CHECKING:
     from chainladder.core import Triangle
@@ -304,6 +303,7 @@ class CaseOutstanding(DevelopmentBase):
             preserve=paid_preserve,
         ).fit(paid_ratio)
         self.paid_w_ = tw_paid.w_
+        self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2)
 
         case_ratio = self.case_to_prior_case_
         tw_case = TriangleWeight(
@@ -317,37 +317,7 @@ class CaseOutstanding(DevelopmentBase):
             preserve=case_preserve,
         ).fit(case_ratio)
         self.case_w_ = tw_case.w_
-
-        xp = case_ratio.get_array_module()
-        vals_c = case_ratio.values
-        w_c = xp.nan_to_num(self.case_w_.values, nan=0.0)
-        has_usable_c = xp.any((w_c > 0) & ~xp.isnan(vals_c), axis=2, keepdims=True)
-        sum_c = xp.sum(
-            xp.where((w_c > 0) & ~xp.isnan(vals_c), vals_c * w_c, 0.0),
-            axis=2,
-            keepdims=True,
-        )
-        is_zero_runoff = has_usable_c & (sum_c == 0.0)
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                category=RuntimeWarning,
-                message=".*empty slice.*",
-            )
-            warnings.filterwarnings(
-                "ignore",
-                category=RuntimeWarning,
-                message=".*All-NaN slice.*",
-            )
-            self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2)
-            xp = self.paid_ldf_.get_array_module()
-            self.paid_ldf_.values[xp.isnan(self.paid_ldf_.values)] = 0.0
-
-            self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2)
-            xp = self.case_ldf_.get_array_module()
-            self.case_ldf_.values[xp.isnan(self.case_ldf_.values)] = 1.0
-            self.case_ldf_.values[is_zero_runoff] = 0.0
+        self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2)
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
