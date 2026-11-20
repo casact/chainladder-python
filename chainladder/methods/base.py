@@ -33,35 +33,53 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return X.cdf_.align_pattern(X, sample_weight)
 
     @staticmethod
-    def _slice_weight_origins(X, sample_weight):
+    def _align_sample_weight(
+        X: Triangle, sample_weight: Triangle | None
+    ) -> tuple[Triangle | None, pd.PeriodIndex]:
         """
-        Slice ``sample_weight`` to the origin range it shares with ``X``.
+        Align ``sample_weight`` to the origins of ``X``.
 
         The methods read ``sample_weight`` by position along the origin axis.
         When ``X`` and ``sample_weight`` each have more than one origin, this
         keeps the weight from the later of the two first origins to the
-        earlier of the two last origins, and gives NaN weight to origins of
-        ``X`` outside that range. A warning names those origins of ``X``.
+        earlier of the two last origins. Origins of ``X`` outside that range
+        get NaN weight, and a warning names them.
 
-        Both triangles need consecutive origins at the same origin grain.
-        A ValueError is raised when the grains differ, when the ranges share
-        no origin, or when the origins in the shared range do not line up.
+        Parameters
+        ----------
+        X : Triangle
+            The loss triangle the method is fit to or predicts on. Its
+            origins need to be consecutive.
+        sample_weight : Triangle or None
+            The exposure triangle. Its origins need to be consecutive and at
+            the same origin grain as ``X``. A weight with a single origin
+            applies to every origin of ``X`` and is returned unchanged.
 
-        Returns the weight and the origins of ``X`` that it lacks, which get
-        no ultimate.
+        Returns
+        -------
+        sample_weight : Triangle or None
+            The weight with the same origins as ``X``.
+        missing : PeriodIndex
+            The origins of ``X`` that the weight lacks. These get no ultimate.
+
+        Raises
+        ------
+        ValueError
+            If the origin grains differ, if the two triangles share no
+            origin, or if their origins do not line up in the range they
+            share.
         """
-        none = pd.DatetimeIndex([])
         if sample_weight is None or len(X.odims) == 1 or len(sample_weight.odims) == 1:
-            return sample_weight, none
-        if X.origin_grain != sample_weight.origin_grain:
+            return sample_weight, X.origin[:0]
+        x_origins = X.origin
+        w_origins = sample_weight.origin
+        if x_origins.freq != w_origins.freq:
             raise ValueError(
-                f"X has origin grain {X.origin_grain} but sample_weight has "
-                f"origin grain {sample_weight.origin_grain}. They must match."
+                f"X has origin grain {x_origins.freqstr} but sample_weight has "
+                f"origin grain {w_origins.freqstr}. They must match."
             )
-        x_origins = pd.DatetimeIndex(X.odims)
-        w_origins = pd.DatetimeIndex(sample_weight.odims)
         if x_origins.equals(w_origins):
-            return sample_weight, none
+            return sample_weight, x_origins[:0]
         start = max(x_origins[0], w_origins[0])
         end = min(x_origins[-1], w_origins[-1])
         x_shared = (x_origins >= start) & (x_origins <= end)
@@ -73,19 +91,22 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
                 "The origins of X and sample_weight do not line up in the range "
                 "they share. Both need consecutive origins."
             )
-        if not x_shared.all():
-            import warnings
+        if x_shared.all():
+            return sample_weight.loc[:, :, start:end, :], x_origins[:0]
+        import warnings
 
-            warnings.warn(
-                "sample_weight is sliced to the origins it shares with X. "
-                "Origins of X with no weight get no ultimate: "
-                f"{X.origin[~x_shared].astype(str).tolist()}."
-            )
+        warnings.warn(
+            "sample_weight is aligned to the origins it shares with X. "
+            "Origins of X with no weight get no ultimate: "
+            f"{x_origins[~x_shared].astype(str).tolist()}."
+        )
+        # Arithmetic between triangles with different origin counts raises a
+        # KeyError here, so the weight gets a NaN row for each origin of X
+        # outside the shared range.
         backend = sample_weight.array_backend
         obj = sample_weight.set_backend("numpy")
-        xp = obj.get_array_module()
-        values = xp.full(
-            obj.shape[:2] + (len(x_origins), obj.shape[3]), xp.nan, dtype=float
+        values = obj.get_array_module().full(
+            obj.shape[:2] + (len(x_origins), obj.shape[3]), float("nan")
         )
         values[:, :, x_shared, :] = obj.values[:, :, w_shared, :]
         obj.values = values
@@ -93,14 +114,14 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return obj.set_backend(backend), x_origins[~x_shared]
 
     @staticmethod
-    def _drop_ultimates(ultimate, origins):
+    def _drop_ultimates(ultimate: Triangle, origins: pd.PeriodIndex) -> Triangle:
         """Set ``ultimate`` to NaN at ``origins``, which have no weight."""
         if len(origins) == 0:
             return ultimate
         backend = ultimate.array_backend
         obj = ultimate.set_backend("numpy")
         values = obj.values.copy()
-        values[:, :, pd.DatetimeIndex(obj.odims).isin(origins), :] = float("nan")
+        values[:, :, obj.origin.isin(origins), :] = float("nan")
         obj.values = values
         return obj.set_backend(backend)
 
