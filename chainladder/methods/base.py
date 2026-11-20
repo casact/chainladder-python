@@ -24,9 +24,22 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
-        if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
+        if len(obj.ddims) - len(obj.ldf_.ddims) >= 1:
             obj = TailConstant().fit_transform(obj)
-        return obj.val_to_dev()
+        obj = obj.val_to_dev()
+        self._check_ages(obj, obj.ldf_)
+        return obj
+
+    @staticmethod
+    def _check_ages(X, ldf):
+        """
+        Raise when X has development ages beyond the last age of ldf.
+
+        ``fit`` and ``predict`` share this check, so a pattern that is more
+        than one age short of X raises the same error on both paths.
+        """
+        if sum(X.ddims > ldf.ddims.max()) > 0:
+            raise ValueError("X has ages that exceed those available in model.")
 
     def _align_cdf(self, X, sample_weight=None):
         """Vertically align CDF to origin period latest diagonal."""
@@ -102,8 +115,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         X_new = X.val_to_dev()
-        if sum(X_new.ddims > self.ldf_.ddims.max()) > 0:
-            raise ValueError("X has ages that exceed those available in model.")
+        self._check_ages(X_new, self.ldf_)
         # Before the line below, which borrows self.X_'s index when both sides
         # are a single row and so would erase what the caller actually passed.
         self.validate_ldf(X_new, self.ldf_)
