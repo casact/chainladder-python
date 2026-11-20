@@ -1307,28 +1307,28 @@ class Triangle(TriangleBase):
 
     def as_of(self, date) -> Triangle:
         """
-        The Triangle as it stood at the end of a day or period.
+        Keep every cell valued on or before the end of the period that ``date``
+        names.
 
-        Keeps every cell valued on or before the end of the period that
-        ``date`` names. Valuations are stamped at the last instant of their
-        period, while pandas reads a date bound as midnight at the start of
-        the day, so ``tri[tri.valuation <= "1988-12-31"]`` leaves out the
-        cells valued at the end of 1988. ``tri.as_of("1988-12-31")`` keeps
-        them.
+        ``tri[tri.valuation <= "1988-12-31"]`` leaves out the cells valued at
+        the end of 1988. ``tri.as_of("1988-12-31")`` keeps them.
 
         Parameters
         ----------
         date : str, int, pandas.Period or date-like
-            A string or integer names the period it spells: ``"1988"`` or
-            ``1988`` is the year 1988, ``"1988Q2"`` a quarter, ``"1988-06"``
-            a month and ``"1988-06-30"`` a day. A ``pandas.Period`` is used
-            as given. A ``Timestamp``, ``datetime``, ``date`` or
-            ``numpy.datetime64`` names its whole day, whatever its time.
+            The period to stop at.
+
+            - ``"1988"`` or ``1988``: the year 1988
+            - ``"1988Q2"``: a quarter
+            - ``"1988-06"``: a month
+            - ``"1988-06-30"``: a day
+            - ``pandas.Period``: that period
+            - ``Timestamp``, ``datetime``, ``date`` or ``numpy.datetime64``:
+              its whole day
 
         Returns
         -------
         Triangle
-            The cells valued on or before the end of the named period.
 
         Raises
         ------
@@ -1345,15 +1345,19 @@ class Triangle(TriangleBase):
         .. testcode::
 
             raa = cl.load_sample("raa")
-            print(raa.as_of("1988").shape)
-            print(raa.as_of("1988-12-31").shape)
-            print(raa.as_of("1988-06-30").shape)
+            print(raa.as_of("1988"))
 
         .. testoutput::
 
-            (1, 1, 8, 8)
-            (1, 1, 8, 8)
-            (1, 1, 7, 7)
+                      12       24       36       48       60       72       84       96
+            1981  5012.0   8269.0  10907.0  11805.0  13539.0  16181.0  18009.0  18608.0
+            1982   106.0   4285.0   5396.0  10666.0  13782.0  15599.0  15496.0      NaN
+            1983  3410.0   8992.0  13873.0  16141.0  18735.0  22214.0      NaN      NaN
+            1984  5655.0  11555.0  15766.0  21266.0  23425.0      NaN      NaN      NaN
+            1985  1092.0   9565.0  15836.0  22169.0      NaN      NaN      NaN      NaN
+            1986  1513.0   6445.0  11702.0      NaN      NaN      NaN      NaN      NaN
+            1987   557.0   4020.0      NaN      NaN      NaN      NaN      NaN      NaN
+            1988  1351.0      NaN      NaN      NaN      NaN      NaN      NaN      NaN
         """
         if isinstance(date, (str, int, np.integer, pd.Period)):
             period = pd.Period(date)

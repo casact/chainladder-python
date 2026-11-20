@@ -4058,3 +4058,10 @@ def test_as_of_latest_valuation_returns_the_whole_triangle(raa) -> None:
 def test_as_of_before_the_first_valuation_raises(raa) -> None:
     with pytest.raises(ValueError):
         raa.as_of("1980")
+
+
+def test_valuation_strict_filter_keeps_the_previous_year(raa) -> None:
+    """``tri[tri.valuation < "1989"]`` keeps everything valued through 1988."""
+    result = raa[raa.valuation < "1989"]
+    assert result.shape == (1, 1, 8, 8)
+    assert result.valuation_date.strftime("%Y-%m-%d") == "1988-12-31"
