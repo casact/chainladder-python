@@ -733,28 +733,6 @@ class TriangleBase(
 
     @property
     def valuation(self):
-        """
-        The valuation date of every cell, origin varying fastest.
-
-        Each date is the last instant of its valuation period, one time unit
-        before the next period starts. The unit is a nanosecond or a
-        microsecond, depending on the pandas version. On the annual ``raa``
-        sample the 1988 diagonal is valued at ``1988-12-31 23:59:59.999999999``
-        under pandas 2.
-
-        pandas reads a date bound such as ``"1988-12-31"`` as midnight at the
-        start of that day, so ``tri.valuation <= "1988-12-31"`` leaves out the
-        cells valued at the end of 1988, and ``tri.valuation == "1988-12-31"``
-        matches none of them. To filter through the end of a period, use
-        :meth:`~chainladder.Triangle.as_of`, compare against the start of
-        the next period (``tri.valuation < "1989"``) or compare against
-        ``valuation_date``.
-
-        Returns
-        -------
-        pandas.DatetimeIndex
-            One date for each origin and development cell.
-        """
         ddims = self.ddims
         if self.is_val_tri:
             out = pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
