@@ -405,6 +405,61 @@ def test_unweighted_ratios_preserved_when_n_periods_set():
     )
 
 
+def test_case_outstanding_zero_case_reserve_warning():
+    import warnings
+
+    xyz = cl.load_sample("friedland_xyz_auto_bi")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=RuntimeWarning)
+        model = cl.CaseOutstanding(
+            paid_to_incurred=("Paid Claims", "Reported Claims")
+        ).fit(xyz)
+    assert model.paid_ldf_ is not None
+    assert not model.case_ldf_.to_frame().isna().any().any()
+    assert model.case_ldf_.values[0, 0, 0, -1] == 0.0
+
+
+def test_case_outstanding_synthetic_zero_prior_case_warning(genins):
+    import warnings
+
+    p = genins.set_backend("numpy").copy()
+    p.columns = ["paid"]
+    i = p.copy()
+    i.columns = ["incurred"]
+    i.values = p.values + 100
+    # Force case to zero at earlier development maturity
+    i.values[..., 2] = p.values[..., 2]
+    tri = cl.concat((p, i), 1)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=RuntimeWarning)
+        m_zero = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri)
+    assert not m_zero.case_ldf_.to_frame().isna().any().any()
+    assert np.isfinite(m_zero.ldf_.values).all()
+
+
+def test_case_outstanding_intermediate_zero_case_reserve():
+    xyz = cl.load_sample("friedland_xyz_auto_bi")
+    rep = xyz["Reported Claims"].copy()
+    paid = xyz["Paid Claims"].copy()
+
+    for y in range(len(rep.origin)):
+        if not np.isnan(rep.values[0, 0, y, 3]):
+            rep.values[0, 0, y, 3] = paid.values[0, 0, y, 3]
+
+    tri = cl.concat((paid, rep), 1)
+    model = cl.CaseOutstanding(
+        paid_to_incurred=("Paid Claims", "Reported Claims"),
+        paid_n_periods=-1,
+        case_n_periods=-1,
+    ).fit(tri)
+
+    assert (model.case_ldf_.values == 0.0).any()
+    assert np.isfinite(model.ldf_.values).all()
+    cl_fit = cl.Chainladder().fit(model.fit_transform(tri))
+    assert np.isfinite(cl_fit.ultimate_["Paid Claims"].values).all()
+    assert np.isfinite(cl_fit.ultimate_["Reported Claims"].values).all()
+
+
 def test_case_outstanding_clone_and_sklearn_compatibility():
     """Verify scikit-learn clone compatibility."""
     from sklearn.base import clone
