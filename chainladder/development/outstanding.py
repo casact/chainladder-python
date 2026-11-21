@@ -366,7 +366,7 @@ class CaseOutstanding(DevelopmentBase):
 
         # Will this work for sparse?
         forward = case_ldf_[case_ldf_.valuation > original_val_date].values
-        forward[xp.isnan(forward)] = 1.0
+        forward[~xp.isfinite(forward)] = 1.0
         forward = xp.cumprod(forward, -1)
 
         with warnings.catch_warnings():
@@ -381,9 +381,9 @@ class CaseOutstanding(DevelopmentBase):
                 message=".*invalid value.*",
             )
             backward = 1 / case_ldf_[case_ldf_.valuation <= original_val_date].values
-        backward[xp.isnan(backward)] = 1.0
+        backward[~xp.isfinite(backward)] = 1.0
         backward = xp.cumprod(backward[..., ::-1], -1)[..., ::-1][..., 1:]
-        nans = xp.where(xp.isnan(case_ldf_.values), xp.nan, 1.0)
+        nans = xp.where(~xp.isfinite(case_ldf_.values), xp.nan, 1.0)
         case_ldf_.values = xp.concatenate(
             (backward, (case_tri.latest_diagonal * 0 + 1).values, forward), -1
         )
