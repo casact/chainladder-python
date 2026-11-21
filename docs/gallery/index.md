@@ -42,6 +42,7 @@
    plot_loss_development
    plot_valuation_correlation
    plot_paired_bootstrap
+   plot_next_diagonal_backtest
 
 ```
 
@@ -562,6 +563,20 @@ alt: Share of prism claim samples flagged by the per-diagonal and total tests at
 ```{image} ../images/plot_paired_bootstrap.png
 ---
 alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared bootstrap draws and wide for independent draws
+---
+```
++++
+{bdg-warning}`medium`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_next_diagonal_backtest
+:link-type: doc
+**Backtesting Two Development Patterns on the Next Diagonal**
+```{image} ../images/plot_next_diagonal_backtest.png
+---
+alt: Bar chart of the 2008 diagonal projection error for State Farm commercial auto, where the latest 3 diagonals miss by less than all diagonals on both incurred and paid
 ---
 ```
 +++
