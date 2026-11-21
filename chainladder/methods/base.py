@@ -24,8 +24,12 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
-        if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
+        shortage = obj.shape[3] - obj.ldf_.shape[3]
+        if shortage == 1:
             obj = TailConstant().fit_transform(obj)
+        elif shortage > 1:
+            # Match the error predict gives for a pattern that stops early.
+            raise ValueError("X has ages that exceed those available in model.")
         return obj.val_to_dev()
 
     def _align_cdf(self, X, sample_weight=None):
