@@ -34,6 +34,10 @@ del annotations
 __dt64_dtype__: str = pd.to_datetime(["2000-01-01"]).dtype.name
 __dt64_unit__: str = np.datetime_data(__dt64_dtype__)[0]
 
+# Number of months in one period of each supported grain: yearly, semiannual,
+# quarterly and monthly.
+__grain_to_months__: dict[str, int] = {"Y": 12, "S": 6, "Q": 3, "M": 1}
+
 # Sentinel pattern used to mark a parameter as required and validate it.
 _UNSET: Any = object()
 

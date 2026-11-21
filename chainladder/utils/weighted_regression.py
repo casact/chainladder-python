@@ -262,17 +262,45 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def loglinear_interpolation(self, y):
-        """Use Cases: generally for filling in last element of sigma_"""
+        """
+        Fill undefined sigmas by regressing log(sigma) on development period.
+
+        Only positive sigmas enter the regression. A sigma at or below zero
+        has no logarithm, so it stays out of the fit and gets a fill like a
+        missing one. An age with no link ratios divides zero by minus one and
+        gives -0.0, and an age whose link ratios all agree gives +0.0.
+
+        Where the fitted line rises, a fill after the last positive sigma is
+        capped at that sigma, so the tail sigmas never rise above the last one
+        observed.
+
+        A triangle with fewer than three positive sigmas gets no fill. One
+        point gives no slope, and a line through two points fits both exactly,
+        so no residual is left to judge it by.
+        """
         from chainladder.utils.utility_functions import num_to_nan
 
         xp = self.xp
-        ly = y.copy()
-        ly = xp.log(xp.where(ly == 0, 1e-320, ly))
+        y = xp.where(y > 0, y, xp.nan)
+        ly = xp.log(y)
         w = xp.nan_to_num(ly * 0 + 1)
+        estimated = xp.nan_to_num(y * 0 + 1)
         reg = WeightedRegression(self.axis, False, xp=xp).fit(None, ly, w)
         slope, intercept = reg.slope_, reg.intercept_
-        fill_ = xp.exp(reg.x * slope + intercept) * (1 - w)
-        out = xp.nan_to_num(y) + xp.nan_to_num(fill_)
+        fill_ = xp.nan_to_num(xp.exp(reg.x * slope + intercept) * (1 - estimated))
+        # Where the fitted line rises, a fill after the last positive sigma
+        # stays at or below that sigma, as each Mack fill stays at or below
+        # the sigmas before it. A rising line would otherwise grow the tail
+        # sigmas without bound.
+        last_x = xp.max(reg.x * w, axis=self.axis, keepdims=True)
+        last_sigma = xp.sum(
+            xp.nan_to_num(y) * (reg.x == last_x), axis=self.axis, keepdims=True
+        )
+        fill_ = xp.where(
+            (reg.x > last_x) & (slope >= 0), xp.minimum(fill_, last_sigma), fill_
+        )
+        fill_ = xp.where(xp.sum(w, axis=self.axis, keepdims=True) < 3, 0, fill_)
+        out = xp.nan_to_num(y) + fill_
         return num_to_nan(out)
 
     def mack_interpolation(self, y):
@@ -285,7 +313,6 @@ class WeightedRegression(BaseEstimator):
 
         xp = self.xp
         ly = y.copy()
-        ly = xp.where(ly == 0, 1e-320, ly)
         w = xp.nan_to_num(ly * 0 + 1)
         slicer_n, slicer_d, slicer_a = (
             ([slice(None)] * 4),
@@ -302,14 +329,17 @@ class WeightedRegression(BaseEstimator):
             tuple(slicer_d),
             tuple(slicer_a),
         )
-        fill_ = xp.sqrt(
-            abs(
-                xp.minimum(
-                    (ly[slicer_n] ** 4 / ly[slicer_d] ** 2),
-                    xp.minimum(ly[slicer_d] ** 2, ly[slicer_n] ** 2),
+        # A zero sigma two periods back makes the quotient inf or nan, and
+        # nan_to_num below turns that cell's fill into 0.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            fill_ = xp.sqrt(
+                abs(
+                    xp.minimum(
+                        (ly[slicer_n] ** 4 / ly[slicer_d] ** 2),
+                        xp.minimum(ly[slicer_d] ** 2, ly[slicer_n] ** 2),
+                    )
                 )
             )
-        )
         fill_ = xp.concatenate((w[slicer_a], xp.nan_to_num(fill_)), axis=self.axis) * (
             1 - w
         )

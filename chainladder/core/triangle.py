@@ -34,6 +34,7 @@ except ImportError:
 from typing import (
     Any,
     cast,
+    Literal,
     Optional,
     TYPE_CHECKING,
     Self,
@@ -106,6 +107,12 @@ class Triangle(TriangleBase):
         ``cl.options.AUTO_SPARSE`` is ``True``, the backend is instead
         chosen automatically based on array size and density, regardless
         of this argument's value.
+    duplicates: {'sum', 'raise', 'warn'}, default 'sum'
+        What to do when more than one row of ``data`` falls in the same
+        index, origin and development cell. ``'sum'`` adds the rows together,
+        as transaction data needs. ``'raise'`` raises a ``ValueError`` naming
+        the first repeated cells, and ``'warn'`` gives the same message as a
+        warning, then sums.
 
     Attributes
     ----------
@@ -506,10 +513,16 @@ class Triangle(TriangleBase):
         pattern=False,
         trailing: bool = True,
         age: Optional[str | list] = None,
+        duplicates: Literal["sum", "raise", "warn"] = "sum",
         *args,
         **kwargs,
     ):
         self._axes: dict[int, Any] = {}
+
+        if duplicates not in ("sum", "raise", "warn"):
+            raise ValueError(
+                f"duplicates must be 'sum', 'raise' or 'warn', not {duplicates!r}."
+            )
 
         # If data are present, validate the dimensions.
         if data is None:
@@ -540,6 +553,7 @@ class Triangle(TriangleBase):
             origin=origin,
             valuation=development,
             cumulative=cumulative,
+            duplicates=duplicates,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
         origin_date: Series = self._to_datetime(
@@ -621,6 +635,7 @@ class Triangle(TriangleBase):
             development_date=development_date,
             index=index,
             columns=columns,
+            duplicates=duplicates,
         )
 
         # Fill in missing periods with zeros.
@@ -765,6 +780,7 @@ class Triangle(TriangleBase):
         origin: list,
         valuation: list,
         cumulative: bool,
+        duplicates: Literal["sum", "raise", "warn"] = "sum",
     ) -> tuple[DataFrame, Triangle]:
         """
         Split ultimate valuation rows from long-format triangle data.
@@ -792,6 +808,7 @@ class Triangle(TriangleBase):
                     columns=columns,
                     index=index,
                     cumulative=cumulative,
+                    duplicates=duplicates,
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[valuation[0]] != options.ULT_VAL]
@@ -1288,6 +1305,66 @@ class Triangle(TriangleBase):
         )
         return obj
 
+    def as_of(self, date) -> Triangle:
+        """
+        Keep every cell valued on or before the end of the period that ``date``
+        names.
+
+        ``tri[tri.valuation <= "1988-12-31"]`` leaves out the cells valued at
+        the end of 1988. ``tri.as_of("1988-12-31")`` keeps them.
+
+        Parameters
+        ----------
+        date : str, int, pandas.Period or date-like
+            The period to stop at.
+
+            - ``"1988"`` or ``1988``: the year 1988
+            - ``"1988Q2"``: a quarter
+            - ``"1988-06"``: a month
+            - ``"1988-06-30"``: a day
+            - ``pandas.Period``: that period
+            - ``Timestamp``, ``datetime``, ``date`` or ``numpy.datetime64``:
+              its whole day
+
+        Returns
+        -------
+        Triangle
+
+        Raises
+        ------
+        ValueError
+            If ``date`` cannot be parsed, or if no cell is valued by then.
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            print(raa.as_of("1988"))
+
+        .. testoutput::
+
+                      12       24       36       48       60       72       84       96
+            1981  5012.0   8269.0  10907.0  11805.0  13539.0  16181.0  18009.0  18608.0
+            1982   106.0   4285.0   5396.0  10666.0  13782.0  15599.0  15496.0      NaN
+            1983  3410.0   8992.0  13873.0  16141.0  18735.0  22214.0      NaN      NaN
+            1984  5655.0  11555.0  15766.0  21266.0  23425.0      NaN      NaN      NaN
+            1985  1092.0   9565.0  15836.0  22169.0      NaN      NaN      NaN      NaN
+            1986  1513.0   6445.0  11702.0      NaN      NaN      NaN      NaN      NaN
+            1987   557.0   4020.0      NaN      NaN      NaN      NaN      NaN      NaN
+            1988  1351.0      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        """
+        if isinstance(date, (str, int, np.integer, pd.Period)):
+            period = pd.Period(date)
+        else:
+            period = pd.Period(pd.Timestamp(date), freq="D")
+        return self[self.valuation <= period.end_time]
+
     @property
     def link_ratio(self) -> Triangle:
         """
@@ -1620,8 +1697,15 @@ class Triangle(TriangleBase):
         scale = self._dstep()[obj.development_grain][obj.origin_grain]
         offset = np.arange(obj.shape[-2]) * scale
         min_slide = -offset.max()
-        if (obj.values.coords[-2] == np.arange(1)).all():
-            # Unique edge case #239
+        if (
+            sign == -1
+            and obj.shape[-1] == 1
+            and obj.ddims[0] == obj.valuation_date
+            and (obj.values.coords[-2] == 0).all()
+        ):
+            # Unique edge case #239: val_to_dev measures a single latest-diagonal
+            # column from the last origin, so data held only by the first origin
+            # sits offset[-1] columns later.
             offset = offset[-1:] * sign
         offset = offset[obj.values.coords[-2]] * sign  # [0]
         obj.values.coords[-1] = obj.values.coords[-1] + offset

@@ -40,6 +40,8 @@
    plot_value_at_risk
    plot_voting_chainladder
    plot_loss_development
+   plot_valuation_correlation
+   plot_paired_bootstrap
 
 ```
 
@@ -536,5 +538,33 @@ alt: Loss Development Patterns
 ```
 +++
 {bdg-success}`easy`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_valuation_correlation
+:link-type: doc
+**Calendar Year Tests**
+```{image} ../images/plot_valuation_correlation.png
+---
+alt: Share of prism claim samples flagged by the per-diagonal and total tests at three grains
+---
+```
++++
+{bdg-warning}`medium`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_paired_bootstrap
+:link-type: doc
+**Comparing Tail Estimators on Shared Bootstrap Draws**
+```{image} ../images/plot_paired_bootstrap.png
+---
+alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared bootstrap draws and wide for independent draws
+---
+```
++++
+{bdg-warning}`medium`
 :::
 ::::

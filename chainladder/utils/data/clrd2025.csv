@@ -11769,106 +11769,106 @@ GRCODE,GRNAME,AccidentYear,DevelopmentYear,DevelopmentLag,IncurredLosses,CumPaid
 32514,Texas Hospital Ins Exch,2007,2014,8,4,4,0,175,0,175,1,226.316,comauto
 32514,Texas Hospital Ins Exch,2007,2015,9,4,4,0,175,0,175,1,226.316,comauto
 32514,Texas Hospital Ins Exch,2007,2016,10,4,4,0,175,0,175,1,226.316,comauto
-32670,Farmers Union Mut Ins Co,1998,1998,1,312,90,10,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,1999,2,352,123,19,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2000,3,397,183,25,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2001,4,351,334,2,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2002,5,368,334,4,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2003,6,364,334,0,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2004,7,334,334,0,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2005,8,334,334,0,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2006,9,334,334,0,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1998,2007,10,334,334,0,412,49,363,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,1999,1,120,37,3,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2000,2,113,68,2,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2001,3,145,145,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2002,4,146,146,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2003,5,203,203,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2004,6,203,203,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2005,7,203,203,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2006,8,203,203,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2007,9,203,203,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,1999,2008,10,203,203,0,423,54,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2000,1,285,67,3,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2001,2,257,216,4,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2002,3,239,229,1,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2003,4,261,259,0,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2004,5,260,260,0,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2005,6,260,260,0,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2006,7,260,260,0,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2007,8,260,260,0,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2008,9,260,260,0,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2000,2009,10,260,260,0,420,51,369,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2001,1,157,86,8,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2002,2,160,134,3,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2003,3,167,163,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2004,4,165,165,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2005,5,166,166,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2006,6,173,173,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2007,7,177,177,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2008,8,177,177,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2009,9,177,177,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2001,2010,10,177,177,0,419,70,349,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2002,1,84,65,8,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2003,2,71,70,1,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2004,3,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2005,4,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2006,5,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2007,6,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2008,7,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2009,8,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2010,9,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2002,2011,10,70,70,0,443,75,368,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2003,1,63,28,7,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2004,2,78,74,1,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2005,3,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2006,4,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2007,5,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2008,6,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2009,7,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2010,8,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2011,9,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2003,2012,10,77,77,0,456,70,386,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2004,1,158,109,9,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2005,2,126,120,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2006,3,127,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2007,4,126,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2008,5,126,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2009,6,126,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2010,7,126,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2011,8,126,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2012,9,126,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2004,2013,10,126,126,0,489,72,417,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2005,1,74,57,6,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2006,2,86,85,1,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2007,3,85,85,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2008,4,129,98,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2009,5,111,111,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2010,6,111,111,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2011,7,111,111,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2012,8,111,111,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2013,9,111,111,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2005,2014,10,111,111,0,494,50,444,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2006,1,93,66,9,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2007,2,80,80,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2008,3,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2009,4,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2010,5,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2011,6,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2012,7,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2013,8,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2014,9,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2006,2015,10,91,91,0,498,43,455,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2007,1,82,62,7,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2008,2,70,69,1,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2009,3,69,69,0,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2010,4,69,69,0,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2011,5,69,69,0,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2012,6,69,69,0,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2013,7,69,69,0,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2014,8,69,69,0,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2015,9,69,69,0,501,40,461,1,21.257,comauto
-32670,Farmers Union Mut Ins Co,2007,2016,10,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,1998,1998,1,312,90,10,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,1999,2,352,123,19,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2000,3,397,183,25,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2001,4,351,334,2,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2002,5,368,334,4,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2003,6,364,334,0,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2004,7,334,334,0,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2005,8,334,334,0,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2006,9,334,334,0,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1998,2007,10,334,334,0,412,49,363,1,21.257,comauto
+32670,Agraria Ins Co,1999,1999,1,120,37,3,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2000,2,113,68,2,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2001,3,145,145,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2002,4,146,146,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2003,5,203,203,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2004,6,203,203,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2005,7,203,203,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2006,8,203,203,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2007,9,203,203,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,1999,2008,10,203,203,0,423,54,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2000,1,285,67,3,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2001,2,257,216,4,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2002,3,239,229,1,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2003,4,261,259,0,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2004,5,260,260,0,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2005,6,260,260,0,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2006,7,260,260,0,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2007,8,260,260,0,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2008,9,260,260,0,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2000,2009,10,260,260,0,420,51,369,1,21.257,comauto
+32670,Agraria Ins Co,2001,2001,1,157,86,8,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2002,2,160,134,3,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2003,3,167,163,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2004,4,165,165,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2005,5,166,166,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2006,6,173,173,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2007,7,177,177,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2008,8,177,177,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2009,9,177,177,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2001,2010,10,177,177,0,419,70,349,1,21.257,comauto
+32670,Agraria Ins Co,2002,2002,1,84,65,8,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2003,2,71,70,1,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2004,3,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2005,4,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2006,5,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2007,6,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2008,7,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2009,8,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2010,9,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2002,2011,10,70,70,0,443,75,368,1,21.257,comauto
+32670,Agraria Ins Co,2003,2003,1,63,28,7,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2004,2,78,74,1,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2005,3,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2006,4,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2007,5,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2008,6,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2009,7,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2010,8,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2011,9,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2003,2012,10,77,77,0,456,70,386,1,21.257,comauto
+32670,Agraria Ins Co,2004,2004,1,158,109,9,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2005,2,126,120,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2006,3,127,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2007,4,126,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2008,5,126,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2009,6,126,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2010,7,126,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2011,8,126,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2012,9,126,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2004,2013,10,126,126,0,489,72,417,1,21.257,comauto
+32670,Agraria Ins Co,2005,2005,1,74,57,6,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2006,2,86,85,1,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2007,3,85,85,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2008,4,129,98,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2009,5,111,111,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2010,6,111,111,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2011,7,111,111,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2012,8,111,111,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2013,9,111,111,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2005,2014,10,111,111,0,494,50,444,1,21.257,comauto
+32670,Agraria Ins Co,2006,2006,1,93,66,9,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2007,2,80,80,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2008,3,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2009,4,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2010,5,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2011,6,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2012,7,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2013,8,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2014,9,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2006,2015,10,91,91,0,498,43,455,1,21.257,comauto
+32670,Agraria Ins Co,2007,2007,1,82,62,7,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2008,2,70,69,1,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2009,3,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2010,4,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2011,5,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2012,6,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2013,7,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2014,8,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2015,9,69,69,0,501,40,461,1,21.257,comauto
+32670,Agraria Ins Co,2007,2016,10,69,69,0,501,40,461,1,21.257,comauto
 32743,Alliance Mut Ins Co,1998,1998,1,46,-24,38,750,529,221,1,182.893,comauto
 32743,Alliance Mut Ins Co,1998,1999,2,43,6,15,750,529,221,1,182.893,comauto
 32743,Alliance Mut Ins Co,1998,2000,3,64,57,1,750,529,221,1,182.893,comauto
@@ -23359,106 +23359,106 @@ GRCODE,GRNAME,AccidentYear,DevelopmentYear,DevelopmentLag,IncurredLosses,CumPaid
 10308,Antilles Ins Co,2007,2014,8,0,0,0,302,235,67,1,283.543,othliab
 10308,Antilles Ins Co,2007,2015,9,0,0,0,302,235,67,1,283.543,othliab
 10308,Antilles Ins Co,2007,2016,10,0,0,0,302,235,67,1,283.543,othliab
-10323,Farmers Mut Ins Co,1998,1998,1,44,3,29,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,1999,2,25,16,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2000,3,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2001,4,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2002,5,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2003,6,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2004,7,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2005,8,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2006,9,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1998,2007,10,25,25,0,85,4,81,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,1999,1,35,3,28,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2000,2,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2001,3,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2002,4,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2003,5,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2004,6,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2005,7,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2006,8,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2007,9,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,1999,2008,10,6,6,0,77,4,73,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2000,1,47,7,29,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2001,2,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2002,3,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2003,4,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2004,5,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2005,6,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2006,7,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2007,8,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2008,9,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2000,2009,10,16,16,0,81,5,76,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2001,1,39,9,29,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2002,2,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2003,3,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2004,4,11,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2005,5,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2006,6,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2007,7,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2008,8,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2009,9,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2001,2010,10,10,10,0,84,5,79,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2002,1,0,7,30,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2003,2,0,9,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2004,3,0,15,1,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2005,4,0,66,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2006,5,0,66,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2007,6,0,66,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2008,7,0,66,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2009,8,0,66,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2010,9,0,66,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2002,2011,10,0,66,0,100,8,92,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2003,1,0,8,17,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2004,2,0,10,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2005,3,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2006,4,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2007,5,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2008,6,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2009,7,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2010,8,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2011,9,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2003,2012,10,0,-27,0,153,14,139,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2004,1,0,6,16,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2005,2,0,8,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2006,3,0,7,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2007,4,0,7,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2008,5,0,18,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2009,6,0,19,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2010,7,0,32,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2011,8,0,32,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2012,9,0,32,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2004,2013,10,32,32,0,200,16,184,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2005,1,0,7,17,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2006,2,0,5,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2007,3,0,9,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2008,4,0,26,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2009,5,0,26,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2010,6,0,26,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2011,7,0,26,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2012,8,0,26,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2013,9,26,26,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2005,2014,10,26,26,0,223,17,206,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2006,1,0,11,17,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2007,2,0,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2008,3,0,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2009,4,0,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2010,5,0,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2011,6,0,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2012,7,0,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2013,8,13,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2014,9,13,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2006,2015,10,13,13,0,217,17,200,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2007,1,0,11,12,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2008,2,0,11,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2009,3,0,11,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2010,4,0,11,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2011,5,0,11,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2012,6,0,11,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2013,7,11,11,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2014,8,11,11,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2015,9,12,12,0,211,15,196,1,51.591,othliab
-10323,Farmers Mut Ins Co,2007,2016,10,12,12,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,1998,1998,1,44,3,29,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,1999,2,25,16,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2000,3,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2001,4,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2002,5,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2003,6,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2004,7,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2005,8,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2006,9,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1998,2007,10,25,25,0,85,4,81,1,51.591,othliab
+10323,Eagle Mut,1999,1999,1,35,3,28,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2000,2,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2001,3,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2002,4,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2003,5,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2004,6,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2005,7,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2006,8,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2007,9,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,1999,2008,10,6,6,0,77,4,73,1,51.591,othliab
+10323,Eagle Mut,2000,2000,1,47,7,29,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2001,2,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2002,3,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2003,4,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2004,5,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2005,6,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2006,7,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2007,8,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2008,9,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2000,2009,10,16,16,0,81,5,76,1,51.591,othliab
+10323,Eagle Mut,2001,2001,1,39,9,29,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2002,2,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2003,3,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2004,4,11,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2005,5,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2006,6,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2007,7,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2008,8,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2009,9,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2001,2010,10,10,10,0,84,5,79,1,51.591,othliab
+10323,Eagle Mut,2002,2002,1,0,7,30,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2003,2,0,9,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2004,3,0,15,1,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2005,4,0,66,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2006,5,0,66,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2007,6,0,66,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2008,7,0,66,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2009,8,0,66,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2010,9,0,66,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2002,2011,10,0,66,0,100,8,92,1,51.591,othliab
+10323,Eagle Mut,2003,2003,1,0,8,17,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2004,2,0,10,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2005,3,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2006,4,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2007,5,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2008,6,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2009,7,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2010,8,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2011,9,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2003,2012,10,0,-27,0,153,14,139,1,51.591,othliab
+10323,Eagle Mut,2004,2004,1,0,6,16,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2005,2,0,8,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2006,3,0,7,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2007,4,0,7,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2008,5,0,18,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2009,6,0,19,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2010,7,0,32,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2011,8,0,32,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2012,9,0,32,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2004,2013,10,32,32,0,200,16,184,1,51.591,othliab
+10323,Eagle Mut,2005,2005,1,0,7,17,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2006,2,0,5,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2007,3,0,9,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2008,4,0,26,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2009,5,0,26,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2010,6,0,26,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2011,7,0,26,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2012,8,0,26,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2013,9,26,26,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2005,2014,10,26,26,0,223,17,206,1,51.591,othliab
+10323,Eagle Mut,2006,2006,1,0,11,17,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2007,2,0,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2008,3,0,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2009,4,0,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2010,5,0,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2011,6,0,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2012,7,0,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2013,8,13,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2014,9,13,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2006,2015,10,13,13,0,217,17,200,1,51.591,othliab
+10323,Eagle Mut,2007,2007,1,0,11,12,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2008,2,0,11,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2009,3,0,11,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2010,4,0,11,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2011,5,0,11,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2012,6,0,11,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2013,7,11,11,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2014,8,11,11,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2015,9,12,12,0,211,15,196,1,51.591,othliab
+10323,Eagle Mut,2007,2016,10,12,12,0,211,15,196,1,51.591,othliab
 10341,Controlled Risk Ins Co Of VT Inc,1998,1998,1,63,0,63,108,87,21,1,0,othliab
 10341,Controlled Risk Ins Co Of VT Inc,1998,1999,2,45,2,34,108,87,21,1,0,othliab
 10341,Controlled Risk Ins Co Of VT Inc,1998,2000,3,30,0,30,108,87,21,1,0,othliab
@@ -26619,106 +26619,106 @@ GRCODE,GRNAME,AccidentYear,DevelopmentYear,DevelopmentLag,IncurredLosses,CumPaid
 14427,Louisiana Farm Bureau Mut Ins Co,2007,2014,8,0,0,0,2686,2686,0,1,0,othliab
 14427,Louisiana Farm Bureau Mut Ins Co,2007,2015,9,0,0,0,2686,2686,0,1,0,othliab
 14427,Louisiana Farm Bureau Mut Ins Co,2007,2016,10,0,0,0,2686,2686,0,1,0,othliab
-14443,Madison Mut Ins Co,1998,1998,1,15,0,15,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,1999,2,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2000,3,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2001,4,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2002,5,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2003,6,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2004,7,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2005,8,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2006,9,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1998,2007,10,0,0,0,36,23,13,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,1999,1,22,0,22,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2000,2,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2001,3,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2002,4,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2003,5,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2004,6,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2005,7,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2006,8,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2007,9,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,1999,2008,10,0,0,0,38,24,14,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2000,1,22,0,22,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2001,2,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2002,3,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2003,4,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2004,5,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2005,6,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2006,7,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2007,8,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2008,9,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2000,2009,10,0,0,0,42,27,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2001,1,22,0,22,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2002,2,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2003,3,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2004,4,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2005,5,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2006,6,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2007,7,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2008,8,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2009,9,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2001,2010,10,0,0,0,45,30,15,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2002,1,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2003,2,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2004,3,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2005,4,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2006,5,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2007,6,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2008,7,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2009,8,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2010,9,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2002,2011,10,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2003,1,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2004,2,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2005,3,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2006,4,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2007,5,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2008,6,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2009,7,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2010,8,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2011,9,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2003,2012,10,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2004,1,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2005,2,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2006,3,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2007,4,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2008,5,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2009,6,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2010,7,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2011,8,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2012,9,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2004,2013,10,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2005,1,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2006,2,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2007,3,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2008,4,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2009,5,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2010,6,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2011,7,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2012,8,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2013,9,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2005,2014,10,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2006,1,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2007,2,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2008,3,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2009,4,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2010,5,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2011,6,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2012,7,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2013,8,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2014,9,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2006,2015,10,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2007,1,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2008,2,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2009,3,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2010,4,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2011,5,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2012,6,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2013,7,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2014,8,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2015,9,0,0,0,0,0,0,1,0.295,othliab
-14443,Madison Mut Ins Co,2007,2016,10,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,1998,1,15,0,15,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,1999,2,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2000,3,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2001,4,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2002,5,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2003,6,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2004,7,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2005,8,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2006,9,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1998,2007,10,0,0,0,36,23,13,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,1999,1,22,0,22,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2000,2,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2001,3,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2002,4,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2003,5,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2004,6,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2005,7,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2006,8,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2007,9,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),1999,2008,10,0,0,0,38,24,14,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2000,1,22,0,22,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2001,2,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2002,3,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2003,4,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2004,5,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2005,6,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2006,7,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2007,8,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2008,9,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2000,2009,10,0,0,0,42,27,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2001,1,22,0,22,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2002,2,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2003,3,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2004,4,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2005,5,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2006,6,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2007,7,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2008,8,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2009,9,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2001,2010,10,0,0,0,45,30,15,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2002,1,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2003,2,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2004,3,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2005,4,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2006,5,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2007,6,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2008,7,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2009,8,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2010,9,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2002,2011,10,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2003,1,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2004,2,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2005,3,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2006,4,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2007,5,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2008,6,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2009,7,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2010,8,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2011,9,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2003,2012,10,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2004,1,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2005,2,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2006,3,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2007,4,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2008,5,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2009,6,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2010,7,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2011,8,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2012,9,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2004,2013,10,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2005,1,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2006,2,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2007,3,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2008,4,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2009,5,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2010,6,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2011,7,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2012,8,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2013,9,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2005,2014,10,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2006,1,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2007,2,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2008,3,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2009,4,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2010,5,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2011,6,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2012,7,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2013,8,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2014,9,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2006,2015,10,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2007,1,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2008,2,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2009,3,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2010,4,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2011,5,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2012,6,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2013,7,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2014,8,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2015,9,0,0,0,0,0,0,1,0.295,othliab
+14443,Madison Mut Ins Co (IL),2007,2016,10,0,0,0,0,0,0,1,0.295,othliab
 14451,Marysville Mut Ins Co,1998,1998,1,10,9,1,94,6,88,1,11.5,othliab
 14451,Marysville Mut Ins Co,1998,1999,2,24,24,0,94,6,88,1,11.5,othliab
 14451,Marysville Mut Ins Co,1998,2000,3,24,24,0,94,6,88,1,11.5,othliab
@@ -29419,96 +29419,96 @@ GRCODE,GRNAME,AccidentYear,DevelopmentYear,DevelopmentLag,IncurredLosses,CumPaid
 17043,Everett Cash Mut Ins Co,2007,2014,8,961,881,13,2746,387,2359,1,3452.016,othliab
 17043,Everett Cash Mut Ins Co,2007,2015,9,1046,918,23,2746,387,2359,1,3452.016,othliab
 17043,Everett Cash Mut Ins Co,2007,2016,10,1045,929,19,2746,387,2359,1,3452.016,othliab
-17124,Farmers Mut Ins Co,1998,1998,1,22,4,14,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,1999,2,67,27,10,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2000,3,89,33,3,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2001,4,91,33,9,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2002,5,43,35,2,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2003,6,84,59,2,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2004,7,86,59,2,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2005,8,86,59,2,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2006,9,86,59,2,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1998,2007,10,86,59,2,50,19,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,1999,1,18,0,18,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2000,2,18,0,18,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2001,3,-6,0,-6,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2002,4,0,0,0,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2003,5,0,0,0,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2004,6,0,0,0,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2005,7,0,0,0,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2006,8,0,0,0,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2007,9,0,0,0,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,1999,2008,10,0,0,0,42,13,29,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2000,1,52,1,19,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2001,2,52,2,18,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2002,3,27,27,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2003,4,47,27,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2004,5,28,28,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2005,6,28,28,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2006,7,28,28,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2007,8,28,28,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2008,9,28,28,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2000,2009,10,28,28,0,47,15,32,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2001,1,26,1,20,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2002,2,16,1,15,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2003,3,1,1,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2004,4,1,1,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2005,5,7,7,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2006,6,7,7,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2007,7,7,7,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2008,8,7,7,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2009,9,7,7,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2001,2010,10,7,7,0,63,32,31,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2002,1,122,2,23,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2003,2,63,5,15,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2004,3,25,5,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2005,4,25,5,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2006,5,25,5,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2007,6,25,26,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2008,7,26,26,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2009,8,26,26,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2010,9,26,26,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2002,2011,10,26,26,0,93,55,38,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2003,1,36,1,20,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2004,2,27,7,15,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2005,3,13,7,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2006,4,44,14,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2007,5,33,34,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2008,6,34,34,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2009,7,34,34,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2010,8,34,34,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2011,9,34,34,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2003,2012,10,34,34,0,104,32,72,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2004,1,38,5,22,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2005,2,30,5,25,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2006,3,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2007,4,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2008,5,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2009,6,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2010,7,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2011,8,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2012,9,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2004,2013,10,5,5,0,101,32,69,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2005,1,106,79,12,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2006,2,92,80,12,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2007,3,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2008,4,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2009,5,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2010,6,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2011,7,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2012,8,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2013,9,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2005,2014,10,80,80,0,104,36,68,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2006,1,27,2,20,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2007,2,14,2,12,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2008,3,2,2,0,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2009,4,6,2,4,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2010,5,2,2,0,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2011,6,2,2,0,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2012,7,2,2,0,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2013,8,2,2,0,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2014,9,2,2,0,118,41,77,1,53.41,othliab
-17124,Farmers Mut Ins Co,2006,2015,10,2,2,0,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,1998,1,22,4,14,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,1999,2,67,27,10,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2000,3,89,33,3,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2001,4,91,33,9,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2002,5,43,35,2,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2003,6,84,59,2,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2004,7,86,59,2,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2005,8,86,59,2,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2006,9,86,59,2,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1998,2007,10,86,59,2,50,19,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,1999,1,18,0,18,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2000,2,18,0,18,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2001,3,-6,0,-6,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2002,4,0,0,0,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2003,5,0,0,0,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2004,6,0,0,0,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2005,7,0,0,0,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2006,8,0,0,0,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2007,9,0,0,0,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),1999,2008,10,0,0,0,42,13,29,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2000,1,52,1,19,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2001,2,52,2,18,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2002,3,27,27,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2003,4,47,27,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2004,5,28,28,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2005,6,28,28,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2006,7,28,28,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2007,8,28,28,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2008,9,28,28,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2000,2009,10,28,28,0,47,15,32,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2001,1,26,1,20,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2002,2,16,1,15,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2003,3,1,1,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2004,4,1,1,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2005,5,7,7,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2006,6,7,7,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2007,7,7,7,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2008,8,7,7,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2009,9,7,7,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2001,2010,10,7,7,0,63,32,31,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2002,1,122,2,23,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2003,2,63,5,15,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2004,3,25,5,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2005,4,25,5,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2006,5,25,5,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2007,6,25,26,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2008,7,26,26,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2009,8,26,26,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2010,9,26,26,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2002,2011,10,26,26,0,93,55,38,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2003,1,36,1,20,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2004,2,27,7,15,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2005,3,13,7,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2006,4,44,14,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2007,5,33,34,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2008,6,34,34,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2009,7,34,34,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2010,8,34,34,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2011,9,34,34,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2003,2012,10,34,34,0,104,32,72,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2004,1,38,5,22,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2005,2,30,5,25,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2006,3,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2007,4,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2008,5,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2009,6,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2010,7,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2011,8,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2012,9,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2004,2013,10,5,5,0,101,32,69,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2005,1,106,79,12,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2006,2,92,80,12,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2007,3,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2008,4,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2009,5,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2010,6,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2011,7,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2012,8,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2013,9,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2005,2014,10,80,80,0,104,36,68,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2006,1,27,2,20,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2007,2,14,2,12,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2008,3,2,2,0,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2009,4,6,2,4,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2010,5,2,2,0,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2011,6,2,2,0,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2012,7,2,2,0,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2013,8,2,2,0,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2014,9,2,2,0,118,41,77,1,53.41,othliab
+17124,Farmers Mut Ins Co (defunct),2006,2015,10,2,2,0,118,41,77,1,53.41,othliab
 17256,Hannahstown Mut Ins Co,1998,1998,1,37,1,32,76,29,47,1,19.66,othliab
 17256,Hannahstown Mut Ins Co,1998,1999,2,28,4,24,76,29,47,1,19.66,othliab
 17256,Hannahstown Mut Ins Co,1998,2000,3,21,4,17,76,29,47,1,19.66,othliab
@@ -33819,106 +33819,106 @@ GRCODE,GRNAME,AccidentYear,DevelopmentYear,DevelopmentLag,IncurredLosses,CumPaid
 30317,Hanys Ins Co,2007,2014,8,2997,2202,328,2621,0,2621,1,13997.731,othliab
 30317,Hanys Ins Co,2007,2015,9,2940,2343,196,2621,0,2621,1,13997.731,othliab
 30317,Hanys Ins Co,2007,2016,10,2947,2363,212,2621,0,2621,1,13997.731,othliab
-30449,Madison Mut Ins Co,1998,1998,1,43,0,38,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,1999,2,44,0,44,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2000,3,43,0,43,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2001,4,0,0,0,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2002,5,0,0,0,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2003,6,0,0,0,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2004,7,0,0,0,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2005,8,0,0,0,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2006,9,0,0,0,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1998,2007,10,0,0,0,84,10,74,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,1999,1,34,0,33,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2000,2,39,2,37,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2001,3,32,2,30,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2002,4,2,2,0,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2003,5,2,2,0,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2004,6,2,2,0,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2005,7,2,2,0,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2006,8,2,2,0,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2007,9,2,2,0,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,1999,2008,10,2,2,0,78,8,70,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2000,1,33,4,29,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2001,2,34,4,30,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2002,3,37,4,33,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2003,4,33,4,29,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2004,5,4,4,0,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2005,6,4,4,0,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2006,7,4,4,0,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2007,8,4,4,0,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2008,9,4,4,0,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2000,2009,10,4,4,0,67,10,57,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2001,1,50,1,49,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2002,2,50,2,48,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2003,3,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2004,4,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2005,5,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2006,6,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2007,7,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2008,8,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2009,9,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2001,2010,10,2,2,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2002,1,40,4,28,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2003,2,36,5,29,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2004,3,36,7,29,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2005,4,7,7,0,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2006,5,7,7,0,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2007,6,7,7,0,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2008,7,7,7,0,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2009,8,7,7,0,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2010,9,7,7,0,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2002,2011,10,7,7,0,62,15,47,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2003,1,57,0,51,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2004,2,59,1,29,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2005,3,56,15,29,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2006,4,27,16,0,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2007,5,35,21,0,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2008,6,36,36,0,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2009,7,36,36,0,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2010,8,36,36,0,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2011,9,36,36,0,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2003,2012,10,36,36,0,79,18,61,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2004,1,58,7,51,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2005,2,36,7,29,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2006,3,36,7,29,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2007,4,7,7,0,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2008,5,7,7,0,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2009,6,7,7,0,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2010,7,7,7,0,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2011,8,7,7,0,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2012,9,7,7,0,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2004,2013,10,7,7,0,83,15,68,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2005,1,51,0,51,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2006,2,29,0,29,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2007,3,29,0,29,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2008,4,0,0,0,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2009,5,0,0,0,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2010,6,0,0,0,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2011,7,0,0,0,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2012,8,0,0,0,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2013,9,0,0,0,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2005,2014,10,0,0,0,74,12,62,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2006,1,52,0,51,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2007,2,29,0,29,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2008,3,29,0,29,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2009,4,0,0,0,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2010,5,0,0,0,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2011,6,0,0,0,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2012,7,0,0,0,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2013,8,0,0,0,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2014,9,0,0,0,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2006,2015,10,0,0,0,71,11,60,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2007,1,62,5,51,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2008,2,40,11,29,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2009,3,40,11,29,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2010,4,11,11,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2011,5,11,11,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2012,6,11,11,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2013,7,11,11,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2014,8,11,11,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2015,9,11,11,0,63,9,54,1,130.366,othliab
-30449,Madison Mut Ins Co,2007,2016,10,11,11,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,1998,1,43,0,38,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,1999,2,44,0,44,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2000,3,43,0,43,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2001,4,0,0,0,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2002,5,0,0,0,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2003,6,0,0,0,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2004,7,0,0,0,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2005,8,0,0,0,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2006,9,0,0,0,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1998,2007,10,0,0,0,84,10,74,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,1999,1,34,0,33,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2000,2,39,2,37,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2001,3,32,2,30,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2002,4,2,2,0,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2003,5,2,2,0,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2004,6,2,2,0,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2005,7,2,2,0,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2006,8,2,2,0,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2007,9,2,2,0,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),1999,2008,10,2,2,0,78,8,70,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2000,1,33,4,29,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2001,2,34,4,30,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2002,3,37,4,33,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2003,4,33,4,29,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2004,5,4,4,0,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2005,6,4,4,0,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2006,7,4,4,0,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2007,8,4,4,0,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2008,9,4,4,0,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2000,2009,10,4,4,0,67,10,57,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2001,1,50,1,49,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2002,2,50,2,48,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2003,3,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2004,4,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2005,5,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2006,6,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2007,7,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2008,8,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2009,9,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2001,2010,10,2,2,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2002,1,40,4,28,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2003,2,36,5,29,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2004,3,36,7,29,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2005,4,7,7,0,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2006,5,7,7,0,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2007,6,7,7,0,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2008,7,7,7,0,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2009,8,7,7,0,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2010,9,7,7,0,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2002,2011,10,7,7,0,62,15,47,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2003,1,57,0,51,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2004,2,59,1,29,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2005,3,56,15,29,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2006,4,27,16,0,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2007,5,35,21,0,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2008,6,36,36,0,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2009,7,36,36,0,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2010,8,36,36,0,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2011,9,36,36,0,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2003,2012,10,36,36,0,79,18,61,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2004,1,58,7,51,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2005,2,36,7,29,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2006,3,36,7,29,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2007,4,7,7,0,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2008,5,7,7,0,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2009,6,7,7,0,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2010,7,7,7,0,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2011,8,7,7,0,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2012,9,7,7,0,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2004,2013,10,7,7,0,83,15,68,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2005,1,51,0,51,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2006,2,29,0,29,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2007,3,29,0,29,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2008,4,0,0,0,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2009,5,0,0,0,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2010,6,0,0,0,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2011,7,0,0,0,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2012,8,0,0,0,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2013,9,0,0,0,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2005,2014,10,0,0,0,74,12,62,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2006,1,52,0,51,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2007,2,29,0,29,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2008,3,29,0,29,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2009,4,0,0,0,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2010,5,0,0,0,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2011,6,0,0,0,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2012,7,0,0,0,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2013,8,0,0,0,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2014,9,0,0,0,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2006,2015,10,0,0,0,71,11,60,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2007,1,62,5,51,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2008,2,40,11,29,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2009,3,40,11,29,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2010,4,11,11,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2011,5,11,11,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2012,6,11,11,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2013,7,11,11,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2014,8,11,11,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2015,9,11,11,0,63,9,54,1,130.366,othliab
+30449,Madison Mut Ins Co (NY),2007,2016,10,11,11,0,63,9,54,1,130.366,othliab
 30457,Southern MI Mut Ins Co,1998,1998,1,1,0,1,1,0,1,1,0,othliab
 30457,Southern MI Mut Ins Co,1998,1999,2,0,0,0,1,0,1,1,0,othliab
 30457,Southern MI Mut Ins Co,1998,2000,3,0,0,0,1,0,1,1,0,othliab
@@ -34459,106 +34459,106 @@ GRCODE,GRNAME,AccidentYear,DevelopmentYear,DevelopmentLag,IncurredLosses,CumPaid
 32301,Nichido Fire & Marine Ins Co Ltd,2007,2014,8,882,882,0,913,0,913,1,658.384,othliab
 32301,Nichido Fire & Marine Ins Co Ltd,2007,2015,9,882,882,0,913,0,913,1,658.384,othliab
 32301,Nichido Fire & Marine Ins Co Ltd,2007,2016,10,882,882,0,913,0,913,1,658.384,othliab
-32670,Farmers Union Mut Ins Co,1998,1998,1,121,42,13,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,1999,2,125,63,21,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2000,3,107,79,10,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2001,4,95,85,4,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2002,5,97,93,1,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2003,6,95,94,0,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2004,7,95,94,0,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2005,8,95,94,0,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2006,9,94,94,0,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1998,2007,10,79,79,0,785,570,215,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,1999,1,135,35,5,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2000,2,119,80,8,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2001,3,146,91,12,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2002,4,134,127,2,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2003,5,131,127,1,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2004,6,128,127,0,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2005,7,129,127,0,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2006,8,127,127,0,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2007,9,127,127,0,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,1999,2008,10,127,127,0,827,623,204,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2000,1,59,25,3,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2001,2,70,43,8,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2002,3,71,57,10,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2003,4,69,61,4,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2004,5,75,65,3,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2005,6,77,76,0,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2006,7,72,72,0,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2007,8,72,72,0,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2008,9,72,72,0,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2000,2009,10,73,72,0,872,653,219,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2001,1,160,12,19,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2002,2,155,29,15,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2003,3,43,33,2,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2004,4,50,36,8,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2005,5,45,37,1,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2006,6,43,36,1,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2007,7,43,37,0,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2008,8,37,37,0,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2009,9,39,37,1,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2001,2010,10,39,37,1,921,738,183,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2002,1,112,26,14,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2003,2,83,37,1,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2004,3,75,63,0,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2005,4,72,66,1,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2006,5,71,67,1,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2007,6,68,67,0,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2008,7,68,67,0,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2009,8,68,68,0,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2010,9,68,68,0,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2002,2011,10,69,68,1,1034,834,200,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2003,1,65,10,12,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2004,2,80,29,14,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2005,3,61,31,12,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2006,4,49,33,8,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2007,5,51,36,7,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2008,6,42,39,3,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2009,7,39,39,0,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2010,8,39,39,0,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2011,9,39,39,0,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2003,2012,10,39,39,0,1189,955,234,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2004,1,48,15,14,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2005,2,55,20,16,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2006,3,64,43,11,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2007,4,57,50,2,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2008,5,52,50,0,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2009,6,49,49,0,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2010,7,49,49,0,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2011,8,49,49,0,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2012,9,49,49,0,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2004,2013,10,49,49,0,1270,1014,256,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2005,1,91,13,12,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2006,2,115,16,22,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2007,3,120,28,18,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2008,4,119,32,15,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2009,5,44,36,5,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2010,6,50,37,11,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2011,7,39,37,0,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2012,8,38,37,0,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2013,9,38,37,0,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2005,2014,10,38,37,0,1307,909,399,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2006,1,77,30,19,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2007,2,76,34,19,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2008,3,76,40,23,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2009,4,75,47,24,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2010,5,67,48,16,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2011,6,52,49,2,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2012,7,73,72,0,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2013,8,73,73,0,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2014,9,73,73,0,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2006,2015,10,73,73,0,1356,944,412,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2007,1,160,30,17,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2008,2,165,119,32,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2009,3,165,125,29,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2010,4,144,126,4,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2011,5,143,141,1,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2012,6,141,141,0,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2013,7,141,141,0,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2014,8,141,141,0,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2015,9,141,141,0,1428,1003,425,1,524.165,othliab
-32670,Farmers Union Mut Ins Co,2007,2016,10,141,141,0,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,1998,1998,1,121,42,13,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,1999,2,125,63,21,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2000,3,107,79,10,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2001,4,95,85,4,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2002,5,97,93,1,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2003,6,95,94,0,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2004,7,95,94,0,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2005,8,95,94,0,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2006,9,94,94,0,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1998,2007,10,79,79,0,785,570,215,1,524.165,othliab
+32670,Agraria Ins Co,1999,1999,1,135,35,5,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2000,2,119,80,8,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2001,3,146,91,12,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2002,4,134,127,2,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2003,5,131,127,1,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2004,6,128,127,0,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2005,7,129,127,0,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2006,8,127,127,0,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2007,9,127,127,0,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,1999,2008,10,127,127,0,827,623,204,1,524.165,othliab
+32670,Agraria Ins Co,2000,2000,1,59,25,3,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2001,2,70,43,8,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2002,3,71,57,10,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2003,4,69,61,4,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2004,5,75,65,3,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2005,6,77,76,0,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2006,7,72,72,0,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2007,8,72,72,0,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2008,9,72,72,0,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2000,2009,10,73,72,0,872,653,219,1,524.165,othliab
+32670,Agraria Ins Co,2001,2001,1,160,12,19,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2002,2,155,29,15,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2003,3,43,33,2,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2004,4,50,36,8,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2005,5,45,37,1,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2006,6,43,36,1,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2007,7,43,37,0,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2008,8,37,37,0,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2009,9,39,37,1,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2001,2010,10,39,37,1,921,738,183,1,524.165,othliab
+32670,Agraria Ins Co,2002,2002,1,112,26,14,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2003,2,83,37,1,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2004,3,75,63,0,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2005,4,72,66,1,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2006,5,71,67,1,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2007,6,68,67,0,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2008,7,68,67,0,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2009,8,68,68,0,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2010,9,68,68,0,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2002,2011,10,69,68,1,1034,834,200,1,524.165,othliab
+32670,Agraria Ins Co,2003,2003,1,65,10,12,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2004,2,80,29,14,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2005,3,61,31,12,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2006,4,49,33,8,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2007,5,51,36,7,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2008,6,42,39,3,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2009,7,39,39,0,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2010,8,39,39,0,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2011,9,39,39,0,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2003,2012,10,39,39,0,1189,955,234,1,524.165,othliab
+32670,Agraria Ins Co,2004,2004,1,48,15,14,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2005,2,55,20,16,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2006,3,64,43,11,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2007,4,57,50,2,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2008,5,52,50,0,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2009,6,49,49,0,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2010,7,49,49,0,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2011,8,49,49,0,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2012,9,49,49,0,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2004,2013,10,49,49,0,1270,1014,256,1,524.165,othliab
+32670,Agraria Ins Co,2005,2005,1,91,13,12,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2006,2,115,16,22,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2007,3,120,28,18,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2008,4,119,32,15,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2009,5,44,36,5,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2010,6,50,37,11,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2011,7,39,37,0,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2012,8,38,37,0,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2013,9,38,37,0,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2005,2014,10,38,37,0,1307,909,399,1,524.165,othliab
+32670,Agraria Ins Co,2006,2006,1,77,30,19,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2007,2,76,34,19,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2008,3,76,40,23,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2009,4,75,47,24,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2010,5,67,48,16,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2011,6,52,49,2,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2012,7,73,72,0,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2013,8,73,73,0,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2014,9,73,73,0,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2006,2015,10,73,73,0,1356,944,412,1,524.165,othliab
+32670,Agraria Ins Co,2007,2007,1,160,30,17,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2008,2,165,119,32,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2009,3,165,125,29,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2010,4,144,126,4,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2011,5,143,141,1,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2012,6,141,141,0,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2013,7,141,141,0,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2014,8,141,141,0,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2015,9,141,141,0,1428,1003,425,1,524.165,othliab
+32670,Agraria Ins Co,2007,2016,10,141,141,0,1428,1003,425,1,524.165,othliab
 32743,Alliance Mut Ins Co,1998,1998,1,282,48,233,567,83,484,1,514.197,othliab
 32743,Alliance Mut Ins Co,1998,1999,2,274,61,196,567,83,484,1,514.197,othliab
 32743,Alliance Mut Ins Co,1998,2000,3,255,71,170,567,83,484,1,514.197,othliab
@@ -46189,106 +46189,106 @@ GRCODE,GRNAME,AccidentYear,DevelopmentYear,DevelopmentLag,IncurredLosses,CumPaid
 14370,Lebanon Mut Ins Co,2007,2014,8,8,8,0,74,27,47,1,183.509,ppauto
 14370,Lebanon Mut Ins Co,2007,2015,9,8,8,0,74,27,47,1,183.509,ppauto
 14370,Lebanon Mut Ins Co,2007,2016,10,8,8,0,74,27,47,1,183.509,ppauto
-14443,Madison Mut Ins Co,1998,1998,1,11055,5460,250,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,1999,2,11015,8515,100,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2000,3,11192,10148,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2001,4,11420,10998,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2002,5,11478,11378,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2003,6,11530,11446,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2004,7,11498,11502,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2005,8,11513,11497,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2006,9,11524,11500,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1998,2007,10,11526,11526,0,14022,441,13581,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,1999,1,10459,4702,250,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2000,2,10065,8101,100,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2001,3,9827,9141,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2002,4,10069,9632,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2003,5,10055,9954,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2004,6,10121,10076,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2005,7,10086,10069,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2006,8,10074,10091,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2007,9,10077,10089,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,1999,2008,10,10082,10082,0,13932,353,13579,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2000,1,11287,5359,350,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2001,2,11067,8546,100,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2002,3,11030,10036,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2003,4,11091,10622,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2004,5,11039,10834,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2005,6,11051,10897,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2006,7,11053,10983,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2007,8,11083,10993,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2008,9,11103,10997,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2000,2009,10,11089,10997,0,13671,407,13264,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2001,1,11995,5429,350,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2002,2,11890,9079,100,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2003,3,11710,10264,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2004,4,11414,10940,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2005,5,11443,11350,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2006,6,11431,11433,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2007,7,11438,11438,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2008,8,11441,11439,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2009,9,11428,11433,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2001,2010,10,11503,11429,0,14123,460,13663,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2002,1,11445,5403,350,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2003,2,11224,8872,100,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2004,3,11134,10173,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2005,4,11207,10678,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2006,5,11186,10995,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2007,6,11137,11131,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2008,7,11135,11130,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2009,8,11114,11126,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2010,9,11114,11124,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2002,2011,10,11188,11114,0,15813,485,15328,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2003,1,10551,5883,350,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2004,2,11089,9136,100,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2005,3,11210,10422,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2006,4,11279,10961,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2007,5,11356,11147,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2008,6,11372,11284,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2009,7,11281,11223,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2010,8,11247,11255,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2011,9,11248,11254,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2003,2012,10,11254,11254,0,17080,645,16435,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2004,1,10720,5173,450,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2005,2,10402,8560,100,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2006,3,10470,9717,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2007,4,10614,10501,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2008,5,10936,10646,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2009,6,10951,10725,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2010,7,10920,10927,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2011,8,10927,10927,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2012,9,10927,10927,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2004,2013,10,10927,10927,0,17121,768,16353,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2005,1,9900,4975,300,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2006,2,9925,8107,100,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2007,3,9910,9435,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2008,4,9983,9847,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2009,5,9967,9892,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2010,6,9927,9898,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2011,7,9938,9899,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2012,8,9938,9905,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2013,9,9938,9906,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2005,2014,10,9939,9902,0,16865,756,16109,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2006,1,8900,4642,250,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2007,2,9624,7736,100,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2008,3,9748,8981,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2009,4,9828,9381,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2010,5,9824,9603,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2011,6,9638,9621,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2012,7,9638,9637,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2013,8,9638,9637,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2014,9,9638,9640,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2006,2015,10,9634,9634,0,16234,720,15514,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2007,1,11544,5617,250,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2008,2,11018,8984,100,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2009,3,10664,10139,0,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2010,4,10743,10320,0,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2011,5,10825,10748,0,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2012,6,10825,10760,0,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2013,7,10825,10765,0,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2014,8,10840,10774,0,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2015,9,10833,10838,0,15534,644,14890,1,9541.517,ppauto
-14443,Madison Mut Ins Co,2007,2016,10,10833,10833,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,1998,1,11055,5460,250,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,1999,2,11015,8515,100,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2000,3,11192,10148,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2001,4,11420,10998,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2002,5,11478,11378,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2003,6,11530,11446,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2004,7,11498,11502,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2005,8,11513,11497,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2006,9,11524,11500,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1998,2007,10,11526,11526,0,14022,441,13581,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,1999,1,10459,4702,250,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2000,2,10065,8101,100,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2001,3,9827,9141,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2002,4,10069,9632,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2003,5,10055,9954,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2004,6,10121,10076,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2005,7,10086,10069,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2006,8,10074,10091,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2007,9,10077,10089,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),1999,2008,10,10082,10082,0,13932,353,13579,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2000,1,11287,5359,350,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2001,2,11067,8546,100,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2002,3,11030,10036,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2003,4,11091,10622,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2004,5,11039,10834,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2005,6,11051,10897,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2006,7,11053,10983,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2007,8,11083,10993,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2008,9,11103,10997,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2000,2009,10,11089,10997,0,13671,407,13264,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2001,1,11995,5429,350,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2002,2,11890,9079,100,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2003,3,11710,10264,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2004,4,11414,10940,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2005,5,11443,11350,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2006,6,11431,11433,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2007,7,11438,11438,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2008,8,11441,11439,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2009,9,11428,11433,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2001,2010,10,11503,11429,0,14123,460,13663,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2002,1,11445,5403,350,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2003,2,11224,8872,100,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2004,3,11134,10173,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2005,4,11207,10678,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2006,5,11186,10995,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2007,6,11137,11131,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2008,7,11135,11130,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2009,8,11114,11126,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2010,9,11114,11124,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2002,2011,10,11188,11114,0,15813,485,15328,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2003,1,10551,5883,350,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2004,2,11089,9136,100,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2005,3,11210,10422,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2006,4,11279,10961,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2007,5,11356,11147,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2008,6,11372,11284,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2009,7,11281,11223,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2010,8,11247,11255,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2011,9,11248,11254,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2003,2012,10,11254,11254,0,17080,645,16435,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2004,1,10720,5173,450,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2005,2,10402,8560,100,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2006,3,10470,9717,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2007,4,10614,10501,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2008,5,10936,10646,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2009,6,10951,10725,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2010,7,10920,10927,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2011,8,10927,10927,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2012,9,10927,10927,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2004,2013,10,10927,10927,0,17121,768,16353,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2005,1,9900,4975,300,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2006,2,9925,8107,100,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2007,3,9910,9435,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2008,4,9983,9847,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2009,5,9967,9892,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2010,6,9927,9898,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2011,7,9938,9899,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2012,8,9938,9905,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2013,9,9938,9906,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2005,2014,10,9939,9902,0,16865,756,16109,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2006,1,8900,4642,250,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2007,2,9624,7736,100,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2008,3,9748,8981,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2009,4,9828,9381,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2010,5,9824,9603,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2011,6,9638,9621,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2012,7,9638,9637,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2013,8,9638,9637,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2014,9,9638,9640,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2006,2015,10,9634,9634,0,16234,720,15514,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2007,1,11544,5617,250,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2008,2,11018,8984,100,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2009,3,10664,10139,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2010,4,10743,10320,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2011,5,10825,10748,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2012,6,10825,10760,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2013,7,10825,10765,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2014,8,10840,10774,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2015,9,10833,10838,0,15534,644,14890,1,9541.517,ppauto
+14443,Madison Mut Ins Co (IL),2007,2016,10,10833,10833,0,15534,644,14890,1,9541.517,ppauto
 14550,Wea Prop & Cas Ins Co,1998,1998,1,1081,407,275,2086,423,1663,1,2822.91,ppauto
 14550,Wea Prop & Cas Ins Co,1998,1999,2,1135,652,190,2086,423,1663,1,2822.91,ppauto
 14550,Wea Prop & Cas Ins Co,1998,2000,3,1069,749,105,2086,423,1663,1,2822.91,ppauto

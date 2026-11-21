@@ -2,6 +2,7 @@ import numpy as np
 
 from chainladder.utils.sparse import (
     array,
+    broadcast_origin_development,
     floor,
     COO,
     where,
@@ -141,3 +142,25 @@ def test_keepdims_nanquantile() -> None:
     assert sparse_all(
         nanquantile(a, 0.5, keepdims=True) == COO(np.array([[2, 3, 4, 5]]))
     )
+
+
+def test_broadcast_origin_development() -> None:
+    """
+    Checks that broadcast_origin_development repeats a length-1 origin or
+    development axis, leaves longer axes alone and returns a new array.
+
+    Returns
+    -------
+    None
+    """
+    a = COO(np.array([[[[1.0, 2.0, 3.0]]]]), fill_value=np.nan)
+    result = broadcast_origin_development(a, 2, 5)
+    np.testing.assert_array_equal(result.todense(), [[[[1, 2, 3], [1, 2, 3]]]])
+    b = COO(np.array([[[[1.0], [2.0]]]]), fill_value=np.nan)
+    result = broadcast_origin_development(b, 4, 3)
+    np.testing.assert_array_equal(result.todense(), [[[[1, 1, 1], [2, 2, 2]]]])
+    result = broadcast_origin_development(result, 4, 3)
+    assert result.shape == (1, 1, 2, 3)
+    unchanged = broadcast_origin_development(a, 1, 3)
+    assert unchanged is not a
+    assert not np.shares_memory(unchanged.coords, a.coords)
