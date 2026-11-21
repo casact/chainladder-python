@@ -129,7 +129,10 @@ class Triangle(TriangleBase):
     virtual_columns: Series
         Represents the subset of columns of the triangle that are virtual.
     valuation: DatetimeIndex
-        Represents all valuation dates of each cell in the Triangle.
+        Represents all valuation dates of each cell in the Triangle. Each date
+        falls at the end of its period, so ``tri[tri.valuation <= "1988-12-31"]``
+        leaves out the cells valued at the end of 1988. Use :meth:`as_of` to
+        keep them.
     origin_grain: str
         The grain of the origin vector ('Y', 'S', 'Q', 'M')
     development_grain: str
