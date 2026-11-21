@@ -416,6 +416,7 @@ def test_case_outstanding_zero_case_reserve_warning():
         ).fit(xyz)
     assert model.paid_ldf_ is not None
     assert not model.case_ldf_.to_frame().isna().any().any()
+    assert model.case_ldf_.values[0, 0, 0, -1] == 0.0
 
 
 def test_case_outstanding_synthetic_zero_prior_case_warning(genins):

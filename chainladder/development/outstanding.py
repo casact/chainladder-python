@@ -330,7 +330,13 @@ class CaseOutstanding(DevelopmentBase):
                 message=".*All-NaN slice.*",
             )
             self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2).fillzero()
-            self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2).fillna(1.0)
+
+            case_weighted = case_ratio * self.case_w_
+            xp = case_weighted.get_array_module()
+            empty_case_lags = xp.isnan(case_weighted.values).all(axis=2, keepdims=True)
+            case_mean = case_weighted.mean(axis=2).fillzero()
+            case_mean.values = xp.where(empty_case_lags, 1.0, case_mean.values)
+            self.case_ldf_ = case_mean
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
@@ -362,17 +368,27 @@ class CaseOutstanding(DevelopmentBase):
         forward = case_ldf_[case_ldf_.valuation > original_val_date].values
         forward[xp.isnan(forward)] = 1.0
         forward = xp.cumprod(forward, -1)
-        1 / case_ldf_[case_ldf_.valuation <= original_val_date]
 
-        backward = 1 / case_ldf_[case_ldf_.valuation <= original_val_date].values
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*divide by zero.*",
+            )
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*invalid value.*",
+            )
+            backward = 1 / case_ldf_[case_ldf_.valuation <= original_val_date].values
         backward[xp.isnan(backward)] = 1.0
         backward = xp.cumprod(backward[..., ::-1], -1)[..., ::-1][..., 1:]
-        nans = case_ldf_ / case_ldf_
+        nans = xp.where(xp.isnan(case_ldf_.values), xp.nan, 1.0)
         case_ldf_.values = xp.concatenate(
             (backward, (case_tri.latest_diagonal * 0 + 1).values, forward), -1
         )
         case_tri = (
-            (case_ldf_ * nans.values * case_tri.latest_diagonal.values)
+            (case_ldf_ * nans * case_tri.latest_diagonal.values)
             .val_to_dev()
             .iloc[..., : len(case_tri.ddims)]
         )
