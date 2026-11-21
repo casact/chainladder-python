@@ -42,6 +42,7 @@
    plot_loss_development
    plot_valuation_correlation
    plot_paired_bootstrap
+   plot_exceedance_bounds
 
 ```
 
@@ -562,6 +563,20 @@ alt: Share of prism claim samples flagged by the per-diagonal and total tests at
 ```{image} ../images/plot_paired_bootstrap.png
 ---
 alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared bootstrap draws and wide for independent draws
+---
+```
++++
+{bdg-warning}`medium`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_exceedance_bounds
+:link-type: doc
+**Bounds on Two-Line IBNR Exceedance**
+```{image} ../images/plot_exceedance_bounds.png
+---
+alt: Line chart of the exceedance probability at the 95th percentile threshold against rho from -1 to 1. It rises from 0.000 to 0.050. A dash-dot line marks the lower bound at 0.000, a dashed line marks the upper bound at 0.091 and a dotted line marks independence at 0.016.
 ---
 ```
 +++
