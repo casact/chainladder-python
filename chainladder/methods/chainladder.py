@@ -164,7 +164,10 @@ class Chainladder(MethodBase):
         Returns
         -------
         X_new: Triangle
-            Loss data with chainladder ultimate applied
+            Loss data with chainladder ultimate applied. When ``X``
+            carries simulated process variance (for example from
+            ``BootstrapODPSample``), the predicted ultimate includes it,
+            matching ``fit()``.
 
         Examples
         --------
@@ -198,6 +201,7 @@ class Chainladder(MethodBase):
         """
         X_new = super().predict(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, sample_weight)
+        X_new.process_variance_ = self._include_process_variance(X_new)
         return X_new
 
     def _get_ultimate(self, X, sample_weight=None):

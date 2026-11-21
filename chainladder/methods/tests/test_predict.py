@@ -98,6 +98,72 @@ def test_bs_random_state_predict(clrd):
     )
 
 
+def test_predict_carries_process_variance(raa):
+    # https://github.com/casact/chainladder-python/issues/1639
+    sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
+
+    def sd(ult):
+        return float(np.std((ult - sims.latest_diagonal).sum("origin").values))
+
+    model = cl.Chainladder().fit(sims)
+    fit_sd = sd(model.ultimate_)
+    fit_ult = model.ultimate_.values.copy()
+    pred = model.predict(sims)
+    # predict() must carry the same process variance as fit()
+    assert sd(pred.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    assert np.allclose(pred.ultimate_.values, model.ultimate_.values, equal_nan=True)
+    # ... and must not mutate the fitted model
+    assert np.allclose(model.ultimate_.values, fit_ult, equal_nan=True)
+    # VotingChainladder inherits it through predict()
+    vot = cl.VotingChainladder([("a", cl.Chainladder()), ("b", cl.Chainladder())]).fit(
+        sims
+    )
+    assert sd(vot.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    # Control: a plain triangle has no process variance to carry, so
+    # predict() still matches fit() exactly.
+    plain = cl.Chainladder().fit(raa)
+    assert np.allclose(
+        plain.predict(raa).ultimate_.values, plain.ultimate_.values, equal_nan=True
+    )
+    assert plain.predict(raa).process_variance_ is None
+
+
+def test_predict_subset_of_simulations_keeps_shape(raa):
+    # #1639: predicting on a subset of simulations must keep the
+    # subset's shape and fall back to point estimates.
+    sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
+    model = cl.Chainladder().fit(sims)
+    sub = sims.iloc[:5]
+    pred = model.predict(sub)
+    assert pred.ultimate_.shape == (5, 1, 10, 1)
+    assert len(pred.ultimate_.index) == 5
+    assert pred.process_variance_ is None
+    from chainladder.methods.base import MethodBase
+
+    X_new = MethodBase.predict(model, sub)
+    assert np.allclose(
+        pred.ultimate_.values,
+        model._get_ultimate(X_new).values,
+        equal_nan=True,
+    )
+
+
+def test_benktander_predict_carries_process_variance(genins):
+    # #1639: same missing-variance bug as Chainladder.predict
+    boot = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(genins)
+    w = boot.latest_diagonal * 0 + 1
+
+    def sd(ult):
+        return float(np.std((ult - boot.latest_diagonal).sum("origin").values))
+
+    bk = cl.Benktander(apriori=1.0, n_iters=2).fit(boot, sample_weight=w)
+    fit_sd = sd(bk.ultimate_)
+    pred = bk.predict(boot, sample_weight=w)
+    assert sd(pred.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    assert np.allclose(pred.ultimate_.values, bk.ultimate_.values, equal_nan=True)
+    assert pred.process_variance_ is not None
+
+
 def test_basic_transform(raa):
     cl.Development().fit_transform(raa)
     cl.ClarkLDF().fit_transform(raa)
