@@ -36,6 +36,99 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """Vertically align CDF to origin period latest diagonal."""
         return X.cdf_.align_pattern(X, sample_weight)
 
+    @staticmethod
+    def _align_sample_weight(
+        X: Triangle, sample_weight: Triangle | None
+    ) -> tuple[Triangle | None, pd.PeriodIndex]:
+        """
+        Align ``sample_weight`` to the origins of ``X``.
+
+        The methods read ``sample_weight`` by position along the origin axis.
+        When ``X`` and ``sample_weight`` each have more than one origin, this
+        keeps the weight from the later of the two first origins to the
+        earlier of the two last origins. Origins of ``X`` outside that range
+        get NaN weight, and a warning names them.
+
+        Parameters
+        ----------
+        X : Triangle
+            The loss triangle the method is fit to or predicts on. Its
+            origins need to be consecutive.
+        sample_weight : Triangle or None
+            The exposure triangle. Its origins need to be consecutive and at
+            the same origin grain as ``X``. A weight with a single origin
+            applies to every origin of ``X`` and is returned unchanged.
+
+        Returns
+        -------
+        sample_weight : Triangle or None
+            The weight with the same origins as ``X``.
+        missing : PeriodIndex
+            The origins of ``X`` that the weight lacks. These get no ultimate.
+
+        Raises
+        ------
+        ValueError
+            If the origin grains differ, if the two triangles share no
+            origin, or if their origins do not line up in the range they
+            share.
+        """
+        if sample_weight is None or len(X.odims) == 1 or len(sample_weight.odims) == 1:
+            return sample_weight, X.origin[:0]
+        x_origins = X.origin
+        w_origins = sample_weight.origin
+        if x_origins.freq != w_origins.freq:
+            raise ValueError(
+                f"X has origin grain {x_origins.freqstr} but sample_weight has "
+                f"origin grain {w_origins.freqstr}. They must match."
+            )
+        if x_origins.equals(w_origins):
+            return sample_weight, x_origins[:0]
+        start = max(x_origins[0], w_origins[0])
+        end = min(x_origins[-1], w_origins[-1])
+        x_shared = (x_origins >= start) & (x_origins <= end)
+        w_shared = (w_origins >= start) & (w_origins <= end)
+        if not x_shared.any():
+            raise ValueError("X and sample_weight share no origin.")
+        if not x_origins[x_shared].equals(w_origins[w_shared]):
+            raise ValueError(
+                "The origins of X and sample_weight do not line up in the range "
+                "they share. Both need consecutive origins."
+            )
+        if x_shared.all():
+            return sample_weight.loc[:, :, start:end, :], x_origins[:0]
+        import warnings
+
+        warnings.warn(
+            "sample_weight is aligned to the origins it shares with X. "
+            "Origins of X with no weight get no ultimate: "
+            f"{x_origins[~x_shared].astype(str).tolist()}."
+        )
+        # Arithmetic between triangles with different origin counts raises a
+        # KeyError here, so the weight gets a NaN row for each origin of X
+        # outside the shared range.
+        backend = sample_weight.array_backend
+        obj = sample_weight.set_backend("numpy")
+        values = obj.get_array_module().full(
+            obj.shape[:2] + (len(x_origins), obj.shape[3]), float("nan")
+        )
+        values[:, :, x_shared, :] = obj.values[:, :, w_shared, :]
+        obj.values = values
+        obj.odims = X.odims.copy()
+        return obj.set_backend(backend), x_origins[~x_shared]
+
+    @staticmethod
+    def _drop_ultimates(ultimate: Triangle, origins: pd.PeriodIndex) -> Triangle:
+        """Set ``ultimate`` to NaN at ``origins``, which have no weight."""
+        if len(origins) == 0:
+            return ultimate
+        backend = ultimate.array_backend
+        obj = ultimate.set_backend("numpy")
+        values = obj.values.copy()
+        values[:, :, obj.origin.isin(origins), :] = float("nan")
+        obj.values = values
+        return obj.set_backend(backend)
+
     def _set_ult_attr(self, ultimate):
         """Ultimate scaffolding"""
         from chainladder import options
