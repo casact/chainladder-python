@@ -1,6 +1,6 @@
 # Governing Doc
 
-This document defines the governance structure, contribution process, code ownership policies, and release lifecycle for the chainladder-python project under the Casualty Actuarial Society (CAS) Open-Source Projects Working Group (OSPWG).
+This document defines the governance structure, contribution process, code ownership policies, and release lifecycle for the chainladder project under the Casualty Actuarial Society (CAS) Open-Source Projects Working Group (OSPWG).
 
 ---
 
@@ -338,18 +338,18 @@ The project is provided "as is" under the terms of the Mozilla Public License 2.
 
 ## 7. Citation
 
-If you use chainladder-python for a project or for a research project, we would appreciate appropriate citation of the package in any published work. The citation information is set out below in BibTeX format:
+If you use chainladder for a project or for a research project, we would appreciate appropriate citation of the package in any published work. The citation information is set out below in BibTeX format:
 
 (please replace the “month”, “year”, and “version” as needed)
 
 ```bibtex
 @software{chainladder,
- author       = {{The chainladder-python development team}},
- title        = {casact/chainladder-python: Property and Casualty Loss Reserving in Python},
+ author       = {{The chainladder development team}},
+ title        = {casact/chainladder: Property and Casualty Loss Reserving in Python},
  month        = jan,
  year         = 2026,
  version      = {v0.0.1},
- url          = {https://github.com/casact/chainladder-python},
+ url          = {https://github.com/casact/chainladder},
 }
 ```
 
@@ -357,7 +357,7 @@ If you use chainladder-python for a project or for a research project, we would 
 
 ## 8. Code of Conduct
 
-As contributors and maintainers of chainladder-python, we are committed to fostering an open, welcoming, and respectful community.
+As contributors and maintainers of chainladder, we are committed to fostering an open, welcoming, and respectful community.
 
 Our guiding principle is: **Be excellent to each other, and drive the actuarial frontier forward!**
 

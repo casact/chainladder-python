@@ -1,6 +1,6 @@
 # chainladder documentation
 
-This folder contains everything that builds the [chainladder-python docs site](https://chainladder-python.readthedocs.io/). It is organised as a [Jupyter Book](https://jupyterbook.org/) v1.x project on top of Sphinx, with the API reference produced by `sphinx.ext.autosummary` from the package docstrings.
+This folder contains everything that builds the [chainladder docs site](https://chainladder.readthedocs.io/). It is organised as a [Jupyter Book](https://jupyterbook.org/) v1.x project on top of Sphinx, with the API reference produced by `sphinx.ext.autosummary` from the package docstrings.
 
 If you only want to read the docs, use the published site. This README is for contributors editing the docs.
 

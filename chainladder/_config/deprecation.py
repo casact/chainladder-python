@@ -27,8 +27,8 @@ del annotations
 # passing a Dask dataframe to the Triangle constructor) emits a
 # DeprecationWarning.
 _DEPRECATED_BACKENDS: dict[str, str] = {
-    "cupy": "https://github.com/casact/chainladder-python/issues/843",
-    "dask": "https://github.com/casact/chainladder-python/issues/842",
+    "cupy": "https://github.com/casact/chainladder/issues/843",
+    "dask": "https://github.com/casact/chainladder/issues/842",
 }
 
 

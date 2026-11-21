@@ -27,7 +27,7 @@ def test_drop_valuation_without_sample_weight(genins):
     must match the result of passing an all-ones sample_weight. The
     unweighted fit itself must be unchanged.
 
-    https://github.com/casact/chainladder-python/issues/1619
+    https://github.com/casact/chainladder/issues/1619
     """
     base = cl.TweedieGLM().fit(genins).ldf_.values[0, 0, 0, :4]
     dropped = cl.TweedieGLM(drop_valuation="2005").fit(genins).ldf_.values[0, 0, 0, :4]
@@ -55,7 +55,7 @@ def test_drop_without_sample_weight(genins):
     drop must take effect even when sample_weight is None, while the
     unweighted fit itself is unchanged.
 
-    https://github.com/casact/chainladder-python/issues/1619
+    https://github.com/casact/chainladder/issues/1619
     """
     base = cl.TweedieGLM().fit(genins).ldf_.values[0, 0, 0, :4]
     dropped = cl.TweedieGLM(drop=("2001", 12)).fit(genins).ldf_.values[0, 0, 0, :4]
@@ -79,7 +79,7 @@ def test_incremental_triangle_with_empty_cells(monthly):
     TweedieGLM must fit the incremental triangle, with or without
     drop_valuation, the same way it fits the cumulative one.
 
-    https://github.com/casact/chainladder-python/issues/1640
+    https://github.com/casact/chainladder/issues/1640
     """
     incremental = monthly["reportedCount"].grain("OYDQ")
     cumulative = incremental.incr_to_cum()

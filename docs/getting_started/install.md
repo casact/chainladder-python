@@ -19,7 +19,7 @@ We recommend **uv** for installing `chainladder`, but you can use any of the man
 Alternatively, if you have git and want to enjoy unreleased features, you can
 install directly from `Github`:
 
-`pip install git+https://github.com/casact/chainladder-python/`
+`pip install git+https://github.com/casact/chainladder/`
 
 ## Developer Installation
 

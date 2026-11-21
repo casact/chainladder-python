@@ -39,10 +39,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/casact/chainladder-python"
-Documentation = "https://chainladder-python.readthedocs.io/"
-Repository = "https://github.com/casact/chainladder-python"
-"Bug Tracker" = "https://github.com/casact/chainladder-python/issues"
+Homepage = "https://github.com/casact/chainladder"
+Documentation = "https://chainladder.readthedocs.io/"
+Repository = "https://github.com/casact/chainladder"
+"Bug Tracker" = "https://github.com/casact/chainladder/issues"
 
 
 [project.optional-dependencies]
