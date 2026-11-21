@@ -9,13 +9,7 @@ import chainladder as cl
 
 if TYPE_CHECKING:
     from chainladder import Triangle
-
-
-@pytest.fixture
-def triangle_data():
-    clrd = cl.load_sample("clrd")[["CumPaidLoss", "EarnedPremDIR"]]
-    clrd = clrd[clrd["LOB"] == "wkcomp"]
-    return clrd
+    from typing import Any, Callable
 
 
 @pytest.fixture
@@ -29,20 +23,35 @@ def estimators():
     return estimators
 
 
-array_weight = np.array([[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
+# fmt: off
+array_weight = np.array(
+    [[1, 2, 3]] * 4 +
+    [[0, 0.5, 0.5]] * 3 +
+    [[0, 0, 1]] * 3
+)
 
-list_weight = [[[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3]
-
+list_weight = [
+    [[1, 2, 3]] * 4 +
+    [[0, 0.5, 0.5]] * 3 +
+    [[0, 0, 1]] * 3
+]
 
 def callable_weight(origin):
     return np.where(
-        origin.year < 1992,
-        (1, 2, 3),
-        np.where(origin.year > 1994, (0, 0, 1), (0, 0.5, 0.5)),
+            origin.year < 1992, (1, 2, 3),
+        np.where(
+            origin.year > 1994, (0, 0, 1),
+                                (0, 0.5, 0.5)
+        ),
     )
+# fmt: on
 
 
 dict_weight = {
+    "1988": (1, 2, 3),
+    "1989": (1, 2, 3),
+    "1990": (1, 2, 3),
+    "1991": (1, 2, 3),
     "1992": (0, 0.5, 0.5),
     "1993": (0, 0.5, 0.5),
     "1994": (0, 0.5, 0.5),
@@ -57,12 +66,39 @@ def weights(request):
     return request.param
 
 
-def test_voting_ultimate(triangle_data, estimators, weights):
+def test_voting_ultimate(
+    clrd: Triangle,
+    estimators: list[tuple[str, Callable[[], Any]]],
+    weights: list | Callable[[], Any] | np.ndarray | dict,
+    atol: float,
+) -> None:
+    """
+    Test a variety of weights to be accepted by VotingChainladder
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture
+
+    estimators: list[tuple[str, Triangle Predictor]]
+        various IBNR predictors
+
+    weights: list | Callable[[], Any] | np.ndarray | dict
+        various types of weights
+
+    atol: float
+        absolute tolerance of the test
+
+    Returns
+    -------
+    None
+    """
+    tri = clrd[clrd["LOB"] == "wkcomp"].sum()[["CumPaidLoss", "EarnedPremDIR"]]
     bcl_ult = (
         cl
         .Chainladder()
         .fit(
-            triangle_data["CumPaidLoss"].sum(),
+            tri["CumPaidLoss"],
         )
         .ultimate_
     )
@@ -70,8 +106,8 @@ def test_voting_ultimate(triangle_data, estimators, weights):
         cl
         .BornhuetterFerguson()
         .fit(
-            triangle_data["CumPaidLoss"].sum(),
-            sample_weight=triangle_data["EarnedPremDIR"].sum().latest_diagonal,
+            tri["CumPaidLoss"],
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal,
         )
         .ultimate_
     )
@@ -79,8 +115,8 @@ def test_voting_ultimate(triangle_data, estimators, weights):
         cl
         .CapeCod()
         .fit(
-            triangle_data["CumPaidLoss"].sum(),
-            sample_weight=triangle_data["EarnedPremDIR"].sum().latest_diagonal,
+            tri["CumPaidLoss"],
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal,
         )
         .ultimate_
     )
@@ -91,8 +127,8 @@ def test_voting_ultimate(triangle_data, estimators, weights):
             estimators=estimators, weights=weights, default_weighting=(1, 2, 3)
         )
         .fit(
-            triangle_data["CumPaidLoss"].sum(),
-            sample_weight=triangle_data["EarnedPremDIR"].sum().latest_diagonal,
+            tri["CumPaidLoss"],
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal,
         )
         .ultimate_
     )
@@ -112,45 +148,96 @@ def test_voting_ultimate(triangle_data, estimators, weights):
             ).sum()
             - vot_ult.sum()
         )
-        < 1
+        < atol
     )
 
 
-def test_different_backends(triangle_data, estimators, weights):
-    model = cl.VotingChainladder(
-        estimators=estimators, weights=weights, default_weighting=(1, 2, 3)
-    ).fit(
-        triangle_data["CumPaidLoss"].sum().set_backend("numpy"),
-        sample_weight=triangle_data["EarnedPremDIR"]
-        .sum()
-        .latest_diagonal.set_backend("numpy"),
-    )
-    assert (
-        abs(
-            model.predict(
-                triangle_data["CumPaidLoss"].sum().set_backend("sparse"),
-                sample_weight=triangle_data["EarnedPremDIR"]
-                .sum()
-                .latest_diagonal.set_backend("sparse"),
-            ).ultimate_.sum()
-            - model.ultimate_.sum()
+def test_different_backends(
+    clrd: Triangle,
+    estimators: list[tuple[str, Callable[[], Any]]],
+    weights: list | Callable[[], Any] | np.ndarray | dict,
+    atol: float,
+) -> None:
+    """
+    Tests parity between backeneds within VotingChainladder
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture
+
+    estimators: list[tuple[str, Triangle Predictor]]
+        various IBNR predictors
+
+    weights: list | Callable[[], Any] | np.ndarray | dict
+        various types of weights
+
+    atol: float
+        absolute tolerance of the test
+
+    Returns
+    -------
+    None
+    """
+    if clrd.array_backend == "numpy":
+        model = cl.VotingChainladder(
+            estimators=estimators, weights=weights, default_weighting=(1, 2, 3)
+        ).fit(
+            clrd["CumPaidLoss"].sum(),
+            sample_weight=clrd["EarnedPremDIR"].sum().latest_diagonal,
         )
-        < 1
-    )
+        assert (
+            abs(
+                model.predict(
+                    clrd["CumPaidLoss"].sum().set_backend("sparse"),
+                    sample_weight=clrd["EarnedPremDIR"]
+                    .sum()
+                    .latest_diagonal.set_backend("sparse"),
+                ).ultimate_.sum()
+                - model.ultimate_.sum()
+            )
+            < atol
+        )
 
 
-def test_weight_broadcasting(triangle_data, estimators, weights):
+def test_weight_broadcasting(
+    clrd: Triangle,
+    estimators: list[tuple[str, Callable[[], Any]]],
+    weights: list | Callable[[], Any] | np.ndarray | dict,
+    atol: float,
+) -> None:
+    """
+    Test parity between backeneds within VotingChainladder
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture
+
+    estimators: list[tuple[str, Triangle Predictor]]
+        various IBNR predictors
+
+    weights: list | Callable[[], Any] | np.ndarray | dict
+        various types of weights
+
+    atol: float
+        absolute tolerance of the test
+
+    Returns
+    -------
+    None
+    """
     mid_dim_weights = np.array(
         [[[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3] * 1
     )
-    max_dim_weights = np.array(mid_dim_weights * 132)
-
+    max_dim_weights = np.array(mid_dim_weights * 6)
+    tri = clrd.groupby("LOB").sum()
     min_dim_ult = (
         cl
         .VotingChainladder(estimators=estimators, weights=weights)
         .fit(
-            triangle_data["CumPaidLoss"],
-            sample_weight=triangle_data["EarnedPremDIR"].latest_diagonal,
+            tri["CumPaidLoss"],
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal,
         )
         .ultimate_.sum()
     )
@@ -158,8 +245,8 @@ def test_weight_broadcasting(triangle_data, estimators, weights):
         cl
         .VotingChainladder(estimators=estimators, weights=mid_dim_weights)
         .fit(
-            triangle_data["CumPaidLoss"],
-            sample_weight=triangle_data["EarnedPremDIR"].latest_diagonal,
+            tri["CumPaidLoss"],
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal,
         )
         .ultimate_.sum()
     )
@@ -167,12 +254,13 @@ def test_weight_broadcasting(triangle_data, estimators, weights):
         cl
         .VotingChainladder(estimators=estimators, weights=max_dim_weights)
         .fit(
-            triangle_data["CumPaidLoss"],
-            sample_weight=triangle_data["EarnedPremDIR"].latest_diagonal,
+            tri["CumPaidLoss"],
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal,
         )
         .ultimate_.sum()
     )
-    assert abs(min_dim_ult - mid_dim_ult - max_dim_ult) < 1
+    assert abs(min_dim_ult.sum() - mid_dim_ult.sum()) < atol
+    assert abs(mid_dim_ult.sum() - max_dim_ult.sum()) < atol
 
 
 def test_voting(raa):
