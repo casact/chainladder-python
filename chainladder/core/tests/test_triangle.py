@@ -4060,6 +4060,42 @@ def test_as_of_before_the_first_valuation_raises(raa) -> None:
         raa.as_of("1980")
 
 
+@pytest.mark.parametrize(
+    "build",
+    [
+        lambda: cl.load_sample("raa"),
+        lambda: cl.load_sample("raa").cum_to_incr(),
+        lambda: cl.load_sample("raa").dev_to_val(),
+        lambda: cl.Chainladder().fit(cl.load_sample("raa")).full_triangle_,
+        lambda: cl.load_sample("quarterly"),
+        lambda: cl.load_sample("quarterly").dev_to_val(),
+        lambda: cl.load_sample("clrd").iloc[:5].set_backend("sparse"),
+    ],
+    ids=["lag", "incremental", "valuation", "full", "OYDQ", "OYDQ-valuation", "sparse"],
+)
+@pytest.mark.parametrize("date", ["1985", "1990Q3", "1994-06-15", "1997"])
+def test_as_of_matches_the_valuation_slice(build, date) -> None:
+    """
+    ``as_of`` builds its own mask and trim, and the result matches the
+    generic ``valuation <=`` slice cell for cell (#1696).
+    """
+    tri = build()
+    end = pd.Period(date).end_time
+    try:
+        expected = tri[tri.valuation <= end]
+    except ValueError:
+        with pytest.raises(ValueError):
+            tri.as_of(date)
+        return
+    result = tri.as_of(date)
+    assert result.shape == expected.shape
+    assert result.valuation_date == expected.valuation_date
+    assert np.array_equal(result.odims, expected.odims)
+    assert np.array_equal(result.ddims, expected.ddims)
+    assert result.index.equals(expected.index)
+    assert result.equals(expected)
+
+
 def test_valuation_strict_filter_keeps_the_previous_year(raa) -> None:
     """``tri[tri.valuation < "1989"]`` keeps everything valued through 1988."""
     result = raa[raa.valuation < "1989"]
