@@ -23,7 +23,9 @@ class DevelopmentConstant(DevelopmentBase):
         A representation of development factors indexed by age (in months). Can be
         a dictionary of age:value, a pandas Series, a 1-row or 1-column DataFrame,
         a 1D Triangle pattern (such as another estimator's ``ldf_`` or ``cdf_``),
-        or a fitted estimator. When passing a fitted estimator, the pattern matching
+        or a fitted estimator. A Triangle or estimator pattern must have one index
+        row and one column. For patterns that vary by index or column, pass a
+        callable. When passing a fitted estimator, the pattern matching
         ``style`` (``ldf_`` or ``cdf_``) is used. If the estimator only provides one
         pattern attribute (e.g. only ``cdf_`` or only ``ldf_``), it is used as a
         convenience fallback and a UserWarning is issued if ``style`` does not match.
@@ -267,6 +269,13 @@ class DevelopmentConstant(DevelopmentBase):
             ):
                 raise ValueError(
                     "Triangle pattern must have a single origin row (e.g. model.ldf_ or model.cdf_)."
+                )
+            if patterns.shape[0] > 1 or patterns.shape[1] > 1:
+                raise ValueError(
+                    "Triangle pattern must have one index row and one column, but it "
+                    f"has {patterns.shape[0]} index row(s) and {patterns.shape[1]} "
+                    "column(s). Select one, or pass a callable with callable_axis to "
+                    "use a different pattern for each index row or column."
                 )
             vals = patterns.values[0, 0, 0, :]
             vals = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
