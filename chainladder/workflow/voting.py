@@ -4,27 +4,29 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 import numpy as np
-from chainladder.methods.base import MethodBase
+
 from joblib import Parallel, delayed
 from sklearn.base import (
     BaseEstimator,
-    clone,
     TransformerMixin,
+    clone,
 )
-from sklearn.ensemble._base import _fit_single_estimator, _BaseHeterogeneousEnsemble
+from sklearn.ensemble._base import _BaseHeterogeneousEnsemble, _fit_single_estimator
 from sklearn.ensemble._voting import _BaseVoting
 from sklearn.utils import Bunch
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from chainladder.core.io import EstimatorIO
+from chainladder.methods.base import MethodBase
 
 from ..core.base import is_chainladder
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
+    from typing import Self
+
     from chainladder import Triangle
 
 
@@ -198,9 +200,9 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         ``callable``: A callable that returns weighting tuples.
         ``None`` uses ``default_weighting``.
     default_weighting: tuple of shape (n_estimators, ), default=None
-        Default weighting to use where a weight was not provided or if ``weights`` is None.
-        ``None`` uses a typle of all ones which is equivalent to averaging the predictions
-        of the estimators.
+        Default weighting to use where a weight was not provided or if ``weights`` is
+        None. ``None`` uses a typle of all ones which is equivalent to averaging the
+        predictions of the estimators.
     n_jobs: int, default=None
         The number of jobs to run in parallel for ``fit``.
         ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
@@ -242,7 +244,9 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         bf = cl.BornhuetterFerguson()
         cc = cl.CapeCod()
         estimators = [('bcl', bcl), ('bf', bf), ('cc', cc)]
-        weights = np.array([[0.6, 0.2, 0.2]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
+        weights = np.array(
+            [[0.6, 0.2, 0.2]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3
+        )
         vot = cl.VotingChainladder(estimators=estimators, weights=weights)
         vot.fit(raa, sample_weight=apriori)
         print(vot.ultimate_)
@@ -431,11 +435,12 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         shape_check = list(set([ult.shape for ult in ultimates]))
         if len(shape_check) > 1:
             raise ValueError(
-                "Estimators returning ultimate_ of different shapes,"
-                "likely due to a mis-specified TriangleSelector transformer in the pipeline"
+                "Estimators returning ultimate_ of different shapes, "
+                "likely due to a mis-specified TriangleSelector transformer "
+                "in the pipeline"
             )
-        # weights are broadcasted to the shape of X. However ultimate_ does not always take the shape of X
-        # use shape_check to redim weights
+        # weights are broadcasted to the shape of X. However ultimate_ does not
+        # always take the shape of X; use shape_check to redim weights
         ultimate = sum([
             ultimates[i] * weights[..., : shape_check[0][1], :, i, :]
             for i, _ in enumerate(ultimates)
@@ -449,18 +454,22 @@ class TriangleSelector(
     EstimatorIO,
 ):
     """
-    A transformer to assist with creating VotingChainladder workflows that weights between Incured/Paid or Reported/Closed.
+    A transformer to assist with creating VotingChainladder workflows that weighs
+    between Incurred/Paid or Reported/Closed.
 
     .. versionadded:: 0.10.0
 
     Parameters
     ----------
-    col: str
-        which `column` to perform the subsequent estiamtion on
+    col: str | list[str]
+        which `column`(s) to perform the subsequent estiamtion on
 
     Examples
     --------
-    Actuaries commonly uses both incurred and paid losses, or both reported and closed counts for estimating ultimate loss or ultimate count. We can use this helper class to create a singular VotingChainladder pipeline that weighs between incurred/paid methods, or reported/closed methods.
+    Actuaries commonly uses both incurred and paid losses, or both reported and closed
+    counts for estimating ultimate loss or ultimate count. We can use this helper class
+    to create a singular VotingChainladder pipeline that weighs between incurred/paid
+    methods, or reported/closed methods.
 
     .. testsetup::
 
@@ -505,11 +514,46 @@ class TriangleSelector(
         1997  664061.404455
     """
 
-    def __init__(self, col: str):
+    def __init__(self, col: str | list[str]):
         self.col = col
 
-    def fit(self, X: Triangle, y: None = None):
+    def fit(
+        self,
+        X: Triangle | None = None,
+        y: None = None,
+        sample_weight: Triangle | None = None,
+    ) -> Self:
+        """
+        Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle
+            Ignored
+        y : None
+            Ignored
+        sample_weight : None
+            Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         return self
 
-    def transform(self, X: Triangle):
-        return X[[self.col]]
+    def transform(self, X: Triangle) -> Triangle:
+        """
+        Return (a) specific column(s) in X
+
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+        Triangle
+        """
+        cols = [self.col] if isinstance(self.col, str) else self.col
+        return X[cols]
