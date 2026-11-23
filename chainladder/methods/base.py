@@ -163,10 +163,24 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         triangle the model was fit on (the ``fit()`` path). Pass the
         predicted triangle from ``predict()`` to rewrite its
         ``ultimate_`` instead, leaving the fitted state untouched.
-        Returns the process variance triangle, or ``None`` when the
-        triangle carries no simulated process variance. The full
-        triangle is only built when process variance is present, so
-        predicting on a plain triangle costs nothing extra.
+        The full triangle is only built when process variance is
+        present, so predicting on a plain triangle costs nothing extra.
+        When the variance draw does not match the predicted ultimate
+        (e.g. a subset of simulations), a warning is issued and the
+        ultimate is left as point estimates.
+
+        Parameters
+        ----------
+        X : Triangle, optional
+            Triangle whose ultimate should carry the simulated process
+            variance. Defaults to the triangle the model was fit on.
+
+        Returns
+        -------
+        Triangle or None
+            The process variance triangle (the simulated noise added to
+            the ultimate), or ``None`` when the triangle carries no
+            simulated process variance.
         """
         if X is None:
             if not hasattr(self.X_, "_get_process_variance"):
@@ -181,9 +195,16 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = X._get_process_variance(full)
         if obj.values[..., -1:].shape != X.ultimate_.values.shape:
             # e.g. a subset of simulations: the variance draw is bound to
-            # the full bootstrap, so it cannot apply here. Keep base
-            # behaviour (point estimates, correct shape) instead of
-            # corrupting ultimate_.
+            # the full bootstrap, so it cannot apply here. Keep point
+            # estimates with the correct shape instead of corrupting
+            # ultimate_.
+            warnings.warn(
+                "Process variance cannot be applied: the variance draw "
+                "does not match the predicted ultimate (e.g. a subset of "
+                "simulations). Falling back to point estimates.",
+                UserWarning,
+                stacklevel=2,
+            )
             return None
         X.ultimate_.values = obj.values[..., -1:]
         return obj - full
