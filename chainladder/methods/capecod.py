@@ -237,12 +237,16 @@ class CapeCod(Benktander):
             raise ValueError("sample_weight is required.")
         self.apriori = 1.0
         self.X_ = self.validate_X(X)
+        sample_weight, missing = self._align_sample_weight(X, sample_weight)
         sample_weight = sample_weight.set_backend(self.X_.array_backend)
         self.apriori_, self.detrended_apriori_ = self._get_capecod_aprioris(
             self.X_, sample_weight
         )
         self.expectation_ = sample_weight * self.detrended_apriori_
         super().fit(X, y, self.expectation_)
+        if len(missing):
+            self.ultimate_ = self._drop_ultimates(self.ultimate_, missing)
+            self.process_variance_ = self._include_process_variance()
         return self
 
     def _get_capecod_aprioris(self, X, sample_weight):
@@ -333,6 +337,7 @@ class CapeCod(Benktander):
             2012  15991.144199
             2013  17489.630279
         """
+        sample_weight, missing = self._align_sample_weight(X, sample_weight)
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
@@ -350,6 +355,7 @@ class CapeCod(Benktander):
             )
         X_new.expectation_ = sample_weight * detrended_apriori_
         X_new = super().predict(X_new, X_new.expectation_)
+        X_new.ultimate_ = self._drop_ultimates(X_new.ultimate_, missing)
         X_new.apriori_ = apriori_
         X_new.detrended_apriori_ = detrended_apriori_
         return X_new
