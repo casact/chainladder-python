@@ -877,3 +877,38 @@ def test_apply_from_triangle_sparse_mask(raa) -> None:
     styler_bool._compute()
     styled_bool = {k for k, v in styler_bool.ctx.items() if v}
     assert styled_bool == {(0, 0)}
+
+
+def test_format_preserves_empty_na_rep(raa) -> None:
+    """
+    Check that calling .format() on a Triangle Styler keeps unobserved
+    lower-triangle cells empty by default rather than exposing "nan".
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.format("{:,.0f}")
+    assert "nan" not in styler.to_html()
+
+
+def test_format_allows_custom_na_rep(raa) -> None:
+    """
+    Check that an explicit na_rep argument is respected by .format().
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.format("{:,.0f}", na_rep="-")
+    assert ">-<" in styler.to_html()

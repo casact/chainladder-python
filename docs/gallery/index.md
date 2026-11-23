@@ -41,6 +41,7 @@
    plot_voting_chainladder
    plot_loss_development
    plot_valuation_correlation
+   plot_paired_bootstrap
    plot_leave_one_out
 
 ```
@@ -553,6 +554,21 @@ alt: Share of prism claim samples flagged by the per-diagonal and total tests at
 +++
 {bdg-warning}`medium`
 :::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_paired_bootstrap
+:link-type: doc
+**Comparing Tail Estimators on Shared Bootstrap Draws**
+```{image} ../images/plot_paired_bootstrap.png
+---
+alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared bootstrap draws and wide for independent draws
+---
+```
++++
+{bdg-warning}`medium`
+:::
+
 :::{grid-item-card} 
 :columns: 4
 :link: plot_leave_one_out
