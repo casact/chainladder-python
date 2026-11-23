@@ -99,7 +99,7 @@ def test_link_ratio_converts_zero_ratios_to_nan() -> None:
     zero age-to-age ratio into NaN rather than leaving it as 0. This is an intentional
     design choice to improve memory efficiency - see GH#181:
 
-    https://github.com/casact/chainladder-python/issues/181
+    https://github.com/casact/chainladder/issues/181
 
     Returns
     -------

@@ -37,7 +37,7 @@ def linkcode_resolve(domain: str, info: dict) -> str | None:
     """
 
     # Base path pointing to GitHub source code.
-    url_base: str = "https://github.com/casact/chainladder-python/blob/master/"
+    url_base: str = "https://github.com/casact/chainladder/blob/master/"
 
     # Get the language information.
     if domain != "py":
