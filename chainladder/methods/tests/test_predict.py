@@ -164,6 +164,23 @@ def test_benktander_predict_carries_process_variance(genins):
     assert pred.process_variance_ is not None
 
 
+def test_bornhuetterferguson_predict_carries_process_variance(raa):
+    # #1639 / #1652: BornhuetterFerguson reaches Benktander.predict
+    # through super(), so it inherits the fix there.
+    sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
+    exposure = sims.latest_diagonal * 0 + 40000
+
+    def sd(ult):
+        return float(np.std((ult - sims.latest_diagonal).sum("origin").values))
+
+    bf = cl.BornhuetterFerguson(apriori=0.5).fit(sims, sample_weight=exposure)
+    fit_sd = sd(bf.ultimate_)
+    pred = bf.predict(sims, sample_weight=exposure)
+    assert sd(pred.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    assert np.allclose(pred.ultimate_.values, bf.ultimate_.values, equal_nan=True)
+    assert pred.process_variance_ is not None
+
+
 def test_basic_transform(raa):
     cl.Development().fit_transform(raa)
     cl.ClarkLDF().fit_transform(raa)
