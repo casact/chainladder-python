@@ -573,7 +573,7 @@ alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared boots
 :columns: 4
 :link: plot_leave_one_out
 :link-type: doc
-**Leave-One-Out Link Ratios**
+**Sensitivity of Reserves to Individual Link Ratios**
 ```{image} ../images/plot_leave_one_out.png
 ---
 alt: Change in total IBNR on raa and genins when each link ratio is dropped in turn

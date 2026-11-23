@@ -7,8 +7,108 @@ from sklearn.pipeline import Pipeline as PipelineSL
 from sklearn.base import clone
 from chainladder.core.io import EstimatorIO
 from joblib import Parallel, delayed
+import numpy as np
 import pandas as pd
 import json
+
+
+class LeaveOneOutGrid(dict):
+    """
+    A ``param_grid`` that leaves out one link ratio per candidate.
+
+    ``GridSearch.leave_one_out_grid`` builds this grid. ``GridSearch`` and
+    ``ParameterGrid`` read it as a plain ``dict``, and
+    ``GridSearch.compare_results`` reads its labels to name each row.
+
+    Parameters
+    ----------
+    key: str
+        The parameter name, such as ``"dev__drop"``.
+    labels: DataFrame
+        One row per candidate, indexed by label, with the ``origin``,
+        ``age`` and ``link_ratio`` of the dropped ratio and the grid
+        ``value`` itself. The candidate that drops nothing has the label
+        ``"base"``.
+
+    Attributes
+    ----------
+    key: str
+        The parameter name.
+    labels: DataFrame
+        The label table passed in.
+    """
+
+    def __init__(self, key, labels):
+        super().__init__({key: list(labels["value"])})
+        self.key = key
+        self.labels = labels
+
+
+class _Scorer:
+    """
+    A scoring callable that also tells ``compare_results`` what to report.
+
+    Parameters
+    ----------
+    func: callable
+        Takes a fitted estimator and returns its score.
+    metrics: callable
+        Takes the scorer name, the compared rows, the base row and the label
+        table, and returns a DataFrame of derived columns together with the
+        Series of changes that orders the rows.
+    """
+
+    def __init__(self, func, metrics):
+        self.func = func
+        self.metrics = metrics
+
+    def __call__(self, model):
+        return self.func(model)
+
+    def __repr__(self):
+        return f"GridSearch.{self.func.__name__.lstrip('_')}"
+
+
+def _final_step(model):
+    return model.steps[-1][1] if isinstance(model, PipelineSL) else model
+
+
+def _ibnr(model):
+    return float(_final_step(model).ibnr_.sum())
+
+
+def _ldf(model):
+    ldf = _final_step(model).ldf_
+    ages = [int(str(interval).split("-")[0]) for interval in ldf.development]
+    return pd.Series(ldf.values[0, 0, 0], index=ages)
+
+
+def _ibnr_metrics(name, rows, base, labels):
+    change = rows[name].astype(float) - float(base[name])
+    frame = pd.DataFrame({
+        f"{name}_change": change,
+        f"{name}_share": change / float(base[name]),
+    })
+    return frame, change
+
+
+def _ldf_metrics(name, rows, base, labels):
+    if "age" in labels:
+        ages = labels["age"].reindex(rows.index)
+    else:
+        ages = pd.Series(pd.NA, index=rows.index)
+    before, after = [], []
+    for value, age in zip(rows[name], ages):
+        if pd.isna(age):
+            before.append(np.nan)
+            after.append(np.nan)
+        else:
+            before.append(base[name].get(int(age), np.nan))
+            after.append(value.get(int(age), np.nan))
+    frame = pd.DataFrame(
+        {f"{name}_before": before, f"{name}_after": after}, index=rows.index
+    )
+    return frame, frame[f"{name}_after"] - frame[f"{name}_before"]
 
 
 class GridSearch(BaseEstimator):
@@ -52,6 +152,14 @@ class GridSearch(BaseEstimator):
     results_: DataFrame
         A DataFrame with each param_grid key as a column and the ``scoring``
         score as the last column
+    ibnr: callable
+        Built-in scorer that records total IBNR from the final step. In
+        ``compare_results`` it adds the change in total IBNR and its share
+        of the base.
+    ldf: callable
+        Built-in scorer that records the ``ldf_`` of the final step by age.
+        In ``compare_results`` it adds the factor at the dropped age before
+        and after the drop.
 
     Examples
     --------
@@ -99,6 +207,9 @@ class GridSearch(BaseEstimator):
     carried for the most recent origin years.
 
     """
+
+    ibnr = _Scorer(_ibnr, _ibnr_metrics)
+    ldf = _Scorer(_ldf, _ldf_metrics)
 
     def __init__(
         self,
@@ -154,6 +265,157 @@ class GridSearch(BaseEstimator):
         )
         self.results_ = pd.DataFrame(results_)
         return self
+
+    @staticmethod
+    def leave_one_out_grid(X, step="dev"):
+        """
+        Build a ``param_grid`` that leaves out one link ratio at a time.
+
+        Parameters
+        ----------
+        X: Triangle
+            A cumulative triangle with one index and one column.
+        step: str, default="dev"
+            The name of the ``Development`` step in the pipeline that
+            ``GridSearch`` fits.
+
+        Returns
+        -------
+        LeaveOneOutGrid
+            A ``{step}__drop`` grid. Its first value is ``None``, the fit
+            that keeps every ratio, and each later value is the
+            ``(origin, age)`` pair of one observed link ratio, including
+            ages that have only one ratio.
+
+        Raises
+        ------
+        ValueError
+            If ``X`` has more than one index or column.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            grid = cl.GridSearch.leave_one_out_grid(raa)
+            print(len(grid["dev__drop"]), grid["dev__drop"][:3])
+
+        .. testoutput::
+
+            46 [None, ('1981', 12), ('1981', 24)]
+        """
+        if X.shape[:2] != (1, 1):
+            raise ValueError(
+                "leave_one_out_grid needs a triangle with one index and one "
+                f"column, but X has {X.shape[0]} and {X.shape[1]}."
+            )
+        link_ratio = X.link_ratio
+        values = link_ratio.values[0, 0]
+        rows = [
+            {
+                "label": "base",
+                "origin": None,
+                "age": pd.NA,
+                "link_ratio": np.nan,
+                "value": None,
+            }
+        ]
+        for i, j in zip(*np.nonzero(~np.isnan(values))):
+            origin = str(link_ratio.origin[i])
+            age = int(X.development[j])
+            rows.append({
+                "label": f"{origin}, {age}",
+                "origin": origin,
+                "age": age,
+                "link_ratio": values[i, j],
+                "value": (origin, age),
+            })
+        labels = pd.DataFrame(rows).set_index("label")
+        labels.index.name = None
+        labels["age"] = labels["age"].astype("Int64")
+        return LeaveOneOutGrid(f"{step}__drop", labels)
+
+    def compare_results(self, base):
+        """
+        Compare every candidate in ``results_`` with one base candidate.
+
+        Parameters
+        ----------
+        base: label
+            The candidate to compare with. For a grid from
+            ``leave_one_out_grid`` this is ``"base"``. For any other grid it
+            is an index of ``results_``.
+
+        Returns
+        -------
+        DataFrame
+            One row per other candidate. Rows from a ``leave_one_out_grid``
+            carry the label of the dropped ratio as their index and its
+            ``origin``, ``age`` and ``link_ratio`` as columns, and rows from
+            any other grid keep the index of ``results_``. Each built-in
+            scorer in ``scoring`` adds its own columns, and any other scorer
+            keeps its column from ``results_``. Rows run from the largest
+            change to the smallest under the first built-in scorer.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            pipe = cl.Pipeline(
+                [("dev", cl.Development()), ("model", cl.Chainladder())]
+            )
+            search = cl.GridSearch(
+                pipe,
+                cl.GridSearch.leave_one_out_grid(raa),
+                scoring={"ibnr": cl.GridSearch.ibnr, "ldf": cl.GridSearch.ldf},
+            ).fit(raa)
+            table = search.compare_results("base")
+            print(table[["ibnr_change", "ldf_before", "ldf_after"]].head(3).round(4))
+
+        .. testoutput::
+
+                      ibnr_change  ldf_before  ldf_after
+            1985, 60    3362.8852      1.1134     1.1525
+            1981, 96    2818.0421      1.0169     1.0331
+            1981, 12    2467.6774      2.9994     3.4016
+        """
+        results = self.results_.copy()
+        grid = self.param_grid
+        if isinstance(grid, LeaveOneOutGrid):
+            lookup = dict(zip(grid.labels["value"], grid.labels.index))
+            results.index = pd.Index([lookup[value] for value in results[grid.key]])
+            labels = grid.labels.drop(columns="value")
+        else:
+            labels = pd.DataFrame(index=results.index)
+        base_row = results.loc[base]
+        rows = results.drop(index=base)
+        if isinstance(self.scoring, dict):
+            scoring = self.scoring
+        else:
+            scoring = {"score": self.scoring}
+        parts = [labels.loc[rows.index]]
+        order = None
+        for name, scorer in scoring.items():
+            if isinstance(scorer, _Scorer):
+                frame, change = scorer.metrics(name, rows, base_row, labels)
+                parts.append(frame)
+                if order is None:
+                    order = change.abs().sort_values(ascending=False, kind="stable")
+            else:
+                parts.append(rows[[name]])
+        table = pd.concat(parts, axis=1)
+        if order is not None:
+            table = table.loc[order.index]
+        return table
 
 
 class Pipeline(PipelineSL, EstimatorIO):
