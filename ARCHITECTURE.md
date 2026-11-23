@@ -76,7 +76,7 @@ chainladder-python/
 │   │   ├── sparse.py               # COO sparse array wrapper
 │   │   ├── cupy.py                 # CuPy GPU array shim
 │   │   ├── dask.py                 # Dask parallel shim
-│   │   ├── utility_functions.py    # num_to_nan, set_common_backend, etc.
+│   │   ├── utility_functions.py    # num_to_nan, set_common_backend, RandomStateMixin, etc.
 │   │   ├── weighted_regression.py  # WeightedRegression helper
 │   │   ├── triangle_weight.py      # Triangle weighting helpers
 │   │   ├── data/                   # Bundled sample datasets (CSV)
@@ -229,7 +229,7 @@ sklearn.BaseEstimator
         ├── CaseOutstanding    development/outstanding.py
         ├── TweedieGLM         development/glm.py
         │     └── BarnettZehnwirth  development/barnzehn.py
-        ├── BootstrapODPSample adjustments/bootstrap.py
+        ├── BootstrapODPSample adjustments/bootstrap.py  (also extends RandomStateMixin)
         ├── DisposalRate       adjustments/disposal.py   (also extends DisposalMixin)
         │
         └── TailBase           tails/base.py       — appends tail column, extends DevelopmentBase
@@ -247,7 +247,7 @@ sklearn.BaseEstimator
               ├── Chainladder  methods/chainladder.py
               │     └── MackChainladder  methods/mack.py
               │
-              └── Benktander   methods/benktander.py
+              └── Benktander   methods/benktander.py  (also extends RandomStateMixin)
                     ├── BornhuetterFerguson  methods/bornferg.py
                     ├── CapeCod              methods/capecod.py
                     └── ExpectedLoss         methods/expectedloss.py

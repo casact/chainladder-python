@@ -2,10 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.methods import MethodBase
+from chainladder.utils.utility_functions import RandomStateMixin
 import numpy as np
 
 
-class Benktander(MethodBase):
+class Benktander(MethodBase, RandomStateMixin):
     """
     The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
 
@@ -28,8 +29,12 @@ class Benktander(MethodBase):
         using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by np.random.
+        If None, ``fit`` draws an integer seed from the RandomState instance
+        used by np.random and keeps it as ``random_state_``, and each
+        ``predict`` draws a new seed the same way, so its aprioris differ from
+        the fit's. Pass an integer to get the same aprioris from ``fit`` and
+        every ``predict``. A RandomState instance keeps advancing, so each
+        ``predict`` continues its sequence.
 
     Attributes
     ----------
@@ -37,6 +42,11 @@ class Benktander(MethodBase):
         The ultimate losses per the method
     ibnr_: Triangle
         The IBNR per the method
+    random_state_: int, RandomState instance or None
+        The seed the apriori draws used: ``random_state`` when it is an integer
+        or a RandomState instance, otherwise the integer ``fit`` drew. Passing
+        it back as ``random_state`` repeats the draws. It is ``random_state``
+        itself when ``apriori_sigma`` is 0, since no draw is made.
 
     See Also
     --------
@@ -196,8 +206,12 @@ class Benktander(MethodBase):
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
+
         super().fit(X, y, sample_weight)
-        self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        self._record_random_state(draws=self.apriori_sigma != 0)
+        self.expectation_ = self._get_benktander_aprioris(
+            X, sample_weight, self.random_state_
+        )
         self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
         self.process_variance_ = self._include_process_variance()
         return self
@@ -253,17 +267,26 @@ class Benktander(MethodBase):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = super().predict(X, sample_weight)
-        X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        X_new.expectation_ = self._get_benktander_aprioris(
+            X, sample_weight, self.random_state
+        )
         X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)
         X_new.n_iters = self.n_iters
         X_new.apriori = self.apriori
         return X_new
 
-    def _get_benktander_aprioris(self, X, sample_weight):
-        """Private method to establish Benktander Apriori"""
+    def _get_benktander_aprioris(self, X, sample_weight, seed):
+        """
+        Private method to establish Benktander Apriori
+
+        ``fit`` passes the seed it recorded as ``random_state_``, so passing
+        that seed back as ``random_state`` repeats the fit's aprioris.
+        ``predict`` passes ``random_state``, so with ``random_state=None`` it
+        draws new aprioris instead of repeating the fit's.
+        """
         xp = X.get_array_module()
         if self.apriori_sigma != 0:
-            random_state = xp.random.RandomState(self.random_state)
+            random_state = self._check_random_state(seed, xp)
             # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
             cov = self.apriori_sigma / self.apriori
             sigma_log = np.sqrt(np.log1p(cov**2))

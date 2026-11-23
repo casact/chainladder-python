@@ -53,6 +53,150 @@ def test_hat_adjustment_is_zero_at_corners(genins):
         )
 
 
+def _bootstrap_run(tri, random_state):
+    """Return the resampled values and the Chainladder ultimates for one run."""
+    sims = cl.BootstrapODPSample(n_sims=20, random_state=random_state).fit_transform(
+        tri
+    )
+    return sims.values, cl.Chainladder().fit(sims).ultimate_.values
+
+
+def _dense(values):
+    """Return ``values`` as a numpy array, densifying a sparse array."""
+    return np.asarray(values.todense() if hasattr(values, "todense") else values)
+
+
+def _assert_runs_differ(first, second):
+    """Check that two runs differ in both the resampled values and the ultimates."""
+    for a, b in zip(first, second):
+        assert not np.array_equal(_dense(a), _dense(b), equal_nan=True)
+
+
+def test_random_state_zero_reproduces_ultimates(raa):
+    """
+    Check that ``random_state=0`` reproduces the process-variance draws.
+
+    Seed 0 used to give the process-variance step an unseeded generator, so
+    the resampled triangles repeated and the ultimates did not (#1568).
+    """
+    first, second = _bootstrap_run(raa, 0), _bootstrap_run(raa, 0)
+    np.testing.assert_array_equal(first[0], second[0])
+    np.testing.assert_array_equal(first[1], second[1])
+
+
+def test_random_state_none_uses_global_generator(raa):
+    """
+    Check that ``random_state=None`` draws from the global ``np.random``
+    generator, as the docstring says, so ``np.random.seed`` repeats a run.
+    """
+    np.random.seed(1)
+    first = _bootstrap_run(raa, None)
+    np.random.seed(1)
+    second = _bootstrap_run(raa, None)
+    np.testing.assert_array_equal(first[0], second[0])
+    np.testing.assert_array_equal(first[1], second[1])
+
+
+def test_random_state_accepts_random_state_instance(raa):
+    """
+    Check that a ``RandomState`` instance is used as the generator.
+
+    The resampled triangles match those from the integer seed the instance
+    was built with.
+    """
+    from_instance = _bootstrap_run(raa, np.random.RandomState(42))
+    np.testing.assert_array_equal(
+        from_instance[0], _bootstrap_run(raa, np.random.RandomState(42))[0]
+    )
+    np.testing.assert_array_equal(from_instance[0], _bootstrap_run(raa, 42)[0])
+
+
+def test_different_seeds_give_different_draws(raa):
+    """
+    Check the converse of the three tests above. Different integer seeds,
+    different global ``np.random`` seeds with ``random_state=None``, and
+    ``RandomState`` instances built from different seeds give different
+    resampled triangles and ultimates.
+    """
+    _assert_runs_differ(_bootstrap_run(raa, 0), _bootstrap_run(raa, 1))
+    np.random.seed(1)
+    first = _bootstrap_run(raa, None)
+    np.random.seed(2)
+    _assert_runs_differ(first, _bootstrap_run(raa, None))
+    _assert_runs_differ(
+        _bootstrap_run(raa, np.random.RandomState(42)),
+        _bootstrap_run(raa, np.random.RandomState(43)),
+    )
+
+
+def test_random_state_none_records_the_seed(raa):
+    """
+    Check that ``fit`` records the integer it draws for ``random_state=None``
+    as ``random_state_``, and that passing it back repeats the run (#1568).
+    """
+    model = cl.BootstrapODPSample(n_sims=20).fit(raa)
+    seed = model.random_state_
+    assert isinstance(seed, int)
+    sims = model.transform(raa)
+    assert sims.random_state == seed
+    ultimate = cl.Chainladder().fit(sims).ultimate_.values
+    repeat = _bootstrap_run(raa, seed)
+    np.testing.assert_array_equal(sims.values, repeat[0])
+    np.testing.assert_array_equal(ultimate, repeat[1])
+
+
+def test_random_state_given_is_recorded(raa):
+    """Check that an integer or an instance passed in is kept as ``random_state_``."""
+    assert cl.BootstrapODPSample(n_sims=5, random_state=42).fit(raa).random_state_ == 42
+    generator = np.random.RandomState(42)
+    model = cl.BootstrapODPSample(n_sims=5, random_state=generator).fit(raa)
+    assert model.random_state_ is generator
+
+
+def test_random_state_none_independent_columns(raa):
+    """
+    Check that with several columns and ``random_state=None`` each column draws
+    its own seed, so two identical columns resample differently, that
+    ``np.random.seed`` repeats the run, and that an integer seed is still shared
+    by every column.
+    """
+    tri = raa.copy()
+    tri["copy"] = tri["values"]
+
+    def resampled(random_state=None):
+        model = cl.BootstrapODPSample(n_sims=5, random_state=random_state).fit(tri)
+        return _dense(model.resampled_triangles_.values)
+
+    np.random.seed(3)
+    first = resampled()
+    assert not np.allclose(np.nan_to_num(first[:, 0]), np.nan_to_num(first[:, 1]))
+    np.random.seed(3)
+    np.testing.assert_array_equal(first, resampled())
+    seeded = resampled(7)
+    np.testing.assert_array_equal(seeded[:, 0], seeded[:, 1])
+
+
+def test_check_random_state_on_a_module_with_its_own_generator():
+    """
+    Check that ``RandomStateMixin._check_random_state`` builds a generator
+    from the array module's own ``random.RandomState`` when it has one, as
+    cupy does, and returns an instance of that class unchanged. A stub module
+    stands in for cupy, which the test suite does not install.
+    """
+    from types import SimpleNamespace
+
+    from chainladder.utils.utility_functions import RandomStateMixin
+
+    class StubRandomState:
+        def __init__(self, seed=None):
+            self.seed = seed
+
+    xp = SimpleNamespace(random=SimpleNamespace(RandomState=StubRandomState))
+    built = RandomStateMixin._check_random_state(42, xp)
+    assert isinstance(built, StubRandomState) and built.seed == 42
+    assert RandomStateMixin._check_random_state(built, xp) is built
+
+
 def test_hat_matrix_fallback_leaves_hat_adj_unchanged():
     # The hat matrix of this quarterly triangle cannot be computed (#33), so
     # fit falls back to residuals without the hat matrix adjustment.
