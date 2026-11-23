@@ -432,3 +432,31 @@ def test_predict_age_exceeds_model():
         ValueError, match="X has ages that exceed those available in model"
     ):
         model.predict(tri)
+
+
+def test_fit_and_predict_agree_one_age_short(raa):
+    """A pattern one age short of X gets the same ultimates on both paths (#1666)."""
+    current = raa[raa.origin < "1990"]
+    prior = raa
+    pred = cl.Chainladder().fit(prior).predict(current)
+    fit = cl.Chainladder().fit(cl.Development().fit(prior).transform(current))
+    pred_ult = pred.ultimate_.set_backend("numpy").values
+    fit_ult = fit.ultimate_.set_backend("numpy").values
+    assert np.allclose(fit_ult[0, 0, :3, -1].round(), [18834, 16858, 24083])
+    assert np.allclose(pred_ult, fit_ult, equal_nan=False)
+
+
+def test_predict_raises_when_pattern_too_short(raa):
+    current = raa[raa.origin < "1990"]
+    prior = raa[raa.valuation < "1989"]
+    with pytest.raises(ValueError, match="exceed those available in model"):
+        cl.Chainladder().fit(prior).predict(current)
+
+
+def test_fit_raises_when_pattern_too_short(raa):
+    """Transform then fit raises instead of returning NaN (#1666)."""
+    current = raa[raa.origin < "1990"]
+    prior = raa[raa.valuation < "1990"]
+    X = cl.Development().fit(prior).transform(current)
+    with pytest.raises(ValueError, match="exceed those available in model"):
+        cl.Chainladder().fit(X)

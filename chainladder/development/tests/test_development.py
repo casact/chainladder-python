@@ -1132,3 +1132,69 @@ def test_valid_params_pass_validation(raa):
     cl.Development(average=lambda age: "geometric", n_periods=[-1] * 9).fit(raa)
     dev = cl.Development(n_periods=4, average="simple")
     assert cl.read_json(dev.to_json()).get_params() == dev.get_params()
+
+
+def test_loglinear_sigma_skips_zero_sigmas(clrd):
+    # GH 1609: zero sigmas used to enter the log-linear fit as log(1e-320).
+    tri = clrd["CumPaidLoss"]
+
+    # One positive sigma (36-48) and a zero (48-60): no line is fitted, and
+    # Mack's approximation has no two positive sigmas in a row, so the
+    # 12-24 and 24-36 sigmas stay NaN instead of 1.8e308.
+    brotherhood = cl.Development().fit(tri.loc["Brotherhood Mut Ins Co", "prodliab"])
+    assert np.nanmax(brotherhood.sigma_.set_backend("numpy").values) < 1e3
+    assert np.isfinite(brotherhood.std_err_.set_backend("numpy").values).all()
+
+    # Two positive sigmas (12-24, 24-36), then none at 36-48 and zeros after:
+    # a line through two points fits both exactly, so 36-48 stays unfilled.
+    great_amer = tri.loc["Great Amer Grp", "medmal"]
+    loglinear = cl.Development().fit(great_amer).sigma_.set_backend("numpy")
+    assert np.isnan(loglinear.values.ravel()[2])
+    # Mack's approximation fills 36-48 and reports the zero sigmas after it
+    # as NaN, with no 1e-320.
+    mack = cl.Development(sigma_interpolation="mack").fit(great_amer)
+    mack = mack.sigma_.set_backend("numpy").values.ravel()
+    assert np.isclose(mack[2], 14.9781, atol=1e-4)
+    assert np.isnan(mack[3:]).all()
+
+    # Five positive sigmas (24-36 to 72-84) and two zeros (84-96, 96-108):
+    # the 12-24 and 108-120 fills come from the five positive sigmas only.
+    buckeye = cl.Development().fit(tri.loc["Buckeye Ins Grp", "othliab"])
+    sigma = buckeye.sigma_.set_backend("numpy").values.ravel()
+    period = np.arange(1, sigma.size + 1)
+    slope, intercept = np.polyfit(period[1:6], np.log(sigma[1:6]), 1)
+    assert np.isclose(sigma[8], np.exp(intercept + slope * period[8]))
+    assert np.isclose(sigma[0], np.exp(intercept + slope * period[0]))
+
+
+def test_loglinear_sigma_tail_capped_at_last_sigma(clrd):
+    # GH 1609: Marysville's three positive sigmas (12-24 to 36-48) rise, and
+    # the line through them filled 107.6 at 108-120. A fill after the last
+    # positive sigma now stays at or below that sigma, as Mack's fill does.
+    tri = clrd["IncurLoss"].loc["Marysville Mut Ins Co", "othliab"]
+    sigma = cl.Development().fit(tri).sigma_.set_backend("numpy").values.ravel()
+    assert np.isclose(sigma[-1], sigma[2])
+    assert np.nanmax(sigma) == np.nanmax(sigma[:3])
+
+
+def test_loglinear_sigma_fills_zero_sigmas(clrd):
+    # GH 1609: IL State Bar has no link ratios at 12-24, 36-48 and 108-120,
+    # which gives sigmas of -0.0, and two equal link ratios at 48-60, which
+    # gives +0.0. The log-linear fill now covers all four ages.
+    tri = clrd["CumPaidLoss"].loc["IL State Bar Assoc Mut Ins Co", "othliab"]
+    n_obs = np.isfinite(tri.age_to_age.set_backend("numpy").values[0, 0]).sum(0)
+    assert n_obs.tolist() == [0, 1, 0, 2, 3, 3, 2, 1, 0]
+    sigma = cl.Development().fit(tri).sigma_.set_backend("numpy").values.ravel()
+    assert np.isfinite(sigma).all()
+    assert (sigma > 0).all()
+
+    # Every fill follows the line through the three positive sigmas at
+    # 60-72, 72-84 and 84-96.
+    period = np.arange(1, sigma.size + 1)
+    slope, intercept = np.polyfit(period[4:7], np.log(sigma[4:7]), 1)
+    for i in [0, 1, 2, 3, 7, 8]:
+        assert np.isclose(sigma[i], np.exp(intercept + slope * period[i]))
+
+    # The positive sigmas and the earlier 24-36 fill keep their values.
+    assert np.allclose(sigma[4:7], [14.709, 9.4502, 8.2299e-03], rtol=1e-4)
+    assert np.isclose(sigma[1], 3.3410e6, rtol=1e-4)

@@ -106,6 +106,62 @@ class Styler(_PandasStyler):
         self._triangle = triangle
         self.format(triangle._get_format_str(data=data), na_rep="")
 
+    def format(
+        self,
+        formatter: Any = None,
+        subset: Any = None,
+        na_rep: str | None = "",
+        precision: int | None = None,
+        decimal: str = ".",
+        thousands: str | None = None,
+        escape: str | None = None,
+        hyperlinks: str | None = None,
+        **kwargs: Any,
+    ) -> Styler:
+        """
+        Format the text display value of cells.
+
+        Overrides pandas Styler.format to default ``na_rep`` to ``""``, keeping
+        unobserved lower-triangle cells empty when custom formatters are applied.
+
+        Parameters
+        ----------
+        formatter: Any, optional
+            Object to format values with.
+        subset: Any, optional
+            A valid 2D slice to restrict formatting to.
+        na_rep: str or None, default ""
+            Representation for missing values. Defaults to ``""``.
+        precision: int, optional
+            Floating point precision to display.
+        decimal: str, default "."
+            Character used as decimal separator.
+        thousands: str, optional
+            Character used as thousands separator.
+        escape: str, optional
+            Method to escape values, e.g. "html" or "latex".
+        hyperlinks: str, optional
+            Convert URL strings to HTML anchors.
+        **kwargs: Any
+            Additional keyword arguments passed to pandas Styler.format.
+
+        Returns
+        -------
+        Styler
+        """
+        super().format(
+            formatter=formatter,
+            subset=subset,
+            na_rep=na_rep,
+            precision=precision,
+            decimal=decimal,
+            thousands=thousands,
+            escape=escape,
+            hyperlinks=hyperlinks,
+            **kwargs,
+        )
+        return self
+
     def _copy(
         self,
         deepcopy: bool = False,
