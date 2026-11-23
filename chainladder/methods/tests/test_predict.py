@@ -99,7 +99,13 @@ def test_bs_random_state_predict(clrd):
 
 
 def test_predict_carries_process_variance(raa):
-    # https://github.com/casact/chainladder-python/issues/1639
+    """
+    Predict on a bootstrapped triangle carries fit's process variance.
+
+    Regression test for #1639: predict() used to return point estimates
+    while fit() added simulated process variance, so the predicted
+    ultimate had a smaller IBNR spread than the fitted one.
+    """
     sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
 
     def sd(ult):
@@ -129,12 +135,18 @@ def test_predict_carries_process_variance(raa):
 
 
 def test_predict_subset_of_simulations_keeps_shape(raa):
-    # #1639: predicting on a subset of simulations must keep the
-    # subset's shape and fall back to point estimates.
+    """
+    Predict on a subset of simulations keeps the subset's shape.
+
+    The variance draw is bound to the full bootstrap, so it cannot
+    apply to a subset; predict() must warn and fall back to point
+    estimates with the correct shape instead of corrupting ultimate_.
+    """
     sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
     model = cl.Chainladder().fit(sims)
     sub = sims.iloc[:5]
-    pred = model.predict(sub)
+    with pytest.warns(UserWarning, match="Process variance cannot be applied"):
+        pred = model.predict(sub)
     assert pred.ultimate_.shape == (5, 1, 10, 1)
     assert len(pred.ultimate_.index) == 5
     assert pred.process_variance_ is None
@@ -149,7 +161,11 @@ def test_predict_subset_of_simulations_keeps_shape(raa):
 
 
 def test_benktander_predict_carries_process_variance(genins):
-    # #1639: same missing-variance bug as Chainladder.predict
+    """
+    Benktander predict() carries the same process variance as fit().
+
+    Same missing-variance bug as Chainladder.predict (#1639).
+    """
     boot = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(genins)
     w = boot.latest_diagonal * 0 + 1
 
@@ -165,8 +181,12 @@ def test_benktander_predict_carries_process_variance(genins):
 
 
 def test_bornhuetterferguson_predict_carries_process_variance(raa):
-    # #1639 / #1652: BornhuetterFerguson reaches Benktander.predict
-    # through super(), so it inherits the fix there.
+    """
+    BornhuetterFerguson predict() carries the same process variance as fit().
+
+    BornhuetterFerguson reaches Benktander.predict through super(),
+    so it inherits the #1639 fix there.
+    """
     sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
     exposure = sims.latest_diagonal * 0 + 40000
 
