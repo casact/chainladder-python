@@ -12,6 +12,7 @@ from chainladder.utils.utility_functions import concat
 
 import numpy as np
 import pandas as pd
+import warnings
 
 if TYPE_CHECKING:
     from chainladder.core import Triangle
@@ -303,7 +304,6 @@ class CaseOutstanding(DevelopmentBase):
             preserve=paid_preserve,
         ).fit(paid_ratio)
         self.paid_w_ = tw_paid.w_
-        self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2)
 
         case_ratio = self.case_to_prior_case_
         tw_case = TriangleWeight(
@@ -317,7 +317,26 @@ class CaseOutstanding(DevelopmentBase):
             preserve=case_preserve,
         ).fit(case_ratio)
         self.case_w_ = tw_case.w_
-        self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*empty slice.*",
+            )
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*All-NaN slice.*",
+            )
+            self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2).fillzero()
+
+            case_weighted = case_ratio * self.case_w_
+            xp = case_weighted.get_array_module()
+            empty_case_lags = xp.isnan(case_weighted.values).all(axis=2, keepdims=True)
+            case_mean = case_weighted.mean(axis=2).fillzero()
+            case_mean.values = xp.where(empty_case_lags, 1.0, case_mean.values)
+            self.case_ldf_ = case_mean
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
@@ -347,19 +366,29 @@ class CaseOutstanding(DevelopmentBase):
 
         # Will this work for sparse?
         forward = case_ldf_[case_ldf_.valuation > original_val_date].values
-        forward[xp.isnan(forward)] = 1.0
+        forward[~xp.isfinite(forward)] = 1.0
         forward = xp.cumprod(forward, -1)
-        1 / case_ldf_[case_ldf_.valuation <= original_val_date]
 
-        backward = 1 / case_ldf_[case_ldf_.valuation <= original_val_date].values
-        backward[xp.isnan(backward)] = 1.0
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*divide by zero.*",
+            )
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message=".*invalid value.*",
+            )
+            backward = 1 / case_ldf_[case_ldf_.valuation <= original_val_date].values
+        backward[~xp.isfinite(backward)] = 1.0
         backward = xp.cumprod(backward[..., ::-1], -1)[..., ::-1][..., 1:]
-        nans = case_ldf_ / case_ldf_
+        nans = xp.where(~xp.isfinite(case_ldf_.values), xp.nan, 1.0)
         case_ldf_.values = xp.concatenate(
             (backward, (case_tri.latest_diagonal * 0 + 1).values, forward), -1
         )
         case_tri = (
-            (case_ldf_ * nans.values * case_tri.latest_diagonal.values)
+            (case_ldf_ * nans * case_tri.latest_diagonal.values)
             .val_to_dev()
             .iloc[..., : len(case_tri.ddims)]
         )
