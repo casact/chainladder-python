@@ -159,3 +159,31 @@ def test_compare_results_keeps_raw_index_for_other_grids(loo_pipe):
     table = search.compare_results(0)
     assert list(table.index) == [1]
     assert list(table.columns) == ["ibnr_change", "ibnr_share", "n"]
+
+
+def test_compare_results_ldf_on_an_ordinary_grid_has_no_age(loo_pipe):
+    """Without leave_one_out_grid labels there is no dropped age, so the ldf columns are NaN."""
+    raa = cl.load_sample("raa")
+    search = cl.GridSearch(
+        loo_pipe,
+        {"dev__average": ["volume", "simple"]},
+        scoring={"ldf": cl.GridSearch.ldf},
+    ).fit(raa)
+    table = search.compare_results(0)
+    assert list(table.index) == [1]
+    assert list(table.columns) == ["ldf_before", "ldf_after"]
+    assert table.isna().all().all()
+
+
+def test_compare_results_accepts_a_single_scorer(loo_pipe):
+    """A scoring callable that is not a dict keeps its score column and the results_ order."""
+    raa = cl.load_sample("raa")
+    search = cl.GridSearch(
+        loo_pipe,
+        {"dev__average": ["volume", "simple", "regression"]},
+        scoring=lambda model: float(model.named_steps.model.ibnr_.sum()),
+    ).fit(raa)
+    table = search.compare_results(0)
+    assert list(table.index) == [1, 2]
+    assert list(table.columns) == ["score"]
+    assert table["score"].equals(search.results_["score"].iloc[1:])
