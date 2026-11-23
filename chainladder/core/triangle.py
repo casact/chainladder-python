@@ -792,15 +792,17 @@ class Triangle(TriangleBase):
         if self.is_pattern:
             obj = self.dropna()
             self.values = obj.values
-            self.origin = obj.origin
-            self.development = obj.development
+            self._axes[2] = obj._axes[2]
+            self._axes[3] = obj._axes[3]
+            self._set_slicers()
         if ult:
             obj = concat((self.dev_to_val().iloc[..., : len(ult.origin), :], ult), -1)
             obj = obj.val_to_dev()
             self.values = obj.values
-            self.origin = obj.origin
-            self.development = obj.development
+            self._axes[2] = obj._axes[2]
+            self._axes[3] = obj._axes[3]
             self.valuation_date = pd.Timestamp(options.ULT_VAL)
+            self._set_slicers()
 
     @staticmethod
     def _split_ult(

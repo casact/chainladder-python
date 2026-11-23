@@ -3919,6 +3919,42 @@ def test_fractional_ages_predict_and_tails(raa: Triangle) -> None:
     assert tail.ldf_._axes[3][-1] == 132.5
 
 
+def test_set_development_prefix_preserves_lags_with_ultimate(raa: Triangle) -> None:
+    """Assigning a sliced prefix on a triangle or pattern with ultimate does not rewrite the last lag to 9999."""
+    # 1. Non-pattern triangle with ultimate column
+    full = cl.Chainladder().fit(raa).full_triangle_
+    assert full.is_ultimate
+    full.values = full.values[..., :2]
+    full.development = full.development[:2]
+    assert list(full._axes[3]) == [12, 24]
+
+    # 2. Pattern with ultimate column
+    pat = raa.link_ratio
+    pat._axes[3][-1] = 9999
+    assert pat.is_ultimate
+    pat.values = pat.values[..., :2]
+    pat.development = pat.development[:2]
+    assert list(pat._axes[3]) == [12, 24]
+
+
+def test_pattern_init_preserves_surviving_origin_after_dropna() -> None:
+    """A pattern constructed from data where dropna reduces origins preserves the surviving origin timestamp."""
+    df = pd.DataFrame({
+        "origin": ["1995", "1996"],
+        "valuation": ["1995-12-31", "1996-12-31"],
+        "values": [np.nan, 100.0],
+    })
+    tri = cl.Triangle(
+        df,
+        origin="origin",
+        valuation="valuation",
+        columns="values",
+        cumulative=True,
+        pattern=True,
+    )
+    assert pd.to_datetime(tri._axes[2]).year[0] == 1996
+
+
 def test_input_validation_non_numeric_columns_raises() -> None:
     """
     Initialize a triangle with reported losses as an invalid string data type. Should raise a TypeError.

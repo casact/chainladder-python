@@ -238,8 +238,8 @@ def _set_origin(obj: Triangle, value: Any, check: bool = True) -> np.ndarray:
     ):
         if hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
             raw_orig = obj._axes.get(2, obj._axes.get("origin"))
-            if raw_orig is not None and len(raw_orig) == 1:
-                return raw_orig
+            if raw_orig is not None and len(raw_orig) >= 1:
+                return raw_orig[:1]
         return pd.date_range("2000", periods=1).values
     origin_grain = getattr(obj, "origin_grain", "Y")
     origin_close = getattr(obj, "origin_close", "DEC")
@@ -375,13 +375,13 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
         raw_dev = getattr(obj, "_axes", {}).get(3)
         if raw_dev is None and hasattr(obj, "_axes") and isinstance(obj._axes, dict):
             raw_dev = obj._axes.get("development")
-        is_ult = getattr(obj, "is_ultimate", False) or (
-            raw_dev is not None
+        if (
+            getattr(obj, "is_pattern", False)
+            and raw_dev is not None
             and len(raw_dev) == len(lags)
             and len(raw_dev) > 0
             and raw_dev[-1] == 9999
-        )
-        if is_ult and len(lags) > 0:
+        ):
             lags[-1] = 9999
         lag_arr = np.array(lags)
         if lag_arr.dtype.kind == "f" and np.all(np.equal(np.mod(lag_arr, 1), 0)):
