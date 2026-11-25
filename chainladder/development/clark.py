@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -279,6 +280,7 @@ class ClarkLDF(DevelopmentBase):
         ]
 
         params = []
+        index_labels = X.index.set_index(X.key_labels).index
         for idx in range(len(X.index)):
             idx_params = []
             for col in range(len(X.columns)):
@@ -314,11 +316,17 @@ class ClarkLDF(DevelopmentBase):
                 else:
                     x0 = xp.array([[[[1.0, age_interval]]]])
                     bounds = ((1e-6, None), (1e-6, None))
-                idx_params.append(
-                    minimize(fun=solver, x0=x0.flatten(), bounds=bounds).x.reshape(
-                        1, 1, 1, -1
+                result = minimize(fun=solver, x0=x0.flatten(), bounds=bounds)
+                if not result.success:
+                    warnings.warn(
+                        "ClarkLDF optimization did not converge for triangle "
+                        f"{index_labels[idx]!r} (column {X.columns[col]!r}): "
+                        f"{result.message} (status {result.status}). "
+                        "The fitted omega_ and theta_ may be unreliable.",
+                        UserWarning,
+                        stacklevel=2,
                     )
-                )
+                idx_params.append(result.x.reshape(1, 1, 1, -1))
             params.append(xp.concatenate(idx_params, axis=1))
         params = xp.concatenate(params, axis=0)
         cdf = self._G(
@@ -332,7 +340,7 @@ class ClarkLDF(DevelopmentBase):
         obj._set_slicers()
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
-        rows = X.index.set_index(X.key_labels).index
+        rows = index_labels
         self.omega_ = pd.DataFrame(
             params[..., 0, 0], index=rows, columns=X.columns.to_list()
         )

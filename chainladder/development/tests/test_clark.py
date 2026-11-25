@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pytest
 
@@ -32,6 +34,42 @@ def clark_premium(clark_genins):
     premium = clark_genins.latest_diagonal * 0
     premium.values = (10_000_000 + 400_000 * np.arange(10))[None, None, :, None]
     return premium
+
+
+def test_clark_ldf_warns_when_optimizer_fails(clark_genins, monkeypatch):
+    """A failed optimizer fit warns naming the triangle instead of passing silently (#1707)."""
+    import chainladder.development.clark as clark_mod
+
+    from scipy.optimize import OptimizeResult
+
+    def fake_minimize(*args, **kwargs):
+        return OptimizeResult(
+            x=np.array([1.0, 12.0]),
+            success=False,
+            status=2,
+            message="ABNORMAL: ",
+            fun=np.nan,
+        )
+
+    monkeypatch.setattr(clark_mod, "minimize", fake_minimize)
+    label = clark_genins.index.set_index(clark_genins.key_labels).index[0]
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        model = cl.ClarkLDF().fit(clark_genins)
+    failed = [str(w.message) for w in caught if "did not converge" in str(w.message)]
+    assert len(failed) == 1
+    assert repr(label) in failed[0]
+    assert "ABNORMAL" in failed[0]
+    # The failed fit is still kept, as before; only the silence is fixed.
+    assert np.isfinite(model.ldf_.values).all()
+
+
+def test_clark_ldf_no_warning_when_optimizer_succeeds(clark_genins):
+    """A successful fit stays silent (control case for #1707)."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        cl.ClarkLDF().fit(clark_genins)
+    assert not [w for w in caught if "did not converge" in str(w.message)]
 
 
 def test_clark_ldf_scale(clark_genins):
