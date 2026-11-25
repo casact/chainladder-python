@@ -554,3 +554,68 @@ def test_fit_raises_when_pattern_too_short(raa):
     X = cl.Development().fit(prior).transform(current)
     with pytest.raises(ValueError, match="exceed those available in model"):
         cl.Chainladder().fit(X)
+
+
+def test_full_triangle_keeps_the_simulated_path(genins):
+    """
+    full_triangle_ after a bootstrap fit is the path fit simulated.
+
+    Regression test for #1667: fit() drew process variance for every
+    future cell but kept only the last column, and full_triangle_ rebuilt
+    the cells before it from the expected pattern.
+    """
+    sims = cl.BootstrapODPSample(n_sims=200, random_state=42).fit_transform(genins)
+    model = cl.Chainladder().fit(sims)
+    no_noise = sims.copy()
+    del no_noise._get_process_variance
+    expected = cl.Chainladder().fit(no_noise)
+    path = expected.full_triangle_ + model.process_variance_
+    full = model.full_triangle_.values
+    n = sims.shape[-1]
+    observed = ~np.isnan(sims.values)
+    future = ~observed & ~np.isnan(full[..., :n])
+    assert future.sum() > 0
+    assert np.allclose(full, path.values, equal_nan=True)
+    assert np.allclose(full[..., :n][observed], sims.values[observed])
+    # The noise sits in the interior cells, not only in the last column.
+    assert not np.allclose(
+        full[..., :n][future], expected.full_triangle_.values[..., :n][future]
+    )
+    assert np.allclose(full[..., -1:], model.ultimate_.values, equal_nan=True)
+    # ultimate_ and ibnr_ are the same as before the change.
+    ult = expected.ultimate_.values + np.nan_to_num(
+        model.process_variance_.values[..., -1:]
+    )
+    assert np.allclose(model.ultimate_.values, ult, equal_nan=True)
+    assert np.allclose(
+        np.nan_to_num(model.ibnr_.values),
+        np.nan_to_num(ult - sims.latest_diagonal.values),
+    )
+    # Callers get a copy, so the stored path cannot change under them.
+    model.full_triangle_.values[...] = 0
+    assert np.allclose(model.full_triangle_.values, full, equal_nan=True)
+
+
+def test_full_triangle_without_bootstrap_is_unchanged(genins):
+    """A fit with no process variance completes each cell from the pattern."""
+    from chainladder.core.common import _get_full_triangle
+
+    model = cl.Chainladder().fit(genins)
+    assert model.process_variance_ is None
+    assert "_simulated_full_triangle" not in model.__dict__
+    rebuilt = _get_full_triangle(model.X_, model.ultimate_, model.X_.is_cumulative)
+    assert np.allclose(
+        model.full_triangle_.set_backend("numpy").values,
+        rebuilt.set_backend("numpy").values,
+        equal_nan=True,
+    )
+
+
+def test_refit_drops_the_simulated_path(genins):
+    """Refitting on a plain triangle drops the path from an earlier bootstrap fit."""
+    sims = cl.BootstrapODPSample(n_sims=20, random_state=0).fit_transform(genins)
+    model = cl.Chainladder().fit(sims)
+    assert "_simulated_full_triangle" in model.__dict__
+    model.fit(genins)
+    assert "_simulated_full_triangle" not in model.__dict__
+    assert model.full_triangle_.shape == (1, 1, 10, 12)
