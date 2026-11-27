@@ -218,12 +218,23 @@ class Common:
 
     @property
     def full_triangle_(self):
+        """
+        The triangle completed to ultimate.
+
+        After a fit on simulated triangles from ``BootstrapODPSample``, or a
+        predict on them, this is the simulated path, with process variance in
+        every future cell. Its last column equals ``ultimate_``. Otherwise each
+        future cell follows the expected development pattern.
+        """
         if not hasattr(self, "ultimate_"):
             raise AttributeError(
                 "'"
                 + self.__class__.__name__
                 + "' object has no attribute 'full_triangle_'"
             )
+
+        if "_simulated_full_triangle" in self.__dict__:
+            return self._simulated_full_triangle.copy()
 
         if hasattr(self, "X_"):
             X = self.X_

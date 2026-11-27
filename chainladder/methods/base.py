@@ -183,12 +183,15 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             simulated process variance.
         """
         if X is None:
+            self.__dict__.pop("_simulated_full_triangle", None)
             if not hasattr(self.X_, "_get_process_variance"):
                 return None
             full = self.full_triangle_
             obj = self.X_._get_process_variance(full)
             self.ultimate_.values = obj.values[..., -1:]
+            self._simulated_full_triangle = obj
             return obj - full
+        X.__dict__.pop("_simulated_full_triangle", None)
         if not hasattr(X, "_get_process_variance"):
             return None
         full = X.full_triangle_
@@ -207,6 +210,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             )
             return None
         X.ultimate_.values = obj.values[..., -1:]
+        X._simulated_full_triangle = obj
         return obj - full
 
     @staticmethod
