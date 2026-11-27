@@ -619,3 +619,31 @@ def test_refit_drops_the_simulated_path(genins):
     model.fit(genins)
     assert "_simulated_full_triangle" not in model.__dict__
     assert model.full_triangle_.shape == (1, 1, 10, 12)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        cl.Chainladder(),
+        cl.BornhuetterFerguson(apriori=1.0),
+        cl.Benktander(apriori=1.0, n_iters=2),
+    ],
+)
+def test_predict_full_triangle_matches_fit(genins, estimator):
+    """predict on the triangles a model was fit on returns the same simulated path."""
+    sims = cl.BootstrapODPSample(n_sims=50, random_state=42).fit_transform(genins)
+    weight = sims.latest_diagonal * 1.2
+    model = estimator.fit(sims, sample_weight=weight)
+    predicted = model.predict(sims, sample_weight=weight)
+    assert model.full_triangle_.equals(predicted.full_triangle_)
+    assert model.ultimate_.equals(predicted.ultimate_)
+
+
+def test_predict_on_plain_triangle_drops_the_simulated_path(genins):
+    """predict on a plain triangle does not reuse a path its input carried."""
+    sims = cl.BootstrapODPSample(n_sims=20, random_state=0).fit_transform(genins)
+    model = cl.Chainladder().fit(sims)
+    predicted = model.predict(sims)
+    assert "_simulated_full_triangle" in predicted.__dict__
+    plain = cl.Chainladder().fit(genins).predict(genins)
+    assert "_simulated_full_triangle" not in plain.__dict__

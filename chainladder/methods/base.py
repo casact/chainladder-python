@@ -56,20 +56,6 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return self.X_.ldf_
 
     @property
-    def full_triangle_(self):
-        """
-        The fitted triangle completed to ultimate.
-
-        After a fit on simulated triangles from ``BootstrapODPSample``, this
-        is the simulated path, with process variance in every future cell.
-        Its last column equals ``ultimate_``. Otherwise each future cell
-        follows the expected development pattern.
-        """
-        if "_simulated_full_triangle" in self.__dict__:
-            return self._simulated_full_triangle.copy()
-        return super().full_triangle_
-
-    @property
     def latest_diagonal(self):
         if self.X_.is_cumulative:
             return self.X_.latest_diagonal
@@ -205,6 +191,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             self.ultimate_.values = obj.values[..., -1:]
             self._simulated_full_triangle = obj
             return obj - full
+        X.__dict__.pop("_simulated_full_triangle", None)
         if not hasattr(X, "_get_process_variance"):
             return None
         full = X.full_triangle_
@@ -223,6 +210,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             )
             return None
         X.ultimate_.values = obj.values[..., -1:]
+        X._simulated_full_triangle = obj
         return obj - full
 
     @staticmethod
