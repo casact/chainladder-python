@@ -168,9 +168,16 @@ class TailBondy(TailBase):
             if xp.any(non_finite):
                 fit_ages = obj.ldf_.ddims[initial:][xp.any(non_finite, axis=0)]
                 ages = ", ".join(str(int(age)) for age in fit_ages)
+                labels = obj.index.set_index(obj.key_labels).index
+                failing = labels[xp.any(non_finite, axis=1)]
+                shown = failing[:5]
+                segments = ", ".join(repr(label) for label in shown)
+                if len(failing) > len(shown):
+                    segments += f", and {len(failing) - len(shown)} more"
                 raise ValueError(
                     "TailBondy cannot fit: no finite development factor at "
-                    f"age(s) {ages} for column {obj.columns[num]!r}. "
+                    f"age(s) {ages} for column {obj.columns[num]!r} in "
+                    f"segment(s) {segments}. "
                     "The development pattern has a NaN or infinite factor "
                     "there; check the fitted ldf_ before fitting a tail."
                 )
