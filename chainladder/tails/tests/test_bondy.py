@@ -21,16 +21,43 @@ def test_bondy_rejects_non_finite_development_factor(clrd: Triangle) -> None:
     """
     tri = clrd["CumPaidLoss"].iloc[2]
     with pytest.raises(
-        ValueError, match=r"no finite development factor at age\(s\) 108"
+        ValueError, match=r"no finite development factor at age\(s\) 108-120"
     ):
         cl.TailBondy().fit(tri)
+
+
+def test_bondy_rejects_infinite_development_factor() -> None:
+    """
+    An infinite development factor raises the same ValueError (#1707).
+
+    ``Development`` never estimates an infinite factor, so this case is
+    supplied through ``DevelopmentConstant`` instead of the clrd sample.
+    """
+    raa = cl.load_sample("raa")
+    patterns = {
+        12: 3.0,
+        24: 1.6,
+        36: 1.27,
+        48: 1.17,
+        60: 1.11,
+        72: 1.04,
+        84: 1.03,
+        96: 1.02,
+        108: np.inf,
+    }
+    dev = cl.DevelopmentConstant(patterns=patterns).fit_transform(raa)
+    with pytest.raises(
+        ValueError, match=r"no finite development factor at age\(s\) 108-120"
+    ):
+        cl.TailBondy().fit(dev)
 
 
 def test_bondy_names_each_non_finite_fit_age(clrd: Triangle) -> None:
     """Every non-finite fit age is listed, not just the first one (#1707)."""
     tri = clrd["CumPaidLoss"].iloc[2]
     with pytest.raises(
-        ValueError, match=r"no finite development factor at age\(s\) 84, 96, 108"
+        ValueError,
+        match=r"no finite development factor at age\(s\) 84-96, 96-108, 108-120",
     ):
         cl.TailBondy(earliest_age=12).fit(tri)
 

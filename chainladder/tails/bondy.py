@@ -166,8 +166,10 @@ class TailBondy(TailBase):
             data = xp.log(obj.ldf_.values[:, num, 0, initial:])
             non_finite = ~xp.isfinite(data)
             if xp.any(non_finite):
-                fit_ages = obj.ldf_.ddims[initial:][xp.any(non_finite, axis=0)]
-                ages = ", ".join(str(int(age)) for age in fit_ages)
+                fit_ages = obj.ldf_.development.iloc[initial:][
+                    xp.any(non_finite, axis=0)
+                ]
+                ages = ", ".join(str(age) for age in fit_ages)
                 labels = obj.index.set_index(obj.key_labels).index
                 failing = labels[xp.any(non_finite, axis=1)]
                 shown = failing[:5]
