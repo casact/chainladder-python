@@ -14,9 +14,14 @@ able to pick up this package with ease. You will be able to save your mental ene
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core.style import Styler as Styler
+
 from importlib.metadata import version
 
-del annotations
+del annotations, TYPE_CHECKING
 
 
 from chainladder._config import (  # noqa (API import)
@@ -58,7 +63,6 @@ from chainladder.core import (  # noqa: E402
     Triangle as Triangle,
     DevelopmentCorrelation as DevelopmentCorrelation,
     ValuationCorrelation as ValuationCorrelation,
-    Styler as Styler,
 )
 from chainladder.development import (  # noqa: E402
     DevelopmentBase as DevelopmentBase,
@@ -105,3 +109,12 @@ from chainladder.workflow import (  # noqa: E402
 )
 
 __version__ = version("chainladder")
+
+
+def __getattr__(name: str) -> type[Styler]:
+    """Import Styler on first use, so jinja2 stays optional (#1714)."""
+    if name == "Styler":
+        from chainladder.core.style import Styler
+
+        return Styler
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
