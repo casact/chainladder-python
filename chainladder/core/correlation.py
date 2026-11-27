@@ -232,15 +232,16 @@ class ValuationCorrelation:
     Attributes
     ----------
     z : Triangle or DataFrame
-        Z values for each Valuation Period
+        Z values for each Valuation Period. Each value is the smaller of
+        ``s`` and ``l``.
     s : Triangle or DataFrame
         Number of link ratios on each valuation diagonal that fall below the
         median of their development age, Mack's S. A ratio equal to the
         median counts in neither ``s`` nor ``l``.
     l : Triangle or DataFrame
         Number of link ratios on each valuation diagonal that fall above the
-        median of their development age, Mack's L. ``z`` is the smaller of
-        ``s`` and ``l``.
+        median of their development age, Mack's L. A ratio equal to the
+        median counts in neither ``s`` nor ``l``.
     z_critical : Triangle or DataFrame
         Boolean value for whether correlation is too high at significance level
         ``p_critical``.
