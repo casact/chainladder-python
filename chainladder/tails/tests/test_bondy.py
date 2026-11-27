@@ -126,3 +126,40 @@ def test_bondy_fits_grouped_development_pattern(clrd: Triangle) -> None:
     assert list(grouped.b_.index) == list(summed.b_.index)
     assert np.allclose(grouped.b_.values, summed.b_.values, equal_nan=True)
     assert np.allclose(grouped.ldf_.values, summed.ldf_.values, equal_nan=True)
+
+
+def test_bondy_fills_every_projected_tail_column(
+    raa: Triangle, qtr: Triangle, monthly: Triangle
+) -> None:
+    """
+    ``TailBondy`` fills each tail column that ``TailBase`` adds.
+
+    ``TailBase.fit`` extends ``ldf_`` by one column per development period in
+    ``projection_period`` plus one for the rest of the tail, so quarterly and
+    monthly triangles, and annual ones with ``projection_period`` other than
+    12, get more than two tail columns. ``TailBondy`` fills them from its
+    fitted curve, and its ``tail_`` is the same for every ``projection_period``.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set, an annual triangle.
+    qtr: Triangle
+        The quarterly sample data set.
+    monthly: Triangle
+        The prism sample data set summed to a single monthly triangle.
+
+    Returns
+    -------
+    None
+    """
+    for triangle in (raa, qtr, monthly):
+        dev = cl.Development().fit_transform(triangle)
+        default = cl.TailBondy().fit(dev)
+        for projection_period in (6, 12, 24):
+            bondy = cl.TailBondy(projection_period=projection_period).fit(dev)
+            constant = cl.TailConstant(projection_period=projection_period).fit(dev)
+
+            assert bondy.ldf_.shape == constant.ldf_.shape
+            assert list(bondy.ldf_.ddims) == list(constant.ldf_.ddims)
+            assert np.allclose(bondy.tail_.values, default.tail_.values, equal_nan=True)
