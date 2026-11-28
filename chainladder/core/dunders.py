@@ -165,11 +165,13 @@ class TriangleDunders:
             (m == n) or (m == 1) or (n == 1)
             for m, n in zip(obj.shape[-2:][::-1], other.shape[-2:][::-1])
         )
-        if (len(obj.odims), len(obj.ddims)) == (len(other.odims), len(other.ddims)):
-            if np.all(obj.ddims != other.ddims) and len(obj.ddims) > 1:
-                is_broadcastable = False
-            if np.all(obj.odims != other.odims) and len(obj.odims) > 1:
-                is_broadcastable = False
+        # Axes of equal length line up by position only when every label
+        # matches. Each axis is checked on its own, so a length-1 development
+        # axis on one side does not skip the origin check.
+        if len(obj.ddims) == len(other.ddims) > 1 and np.any(obj.ddims != other.ddims):
+            is_broadcastable = False
+        if len(obj.odims) == len(other.odims) > 1 and np.any(obj.odims != other.odims):
+            is_broadcastable = False
         if len(other.odims) == 1 and len(obj.odims) > 1:
             other.odims = obj.odims
             other.origin_grain = obj.origin_grain
