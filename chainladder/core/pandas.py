@@ -682,11 +682,12 @@ class TrianglePandas(_TrianglePandasBase):
         if obj.shape[-1] != 1:
             # Flag the development periods that have data.
             ddim = list((xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
-            ddim = obj.development[pd.Series(ddim).astype(bool)]
+            # Find the first and last development periods with data by position. Pattern labels
+            # such as "12-24" are strings, so comparing labels would sort "120-132" before "24-36".
+            min_ddim = ddim.index(1)
+            max_ddim = len(ddim) - 1 - ddim[::-1].index(1)
             # Slice the Triangle by the development periods that have data.
-            obj = self[
-                (self.development >= ddim.min()) & (self.development <= ddim.max())
-            ]
+            obj = self.iloc[..., min_ddim : max_ddim + 1]
             obj = cast("TriangleProtocol", cast(object, obj))
             # Slice the triangle by the origin periods that have data.
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
