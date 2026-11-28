@@ -66,7 +66,8 @@ class _LocBase:
         # Set the new dimension values.
         obj.index = obj.index.iloc[i_idx].reset_index(drop=True)
         obj.columns = obj.columns[c_idx]
-        obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
+        obj._set_axis("origin", obj._axes[2][o_idx], check=False)
+        obj._set_axis("development", obj._axes[3][d_idx], check=False)
         from chainladder import options
 
         if obj.valuation_date < pd.to_datetime(options.ULT_VAL) or not getattr(
@@ -793,14 +794,14 @@ class TriangleSlicer:
 
         # Case development axis.
         if isinstance(key, pd.Series) and key.name == "development":
-            return self._slice(key, "ddims")
+            return self._slice(key, "development")
         # Case ndarray, could be valuation or origin.
         if isinstance(key, np.ndarray):
             # Case valuation, inferred by size of ndarray obtained by filtering on valuation date.
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             # Otherwise, assume case origin.
-            return self._slice(key, "odims")
+            return self._slice(key, "origin")
         # Case index.
         if isinstance(key, pd.Series):
             if pd.api.types.is_bool_dtype(key):
@@ -1000,7 +1001,7 @@ class TriangleSlicer:
     def _slice(
         self: TriangleProtocol,
         key: pd.Series | np.ndarray,
-        axis: Literal["ddims", "odims"],
+        axis: Literal["development", "origin", "ddims", "odims"],
     ) -> Triangle:
         """
         Private method for handling of origin/development slicing.
@@ -1009,18 +1010,22 @@ class TriangleSlicer:
         ----------
         key: pd.Series | np.ndarray
             Array specifying the slice to extract.
-        axis: Literal['ddims', 'odims']
-            The axis to which the slice would apply, `ddims` for development, `odims` for origin.
+        axis: Literal['development', 'origin', 'ddims', 'odims']
+            The axis to which the slice would apply, 'development' or 'origin'.
         """
 
         # Update the axis, then the values.
         obj = self.copy()
-        setattr(obj, axis, getattr(obj, axis)[key])
-        # noinspection PyProtectedMember
-        slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key])
-        if axis == "odims":
-            slicer = tuple(list(slicer) + [slice(None)])
-        obj.values = obj.values[slicer]
+        if axis in ("origin", "odims"):
+            new_axis = obj._axes[2][key]
+            slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key]), slice(None)
+            obj.values = obj.values[slicer]
+            obj._set_axis("origin", new_axis, check=False)
+        else:
+            new_axis = obj._axes[3][key]
+            slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key])
+            obj.values = obj.values[slicer]
+            obj._set_axis("development", new_axis, check=False)
         return obj
 
     def _set_slicers(self: TriangleProtocol) -> None:

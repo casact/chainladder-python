@@ -21,3 +21,13 @@ def test_truncation_age(genins: Triangle, atol: float) -> None:
     assert np.allclose(
         long_truncation.values[..., -1], no_truncation.values[..., -1], atol=atol
     )
+
+
+def test_clark_g_list_of_ages(raa: Triangle) -> None:
+    """
+    Validate that passing a Python list of ages to G_ works without length mismatch.
+    """
+    model = cl.ClarkLDF().fit(raa)
+    g = model.G_([12, 24, 36])
+    assert g.shape[-1] == 3
+    assert list(g.development) == [12.0, 24.0, 36.0]

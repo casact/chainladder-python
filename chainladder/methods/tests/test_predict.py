@@ -528,6 +528,15 @@ def test_odd_shaped_triangle():
     assert abs(ult1 - ult2) < 1e-5
 
 
+def test_predict_age_exceeds_model():
+    tri = cl.load_sample("genins")
+    model = cl.Chainladder().fit(tri.iloc[..., :-2])
+    with pytest.raises(
+        ValueError, match="X has ages that exceed those available in model"
+    ):
+        model.predict(tri)
+
+
 def test_fit_and_predict_agree_one_age_short(raa):
     """A pattern one age short of X gets the same ultimates on both paths (#1666)."""
     current = raa[raa.origin < "1990"]

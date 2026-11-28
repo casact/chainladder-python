@@ -24,26 +24,36 @@ class TailBase(DevelopmentBase):
             "M": (12 * m, 1),
             "S": (2 * m, 6),
         }[obj.development_grain]
-        t_ddims = [
-            (item + 1) * self._ave_period[1] + obj.ldf_.ddims[-1]
+
+        def _parse_age(val):
+            s = str(val).split("-")[0].strip()
+            f = float(s)
+            return int(f) if f.is_integer() else f
+
+        ldf_last_lag = _parse_age(obj.ldf_.development.iloc[-1])
+        t_dev = [
+            (item + 1) * self._ave_period[1] + ldf_last_lag
             for item in range(self._ave_period[0] + 1)
         ]
-        ddims = np.concatenate(
-            (obj.ldf_.ddims, t_ddims),
+        ldf_ages = [_parse_age(d) for d in obj.ldf_.development]
+        dev = np.concatenate(
+            (ldf_ages, t_dev),
             0,
         )
         self.ldf_ = obj.ldf_.copy()
         tail = xp.ones(self.ldf_.shape)[..., -1:]
         tail = xp.repeat(tail, self._ave_period[0] + 1, -1)
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
-        self.ldf_.ddims = ddims
+        self.ldf_.development = dev
         if hasattr(obj, "sigma_"):
             zeros = (obj.sigma_.iloc[..., -1:] * 0).values
             self.sigma_ = getattr(obj, "sigma_").copy()
             self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
             self.std_err_ = getattr(obj, "std_err_").copy()
             self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-            self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims[: obj.shape[2]]
+            self.sigma_.development = self.std_err_.development = self.ldf_.development[
+                : self.sigma_.values.shape[3]
+            ]
             self.sigma_._set_slicers()
             self.std_err_._set_slicers()
         if hasattr(obj, "average_"):
