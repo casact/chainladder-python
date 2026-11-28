@@ -15,7 +15,7 @@ from chainladder.core.axis import TriangleAxis
 from chainladder.core.axis import _set_columns
 from chainladder.core.axis import _set_index
 from chainladder.utils.sparse import sp
-from chainladder.core.slice import VirtualColumns
+from chainladder.core.slice import VirtualColumns, _LocBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.utils.utility_functions import (
     concat,
@@ -1366,7 +1366,39 @@ class Triangle(TriangleBase):
             period = pd.Period(date)
         else:
             period = pd.Period(pd.Timestamp(date), freq="D")
-        return self[self.valuation <= period.end_time]
+        end = period.end_time
+        n_origin, n_dev = self.shape[-2:]
+        if n_dev == 1:
+            return self[self.valuation <= end]
+        # The mask and trim below give the same Triangle as
+        # ``self[self.valuation <= end]`` with one copy and at most one
+        # ``valuation`` read. On a valuation axis each column holds a single
+        # valuation, so the mask comes from ``ddims`` alone.
+        if self.is_val_tri:
+            keep_dev = np.asarray(self.ddims <= end)
+            key = np.repeat(keep_dev[None, :], n_origin, 0)
+            kept = self.ddims[keep_dev]
+        else:
+            valuation = self.valuation
+            keep = np.asarray(valuation <= end)
+            key = keep.reshape((n_origin, n_dev), order="F")
+            kept = valuation[keep]
+        o_idx = _LocBase._contig_slice(np.flatnonzero(key.any(1)))
+        d_idx = _LocBase._contig_slice(np.flatnonzero(key.any(0)))
+        if type(o_idx) is not slice or type(d_idx) is not slice:
+            raise ValueError("Fancy indexing on origin/development is not supported.")
+        obj = self.copy()
+        if obj.valuation_date < pd.to_datetime(options.ULT_VAL) or not getattr(
+            obj, "is_pattern", False
+        ):
+            obj.valuation_date = min(kept.max(), obj.valuation_date)
+        xp = obj.get_array_module()
+        obj.values = num_to_nan(
+            obj.values[..., o_idx, d_idx] * xp.array(key[o_idx, d_idx])
+        )
+        obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
+        obj.index = obj.index.reset_index(drop=True)
+        return obj
 
     @property
     def link_ratio(self) -> Triangle:

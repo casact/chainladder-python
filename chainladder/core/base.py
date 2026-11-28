@@ -735,8 +735,9 @@ class TriangleBase(
     def valuation(self):
         ddims = self.ddims
         if self.is_val_tri:
-            out = pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
-            return pd.DatetimeIndex(out.unstack().values)
+            # Column-major order, as below: every origin of the first
+            # valuation, then every origin of the next.
+            return pd.DatetimeIndex(np.repeat(self.ddims.values, len(self.odims)))
         ddim_arr = ddims - ddims[0]
         origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
         val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
