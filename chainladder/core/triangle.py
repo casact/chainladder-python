@@ -992,8 +992,20 @@ class Triangle(TriangleBase):
         -------
         Styler
             A Styler wrapping this Triangle's frame representation.
+
+        Raises
+        ------
+        AttributeError
+            If jinja2 is not installed. AttributeError lets ``hasattr`` report
+            the accessor as missing, as pandas does for ``DataFrame.style``.
         """
-        from chainladder.core.style import Styler
+        try:
+            from chainladder.core.style import Styler
+        except ImportError as err:
+            raise AttributeError(
+                "The '.style' accessor requires jinja2. Install it with "
+                "pip install jinja2 or conda install jinja2."
+            ) from err
 
         return Styler(self)
 
