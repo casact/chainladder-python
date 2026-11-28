@@ -42,6 +42,7 @@
    plot_loss_development
    plot_valuation_correlation
    plot_paired_bootstrap
+   plot_leave_one_out
    plot_next_diagonal_backtest
 
 ```
@@ -563,6 +564,20 @@ alt: Share of prism claim samples flagged by the per-diagonal and total tests at
 ```{image} ../images/plot_paired_bootstrap.png
 ---
 alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared bootstrap draws and wide for independent draws
+---
+```
++++
+{bdg-warning}`medium`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_leave_one_out
+:link-type: doc
+**Sensitivity of Reserves to Individual Link Ratios**
+```{image} ../images/plot_leave_one_out.png
+---
+alt: Change in total IBNR on raa and genins when each link ratio is dropped in turn
 ---
 ```
 +++
