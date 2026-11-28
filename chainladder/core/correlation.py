@@ -232,7 +232,16 @@ class ValuationCorrelation:
     Attributes
     ----------
     z : Triangle or DataFrame
-        Z values for each Valuation Period
+        Z values for each Valuation Period. Each value is the smaller of
+        ``s`` and ``l``.
+    s : Triangle or DataFrame
+        Number of link ratios on each valuation diagonal that fall below the
+        median of their development age, Mack's S. A ratio equal to the
+        median counts in neither ``s`` nor ``l``.
+    l : Triangle or DataFrame
+        Number of link ratios on each valuation diagonal that fall above the
+        median of their development age, Mack's L. A ratio equal to the
+        median counts in neither ``s`` nor ``l``.
     z_critical : Triangle or DataFrame
         Boolean value for whether correlation is too high at significance level
         ``p_critical``.
@@ -362,6 +371,10 @@ class ValuationCorrelation:
             self.z_critical = z_critical
             self.z = self.z_critical.copy()
             self.z.values = z
+            self.s = self.z_critical.copy()
+            self.s.values = S
+            self.l = self.z_critical.copy()
+            self.l.values = L
             self.z_expectation = self.z_critical.copy()
             self.z_expectation.values = EZ
             self.z_variance = self.z_critical.copy()
@@ -383,6 +396,12 @@ class ValuationCorrelation:
             )
             self.z = pd.DataFrame(
                 z.sum(axis=-1)[..., 0], columns=triangle.columns, index=idx
+            )
+            self.s = pd.DataFrame(
+                S.sum(axis=-1)[..., 0], columns=triangle.columns, index=idx
+            )
+            self.l = pd.DataFrame(
+                L.sum(axis=-1)[..., 0], columns=triangle.columns, index=idx
             )
             self.z_expectation = pd.DataFrame(
                 EZ.sum(axis=-1)[..., 0], columns=triangle.columns, index=idx

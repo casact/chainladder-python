@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 import chainladder as cl
 import numpy as np
 
@@ -7,6 +9,84 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+
+
+def test_bondy_rejects_non_finite_development_factor(clrd: Triangle) -> None:
+    """
+    ``TailBondy`` names the fit age with no finite development factor (#1707).
+
+    Aegis Grp / comauto has a NaN last development factor, so the default
+    fit (from the second-to-last age) used to fail inside scipy with
+    ``ValueError: Initial guess is outside of provided bounds``.
+    """
+    tri = clrd["CumPaidLoss"].iloc[2]
+    with pytest.raises(
+        ValueError, match=r"no finite development factor at age\(s\) 108-120"
+    ):
+        cl.TailBondy().fit(tri)
+
+
+def test_bondy_rejects_infinite_development_factor() -> None:
+    """
+    An infinite development factor raises the same ValueError (#1707).
+
+    ``Development`` never estimates an infinite factor, so this case is
+    supplied through ``DevelopmentConstant`` instead of the clrd sample.
+    """
+    raa = cl.load_sample("raa")
+    patterns = {
+        12: 3.0,
+        24: 1.6,
+        36: 1.27,
+        48: 1.17,
+        60: 1.11,
+        72: 1.04,
+        84: 1.03,
+        96: 1.02,
+        108: np.inf,
+    }
+    dev = cl.DevelopmentConstant(patterns=patterns).fit_transform(raa)
+    with pytest.raises(
+        ValueError, match=r"no finite development factor at age\(s\) 108-120"
+    ):
+        cl.TailBondy().fit(dev)
+
+
+def test_bondy_names_each_non_finite_fit_age(clrd: Triangle) -> None:
+    """Every non-finite fit age is listed, not just the first one (#1707)."""
+    tri = clrd["CumPaidLoss"].iloc[2]
+    with pytest.raises(
+        ValueError,
+        match=r"no finite development factor at age\(s\) 84-96, 96-108, 108-120",
+    ):
+        cl.TailBondy(earliest_age=12).fit(tri)
+
+
+def test_bondy_names_failing_segments(clrd: Triangle) -> None:
+    """
+    The ValueError names the segments with no finite factor (#1707).
+
+    Of clrd.iloc[[1, 2, 3]], only Adriatic Ins Co / ppauto has a finite
+    last factor; the two Aegis Grp segments fail, and both are named while
+    the healthy one is not.
+    """
+    tri = clrd["CumPaidLoss"].iloc[[1, 2, 3]]
+    try:
+        cl.TailBondy().fit(tri)
+    except ValueError as e:
+        msg = str(e)
+    else:
+        raise AssertionError("expected ValueError")
+    assert "('Aegis Grp', 'comauto')" in msg
+    assert "('Aegis Grp', 'othliab')" in msg
+    assert "Adriatic Ins Co" not in msg
+
+
+def test_bondy_truncates_long_failing_segment_list(clrd: Triangle) -> None:
+    """Many failing segments are truncated to five plus a count (#1707)."""
+    tri = clrd["CumPaidLoss"].iloc[0:20]
+    with pytest.raises(ValueError, match=r"and 2 more"):
+        cl.TailBondy().fit(tri)
 
 
 def test_bondy1(tail_sample: Triangle) -> None:

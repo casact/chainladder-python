@@ -32,13 +32,10 @@ def test_val_corr_total_matches_mack(raa: Triangle) -> None:
     assert not vc.z_critical.iloc[0, 0]
 
 
-def test_val_corr_total_flags_calendar_effect() -> None:
+def exam_2015_triangle() -> Triangle:
     # Question 4 of the CAS Spring 2015 Exam 7 gives these paid age-to-age
-    # factors. Sample Answer 1, published with the examiners' report, finds
-    # Z = 2, E(Z) = 4.625 and Var(Z) = 1.117, outside the 95% range
-    # (2.554, 6.696), so it rejects the hypothesis of no calendar year
-    # effects: https://www.casact.org/sites/default/files/2021-03/15-7.pdf
-    # Only the factors matter to the test, so each accident year starts at 1.
+    # factors. Only the factors matter to the test, so each accident year
+    # starts at 1.
     factors = [
         [7.00, 2.55, 1.60, 1.30, 1.20, 1.05],
         [6.00, 2.60, 1.40, 1.50, 1.10],
@@ -55,20 +52,47 @@ def test_val_corr_total_flags_calendar_effect() -> None:
             origin.append(2008 + i)
             valuation.append(2008 + i + k)
             paid.append(amount)
-    triangle = cl.Triangle(
+    return cl.Triangle(
         data={"origin": origin, "valuation": valuation, "paid": paid},
         origin="origin",
         valuation="valuation",
         columns=["paid"],
         cumulative=True,
     )
-    vc = triangle.valuation_correlation(p_critical=0.05, total=True)
+
+
+def test_val_corr_total_flags_calendar_effect() -> None:
+    # Sample Answer 1 to Question 4 of the CAS Spring 2015 Exam 7, published
+    # with the examiners' report, finds Z = 2, E(Z) = 4.625 and Var(Z) = 1.117,
+    # outside the 95% range (2.554, 6.696), so it rejects the hypothesis of no
+    # calendar year effects:
+    # https://www.casact.org/sites/default/files/2021-03/15-7.pdf
+    vc = exam_2015_triangle().valuation_correlation(p_critical=0.05, total=True)
     assert vc.z.iloc[0, 0] == 2
     assert vc.z_expectation.iloc[0, 0] == pytest.approx(4.625)
     assert vc.z_variance.iloc[0, 0] == pytest.approx(1.117, abs=5e-4)
     assert vc.range[0].item() == pytest.approx(2.554, abs=1e-3)
     assert vc.range[1].item() == pytest.approx(6.696, abs=1e-3)
     assert vc.z_critical.iloc[0, 0]
+
+
+def test_val_corr_small_large_counts() -> None:
+    # Counts by hand for the Exam 7 factors. The medians by age are 6.5, 2.55,
+    # 1.55, 1.30, 1.15 and 1.05, and a ratio equal to its median counts in
+    # neither S nor L. The diagonals ending 2009 to 2014 then hold
+    # S = 0, 1, 1, 3, 0, 4 small ratios and L = 1, 0, 2, 0, 5, 1 large ones,
+    # so Z = min(S, L) = 0, 0, 1, 0, 0, 1 sums to the exam's Z = 2.
+    triangle = exam_2015_triangle()
+    vc = triangle.valuation_correlation(p_critical=0.05, total=False)
+    assert vc.s.values.flatten().tolist() == [0, 1, 1, 3, 0, 4]
+    assert vc.l.values.flatten().tolist() == [1, 0, 2, 0, 5, 1]
+    assert vc.z.values.flatten().tolist() == [0, 0, 1, 0, 0, 1]
+    assert vc.s.values.shape == vc.z.values.shape
+    assert vc.l.values.shape == vc.z.values.shape
+    assert vc.s.ddims.tolist() == vc.z.ddims.tolist()
+    total = triangle.valuation_correlation(p_critical=0.05, total=True)
+    assert total.s.iloc[0, 0] == 9
+    assert total.l.iloc[0, 0] == 9
 
 
 def test_val_corr_total_false(raa: Triangle) -> None:

@@ -98,6 +98,109 @@ def test_bs_random_state_predict(clrd):
     )
 
 
+def test_predict_carries_process_variance(raa):
+    """
+    Predict on a bootstrapped triangle carries fit's process variance.
+
+    Regression test for #1639: predict() used to return point estimates
+    while fit() added simulated process variance, so the predicted
+    ultimate had a smaller IBNR spread than the fitted one.
+    """
+    sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
+
+    def sd(ult):
+        return float(np.std((ult - sims.latest_diagonal).sum("origin").values))
+
+    model = cl.Chainladder().fit(sims)
+    fit_sd = sd(model.ultimate_)
+    fit_ult = model.ultimate_.values.copy()
+    pred = model.predict(sims)
+    # predict() must carry the same process variance as fit()
+    assert sd(pred.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    assert np.allclose(pred.ultimate_.values, model.ultimate_.values, equal_nan=True)
+    # ... and must not mutate the fitted model
+    assert np.allclose(model.ultimate_.values, fit_ult, equal_nan=True)
+    # VotingChainladder inherits it through predict()
+    vot = cl.VotingChainladder([("a", cl.Chainladder()), ("b", cl.Chainladder())]).fit(
+        sims
+    )
+    assert sd(vot.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    # Control: a plain triangle has no process variance to carry, so
+    # predict() still matches fit() exactly.
+    plain = cl.Chainladder().fit(raa)
+    assert np.allclose(
+        plain.predict(raa).ultimate_.values, plain.ultimate_.values, equal_nan=True
+    )
+    assert plain.predict(raa).process_variance_ is None
+
+
+def test_predict_subset_of_simulations_keeps_shape(raa):
+    """
+    Predict on a subset of simulations keeps the subset's shape.
+
+    The variance draw is bound to the full bootstrap, so it cannot
+    apply to a subset; predict() must warn and fall back to point
+    estimates with the correct shape instead of corrupting ultimate_.
+    """
+    sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
+    model = cl.Chainladder().fit(sims)
+    sub = sims.iloc[:5]
+    with pytest.warns(UserWarning, match="Process variance cannot be applied"):
+        pred = model.predict(sub)
+    assert pred.ultimate_.shape == (5, 1, 10, 1)
+    assert len(pred.ultimate_.index) == 5
+    assert pred.process_variance_ is None
+    from chainladder.methods.base import MethodBase
+
+    X_new = MethodBase.predict(model, sub)
+    assert np.allclose(
+        pred.ultimate_.values,
+        model._get_ultimate(X_new).values,
+        equal_nan=True,
+    )
+
+
+def test_benktander_predict_carries_process_variance(genins):
+    """
+    Benktander predict() carries the same process variance as fit().
+
+    Same missing-variance bug as Chainladder.predict (#1639).
+    """
+    boot = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(genins)
+    w = boot.latest_diagonal * 0 + 1
+
+    def sd(ult):
+        return float(np.std((ult - boot.latest_diagonal).sum("origin").values))
+
+    bk = cl.Benktander(apriori=1.0, n_iters=2).fit(boot, sample_weight=w)
+    fit_sd = sd(bk.ultimate_)
+    pred = bk.predict(boot, sample_weight=w)
+    assert sd(pred.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    assert np.allclose(pred.ultimate_.values, bk.ultimate_.values, equal_nan=True)
+    assert pred.process_variance_ is not None
+
+
+def test_bornhuetterferguson_predict_carries_process_variance(raa):
+    """
+    BornhuetterFerguson predict() carries the same process variance as fit().
+
+    BornhuetterFerguson reaches Benktander.predict through super(),
+    so it inherits the #1639 fix there.
+    """
+    sims = cl.BootstrapODPSample(n_sims=2000, random_state=42).fit_transform(raa)
+    exposure = sims.latest_diagonal * 0 + 40000
+
+    def sd(ult):
+        return float(np.std((ult - sims.latest_diagonal).sum("origin").values))
+
+    bf = cl.BornhuetterFerguson(apriori=0.5).fit(sims, sample_weight=exposure)
+    fit_sd = sd(bf.ultimate_)
+    pred = bf.predict(sims, sample_weight=exposure)
+    assert sd(pred.ultimate_) == pytest.approx(fit_sd, rel=1e-12)
+    assert np.allclose(pred.ultimate_.values, bf.ultimate_.values, equal_nan=True)
+    assert pred.process_variance_ is not None
+
+
 def test_basic_transform(raa):
     cl.Development().fit_transform(raa)
     cl.ClarkLDF().fit_transform(raa)

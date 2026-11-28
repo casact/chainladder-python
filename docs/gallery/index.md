@@ -43,6 +43,7 @@
    plot_valuation_correlation
    plot_paired_bootstrap
    plot_leave_one_out
+   plot_next_diagonal_backtest
 
 ```
 
@@ -577,6 +578,20 @@ alt: Histograms of TailBondy minus TailCurve total IBNR, narrow for shared boots
 ```{image} ../images/plot_leave_one_out.png
 ---
 alt: Change in total IBNR on raa and genins when each link ratio is dropped in turn
+---
+```
++++
+{bdg-warning}`medium`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_next_diagonal_backtest
+:link-type: doc
+**Backtesting Two Development Patterns on the Next Diagonal**
+```{image} ../images/plot_next_diagonal_backtest.png
+---
+alt: Bar chart of the 2008 diagonal projection error for State Farm commercial auto, where the latest 3 diagonals miss by less than all diagonals on both incurred and paid
 ---
 ```
 +++
