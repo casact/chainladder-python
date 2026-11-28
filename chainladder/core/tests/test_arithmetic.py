@@ -555,3 +555,80 @@ def test_comparison_dunders_are_false_at_missing_values(raa: Triangle) -> None:
     for op in [operator.lt, operator.le, operator.gt, operator.ge]:
         result = op(raa, 10000).set_backend("numpy").values
         assert not result[missing].any()
+
+
+@pytest.mark.parametrize("backend", ["numpy", "sparse"])
+def test_shifted_origins_match_by_label_with_a_one_development_operand(
+    raa: Triangle, backend: str
+) -> None:
+    """
+    A one-development operand whose origins are shifted by a year adds to each
+    origin by label, so ``a + b`` and ``b + a`` agree (#1650). The labels used
+    to be compared only when both axes had the same length, so the premium
+    labelled 1982 landed on the raa row labelled 1981.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    backend: str
+        The array backend under test.
+
+    Returns
+    -------
+    None
+    """
+    import chainladder as cl
+
+    years = list(range(1981, 1991))
+    values = [20000.0 + 2000.0 * (y - 1981) for y in years]
+
+    def premium(origins):
+        df = pd.DataFrame({"origin": origins, "premium": values})
+        return cl.Triangle(df, origin="origin", columns="premium", cumulative=True)
+
+    tri = raa.set_backend(backend)
+    shifted = premium([y + 1 for y in years]).set_backend(backend)
+    left = (tri + shifted).set_backend("numpy")
+    right = (shifted + tri).set_backend("numpy")
+    assert left.origin.year.tolist() == list(range(1981, 1992))
+    assert right.origin.year.tolist() == list(range(1981, 1992))
+    np.testing.assert_array_equal(left.values, right.values)
+    first_age = left.values[0, 0, :, 0]
+    # raa alone in 1981, raa plus the premium labelled 1982 in 1982, and the
+    # premium labelled 1991 alone in 1991.
+    assert first_age[0] == 5012.0
+    assert first_age[1] == 106.0 + 20000.0
+    assert first_age[10] == 38000.0
+
+
+@pytest.mark.parametrize("backend", ["numpy", "sparse"])
+def test_shifted_ages_match_by_label_with_a_one_origin_operand(
+    raa: Triangle, backend: str
+) -> None:
+    """
+    A one-origin operand whose development ages are shifted by one age adds
+    to each age by label (#1650). The ages used to be compared only when both
+    axes had the same length, so the age-24 total landed on age 12.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    backend: str
+        The array backend under test.
+
+    Returns
+    -------
+    None
+    """
+    tri = raa.set_backend(backend)
+    early = tri.iloc[..., :-1]
+    late_total = tri.iloc[..., 1:].sum("origin")
+    for result in (early + late_total, late_total + early):
+        result = result.set_backend("numpy")
+        assert result.development.tolist() == list(range(12, 132, 12))
+        first_origin = result.values[0, 0, 0]
+        assert first_origin[0] == 5012.0
+        assert first_origin[1] == 8269.0 + np.nansum(raa.values[0, 0, :, 1])
+        assert first_origin[9] == np.nansum(raa.values[0, 0, :, 9])
