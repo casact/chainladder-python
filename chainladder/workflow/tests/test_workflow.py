@@ -129,6 +129,22 @@ def test_leave_one_out_grid_rejects_more_than_one_column(clrd):
         cl.GridSearch.leave_one_out_grid(clrd.sum()[["CumPaidLoss", "IncurLoss"]])
 
 
+def test_leave_one_out_grid_rejects_more_than_one_index(clrd):
+    """Development(drop=...) drops a cell in every index row, so one row per ratio needs one index."""
+    lob = clrd.groupby("LOB").sum()["CumPaidLoss"]
+    with pytest.raises(ValueError, match="X has 6 and 1"):
+        cl.GridSearch.leave_one_out_grid(lob)
+
+
+def test_drop_applies_to_every_index_row(clrd):
+    """The limit above comes from Development, which drops the same cell for each LOB."""
+    lob = clrd.groupby("LOB").sum()["CumPaidLoss"]
+    base = cl.Development().fit(lob).ldf_.values[:, 0, 0, 0]
+    dropped = cl.Development(drop=("1990", 12)).fit(lob).ldf_.values[:, 0, 0, 0]
+    assert lob.shape[0] == 6
+    assert np.all(base != dropped)
+
+
 def test_leave_one_out_grid_survives_clone(loo_search):
     """clone keeps the grid, so GridSearch stays an sklearn estimator."""
     copied = clone(loo_search)

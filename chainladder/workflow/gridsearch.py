@@ -12,143 +12,6 @@ import pandas as pd
 import json
 
 
-class _Comparisons:
-    """
-    Comparison callables for ``GridSearch.compare_results``.
-
-    Each comparison takes the ``scoring`` key, the compared rows of
-    ``results_``, the base row and the label columns, and returns a named
-    Series with one value per compared row.
-    """
-
-    @staticmethod
-    def change(name, rows, base, labels):
-        """
-        Measure how far each candidate's score moves from the base score.
-
-        Parameters
-        ----------
-        name: str
-            The ``scoring`` key whose column the comparison reads.
-        rows: DataFrame
-            The rows of ``results_`` that ``compare_results`` compares.
-        base: Series
-            The row of ``results_`` for the base candidate.
-        labels: DataFrame
-            The label columns that ``result_labels`` built, or no columns.
-            This comparison does not read them.
-
-        Returns
-        -------
-        Series
-            ``{name}_change``, the score of each row less the base score.
-            The score must be a number, such as the one ``GridSearch.ibnr``
-            returns.
-        """
-        change = rows[name].astype(float) - float(base[name])
-        return change.rename(f"{name}_change")
-
-    @staticmethod
-    def share(name, rows, base, labels):
-        """
-        Measure each candidate's change in score as a share of the base score.
-
-        Parameters
-        ----------
-        name: str
-            The ``scoring`` key whose column the comparison reads.
-        rows: DataFrame
-            The rows of ``results_`` that ``compare_results`` compares.
-        base: Series
-            The row of ``results_`` for the base candidate.
-        labels: DataFrame
-            The label columns that ``result_labels`` built, or no columns.
-            This comparison does not read them.
-
-        Returns
-        -------
-        Series
-            ``{name}_share``, the change divided by the base score. The score
-            must be a number, such as the one ``GridSearch.ibnr`` returns.
-        """
-        change = rows[name].astype(float) - float(base[name])
-        return (change / float(base[name])).rename(f"{name}_share")
-
-    @staticmethod
-    def _factor_at_age(name, rows, factors, labels, suffix):
-        if "age" in labels:
-            ages = labels["age"].reindex(rows.index)
-        else:
-            ages = pd.Series(pd.NA, index=rows.index)
-        values = [
-            np.nan if pd.isna(age) else factor.get(int(age), np.nan)
-            for factor, age in zip(factors, ages)
-        ]
-        return pd.Series(values, index=rows.index, name=f"{name}_{suffix}", dtype=float)
-
-    @staticmethod
-    def base(name, rows, base, labels):
-        """
-        Read the base factor at the age that each row names.
-
-        Parameters
-        ----------
-        name: str
-            The ``scoring`` key whose column the comparison reads. Its scores
-            must be Series indexed by age, such as the ones
-            ``GridSearch.ldf`` returns.
-        rows: DataFrame
-            The rows of ``results_`` that ``compare_results`` compares.
-        base: Series
-            The row of ``results_`` for the base candidate.
-        labels: DataFrame
-            The label columns that ``result_labels`` built. The comparison
-            reads the ``age`` column, which
-            ``GridSearch.leave_one_out_grid_labels`` supplies.
-
-        Returns
-        -------
-        Series
-            ``{name}_base``, the base factor at each row's age. A row gets
-            NaN when ``labels`` has no ``age`` column or the base has no
-            factor at that age.
-        """
-        return _Comparisons._factor_at_age(
-            name, rows, [base[name]] * len(rows), labels, "base"
-        )
-
-    @staticmethod
-    def scenario(name, rows, base, labels):
-        """
-        Read each candidate's own factor at the age that its row names.
-
-        Parameters
-        ----------
-        name: str
-            The ``scoring`` key whose column the comparison reads. Its scores
-            must be Series indexed by age, such as the ones
-            ``GridSearch.ldf`` returns.
-        rows: DataFrame
-            The rows of ``results_`` that ``compare_results`` compares.
-        base: Series
-            The row of ``results_`` for the base candidate. This comparison
-            does not read it.
-        labels: DataFrame
-            The label columns that ``result_labels`` built. The comparison
-            reads the ``age`` column, which
-            ``GridSearch.leave_one_out_grid_labels`` supplies.
-
-        Returns
-        -------
-        Series
-            ``{name}_scenario``, the candidate's factor at its row's age. A
-            row gets NaN when ``labels`` has no ``age`` column or the
-            candidate has no factor at that age, as when it drops the only
-            ratio at that age.
-        """
-        return _Comparisons._factor_at_age(name, rows, rows[name], labels, "scenario")
-
-
 class GridSearch(BaseEstimator):
     """
     Exhaustive search over specified parameter values for an estimator.
@@ -242,7 +105,145 @@ class GridSearch(BaseEstimator):
 
     """
 
-    comparisons = _Comparisons
+    class comparisons:
+        """
+        Comparison callables for ``compare_results``.
+
+        Each comparison takes the ``scoring`` key, the compared rows of
+        ``results_``, the base row and the label columns, and returns a named
+        Series with one value per compared row.
+        """
+
+        @staticmethod
+        def change(name, rows, base, labels):
+            """
+            Measure how far each candidate's score moves from the base score.
+
+            Parameters
+            ----------
+            name: str
+                The ``scoring`` key whose column the comparison reads.
+            rows: DataFrame
+                The rows of ``results_`` that ``compare_results`` compares.
+            base: Series
+                The row of ``results_`` for the base candidate.
+            labels: DataFrame
+                The label columns that ``result_labels`` built, or no columns.
+                This comparison does not read them.
+
+            Returns
+            -------
+            Series
+                ``{name}_change``, the score of each row less the base score.
+                The score must be a number, such as the one ``GridSearch.ibnr``
+                returns.
+            """
+            change = rows[name].astype(float) - float(base[name])
+            return change.rename(f"{name}_change")
+
+        @staticmethod
+        def share(name, rows, base, labels):
+            """
+            Measure each candidate's change in score as a share of the base score.
+
+            Parameters
+            ----------
+            name: str
+                The ``scoring`` key whose column the comparison reads.
+            rows: DataFrame
+                The rows of ``results_`` that ``compare_results`` compares.
+            base: Series
+                The row of ``results_`` for the base candidate.
+            labels: DataFrame
+                The label columns that ``result_labels`` built, or no columns.
+                This comparison does not read them.
+
+            Returns
+            -------
+            Series
+                ``{name}_share``, the change divided by the base score. The score
+                must be a number, such as the one ``GridSearch.ibnr`` returns.
+            """
+            change = rows[name].astype(float) - float(base[name])
+            return (change / float(base[name])).rename(f"{name}_share")
+
+        @staticmethod
+        def _factor_at_age(name, rows, factors, labels, suffix):
+            if "age" in labels:
+                ages = labels["age"].reindex(rows.index)
+            else:
+                ages = pd.Series(pd.NA, index=rows.index)
+            values = [
+                np.nan if pd.isna(age) else factor.get(int(age), np.nan)
+                for factor, age in zip(factors, ages)
+            ]
+            return pd.Series(
+                values, index=rows.index, name=f"{name}_{suffix}", dtype=float
+            )
+
+        @staticmethod
+        def base(name, rows, base, labels):
+            """
+            Read the base factor at the age that each row names.
+
+            Parameters
+            ----------
+            name: str
+                The ``scoring`` key whose column the comparison reads. Its scores
+                must be Series indexed by age, such as the ones
+                ``GridSearch.ldf`` returns.
+            rows: DataFrame
+                The rows of ``results_`` that ``compare_results`` compares.
+            base: Series
+                The row of ``results_`` for the base candidate.
+            labels: DataFrame
+                The label columns that ``result_labels`` built. The comparison
+                reads the ``age`` column, which
+                ``GridSearch.leave_one_out_grid_labels`` supplies.
+
+            Returns
+            -------
+            Series
+                ``{name}_base``, the base factor at each row's age. A row gets
+                NaN when ``labels`` has no ``age`` column or the base has no
+                factor at that age.
+            """
+            return GridSearch.comparisons._factor_at_age(
+                name, rows, [base[name]] * len(rows), labels, "base"
+            )
+
+        @staticmethod
+        def scenario(name, rows, base, labels):
+            """
+            Read each candidate's own factor at the age that its row names.
+
+            Parameters
+            ----------
+            name: str
+                The ``scoring`` key whose column the comparison reads. Its scores
+                must be Series indexed by age, such as the ones
+                ``GridSearch.ldf`` returns.
+            rows: DataFrame
+                The rows of ``results_`` that ``compare_results`` compares.
+            base: Series
+                The row of ``results_`` for the base candidate. This comparison
+                does not read it.
+            labels: DataFrame
+                The label columns that ``result_labels`` built. The comparison
+                reads the ``age`` column, which
+                ``GridSearch.leave_one_out_grid_labels`` supplies.
+
+            Returns
+            -------
+            Series
+                ``{name}_scenario``, the candidate's factor at its row's age. A
+                row gets NaN when ``labels`` has no ``age`` column or the
+                candidate has no factor at that age, as when it drops the only
+                ratio at that age.
+            """
+            return GridSearch.comparisons._factor_at_age(
+                name, rows, rows[name], labels, "scenario"
+            )
 
     def __init__(
         self,
